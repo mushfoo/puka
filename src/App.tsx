@@ -6,14 +6,16 @@ import {
   CurrentlyReading, 
   AddBookModal 
 } from './components';
-import type { Book, StatusFilter } from './types';
+import type { Book, StatusFilter, ReadingData } from './types';
 import { storageService } from './services';
 
 function App() {
   const [books, setBooks] = useState<Book[]>([]);
+  const [readingData, setReadingData] = useState<ReadingData | null>(null);
   const [currentFilter, setCurrentFilter] = useState<StatusFilter>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -21,25 +23,98 @@ function App() {
 
   const loadData = async () => {
     try {
+      setError(null);
       const data = await storageService.load();
+      setReadingData(data);
       setBooks(data.books);
     } catch (error) {
       console.error('Failed to load data:', error);
+      setError('Failed to load your reading data. You can still add books, and we\'ll help you set up storage.');
       setBooks([]);
+      // Create default data with sample books if none exists
+      const defaultData = {
+        version: '1.0.0',
+        lastModified: new Date().toISOString(),
+        books: [
+          {
+            id: 1,
+            title: "The Midnight Library",
+            author: "Matt Haig",
+            progress: 65,
+            status: "reading" as const,
+            startDate: "2024-06-15",
+            notes: "Fascinating exploration of parallel lives and choices"
+          },
+          {
+            id: 2,
+            title: "Project Hail Mary", 
+            author: "Andy Weir",
+            progress: 100,
+            status: "finished" as const,
+            startDate: "2024-05-01",
+            finishDate: "2024-05-20",
+            notes: "Incredible sci-fi thriller with humor and heart"
+          },
+          {
+            id: 3,
+            title: "The Seven Husbands of Evelyn Hugo",
+            author: "Taylor Jenkins Reid",
+            progress: 0,
+            status: "want-to-read" as const,
+            notes: "Highly recommended by friends"
+          },
+          {
+            id: 4,
+            title: "Atomic Habits",
+            author: "James Clear",
+            progress: 100,
+            status: "finished" as const,
+            startDate: "2024-04-10",
+            finishDate: "2024-04-25",
+            notes: "Life-changing book about building better habits"
+          },
+          {
+            id: 5,
+            title: "The Silent Patient",
+            author: "Alex Michaelides",
+            progress: 0,
+            status: "want-to-read" as const,
+            notes: "Psychological thriller"
+          }
+        ],
+        streaks: { current: 3, longest: 7, lastUpdate: new Date().toISOString() },
+        settings: { theme: 'light' as const, notifications: true }
+      };
+      setReadingData(defaultData);
+      setBooks(defaultData.books);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveData = async (updatedBooks: Book[]) => {
+  const saveData = async (updatedBooks: Book[], updateStreaks = false) => {
     try {
-      const data = await storageService.load();
-      await storageService.save({
-        ...data,
+      if (!readingData) return;
+      
+      let updatedStreaks = readingData.streaks;
+      
+      if (updateStreaks) {
+        updatedStreaks = calculateStreak(updatedBooks, readingData.streaks);
+      }
+      
+      const updatedData = {
+        ...readingData,
         books: updatedBooks,
-      });
+        streaks: updatedStreaks,
+        lastModified: new Date().toISOString(),
+      };
+      
+      await storageService.save(updatedData);
+      setReadingData(updatedData);
+      setError(null);
     } catch (error) {
       console.error('Failed to save data:', error);
+      setError('Failed to save changes. Your changes are preserved locally.');
     }
   };
 
@@ -60,10 +135,33 @@ function App() {
     const newBook: Book = {
       ...bookData,
       id: Date.now(),
+      // Auto-set dates based on status
+      startDate: bookData.status === 'reading' && !bookData.startDate 
+        ? new Date().toISOString().split('T')[0] 
+        : bookData.startDate,
+      finishDate: bookData.status === 'finished' && !bookData.finishDate 
+        ? new Date().toISOString().split('T')[0] 
+        : bookData.finishDate,
     };
+    
+    // Auto-adjust status based on progress
+    if (newBook.progress === 0) {
+      newBook.status = 'want-to-read';
+    } else if (newBook.progress === 100) {
+      newBook.status = 'finished';
+      if (!newBook.finishDate) {
+        newBook.finishDate = new Date().toISOString().split('T')[0];
+      }
+    } else if (newBook.progress > 0 && newBook.progress < 100) {
+      newBook.status = 'reading';
+      if (!newBook.startDate) {
+        newBook.startDate = new Date().toISOString().split('T')[0];
+      }
+    }
+    
     const updatedBooks = [...books, newBook];
     setBooks(updatedBooks);
-    await saveData(updatedBooks);
+    await saveData(updatedBooks, true);
   };
 
   const handleUpdateProgress = async (bookId: number) => {
@@ -73,16 +171,31 @@ function App() {
       const updatedBooks = books.map(book => {
         if (book.id === bookId) {
           const updatedBook = { ...book, progress: progressValue };
-          if (progressValue === 100 && book.status !== 'finished') {
+          
+          // Auto-update status based on progress
+          if (progressValue === 0) {
+            updatedBook.status = 'want-to-read';
+            updatedBook.startDate = undefined;
+            updatedBook.finishDate = undefined;
+          } else if (progressValue === 100) {
             updatedBook.status = 'finished';
-            updatedBook.finishDate = new Date().toISOString().split('T')[0];
+            if (!updatedBook.finishDate) {
+              updatedBook.finishDate = new Date().toISOString().split('T')[0];
+            }
+          } else {
+            updatedBook.status = 'reading';
+            if (!updatedBook.startDate) {
+              updatedBook.startDate = new Date().toISOString().split('T')[0];
+            }
+            updatedBook.finishDate = undefined;
           }
+          
           return updatedBook;
         }
         return book;
       });
       setBooks(updatedBooks);
-      await saveData(updatedBooks);
+      await saveData(updatedBooks, true); // Update streaks when progress changes
     }
   };
 
@@ -93,7 +206,94 @@ function App() {
     { key: 'want-to-read' as StatusFilter, label: 'Want to Read', count: bookCounts['want-to-read'] }
   ];
 
-  const streak = 3; // Placeholder - will be calculated from data
+  // Calculate current streak from reading data
+  const calculateStreak = (booksData: Book[], currentStreaks: any) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Check if there was any progress update in the last 24 hours
+    const hasRecentProgress = booksData.some(book => {
+      const lastModified = readingData?.lastModified;
+      if (!lastModified) return false;
+      
+      const lastUpdate = new Date(lastModified);
+      const timeDiff = today.getTime() - lastUpdate.getTime();
+      return timeDiff < 24 * 60 * 60 * 1000; // 24 hours
+    });
+    
+    let newStreak = currentStreaks.current;
+    
+    if (hasRecentProgress) {
+      // Check if we need to increment the streak
+      const lastUpdate = new Date(currentStreaks.lastUpdate);
+      const daysSinceUpdate = Math.floor((today.getTime() - lastUpdate.getTime()) / (24 * 60 * 60 * 1000));
+      
+      if (daysSinceUpdate >= 1) {
+        newStreak = currentStreaks.current + 1;
+      }
+    } else {
+      // Check if we need to reset the streak
+      const lastUpdate = new Date(currentStreaks.lastUpdate);
+      const daysSinceUpdate = Math.floor((today.getTime() - lastUpdate.getTime()) / (24 * 60 * 60 * 1000));
+      
+      if (daysSinceUpdate > 1) {
+        newStreak = 0;
+      }
+    }
+    
+    return {
+      current: newStreak,
+      longest: Math.max(newStreak, currentStreaks.longest),
+      lastUpdate: hasRecentProgress ? today.toISOString() : currentStreaks.lastUpdate,
+    };
+  };
+  
+  const currentStreak = readingData?.streaks.current || 0;
+
+  const handleImportData = async () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json,.csv';
+      
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) return;
+        
+        const text = await file.text();
+        const format = file.name.endsWith('.csv') ? 'csv' : 'json';
+        
+        await storageService.import(text, format);
+        await loadData();
+      };
+      
+      input.click();
+    } catch (error) {
+      console.error('Import failed:', error);
+      setError('Failed to import data. Please check your file format.');
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const format = confirm('Export as JSON? (Cancel for CSV)') ? 'json' : 'csv';
+      const data = await storageService.export(format);
+      
+      const blob = new Blob([data], { type: format === 'json' ? 'application/json' : 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `puka-reading-data.${format}`;
+      a.click();
+      
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setError('Failed to export data. Please try again.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -116,8 +316,18 @@ function App() {
 
         {/* Content */}
         <div className="p-6 space-y-8">
+          {/* Error Message */}
+          {error && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="text-yellow-400 mr-3">⚠️</div>
+                <div className="text-sm text-yellow-800">{error}</div>
+              </div>
+            </div>
+          )}
+          
           {/* Streak Card */}
-          <StreakCard streak={streak} />
+          <StreakCard streak={currentStreak} />
 
           {/* Currently Reading */}
           <CurrentlyReading 
@@ -155,9 +365,20 @@ function App() {
                 </button>
               ))}
             </div>
-            <button className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
-              📥 Import
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => handleImportData()}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              >
+                📥 Import
+              </button>
+              <button 
+                onClick={() => handleExportData()}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50"
+              >
+                📤 Export
+              </button>
+            </div>
           </div>
 
           {/* Book Grid */}
