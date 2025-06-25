@@ -1,74 +1,92 @@
-import BookCard from './components/books/BookCard'
-import { Book } from './types'
-
-const sampleBooks: Book[] = [
-  {
-    id: 1,
-    title: "The Midnight Library",
-    author: "Matt Haig",
-    status: "currently_reading",
-    progress: 65,
-    dateAdded: new Date(),
-    totalPages: 288,
-    currentPage: 187
-  },
-  {
-    id: 2,
-    title: "Project Hail Mary",
-    author: "Andy Weir",
-    status: "want_to_read",
-    progress: 0,
-    dateAdded: new Date()
-  },
-  {
-    id: 3,
-    title: "Atomic Habits",
-    author: "James Clear",
-    status: "finished",
-    progress: 100,
-    dateAdded: new Date(),
-    dateFinished: new Date()
-  }
-];
+import Dashboard from './components/Dashboard';
+import { useStorage } from './hooks/useStorage';
+import { Book } from './types';
 
 function App() {
-  const handleUpdateProgress = (bookId: number, progress: number) => {
+  const {
+    books,
+    loading,
+    error,
+    updateProgress,
+    markComplete,
+    changeStatus,
+    addBook
+  } = useStorage();
+
+  const handleUpdateProgress = async (bookId: number, progress: number) => {
     console.log(`Updating book ${bookId} progress to ${progress}%`);
+    await updateProgress(bookId, progress);
   };
 
-  const handleQuickUpdate = (bookId: number, increment: number) => {
+  const handleQuickUpdate = async (bookId: number, increment: number) => {
     console.log(`Quick update book ${bookId} by ${increment}%`);
+    
+    const book = books.find(b => b.id === bookId);
+    if (book) {
+      const newProgress = Math.min(100, Math.max(0, book.progress + increment));
+      await updateProgress(bookId, newProgress);
+    }
   };
 
-  const handleMarkComplete = (bookId: number) => {
+  const handleMarkComplete = async (bookId: number) => {
     console.log(`Marking book ${bookId} as complete`);
+    await markComplete(bookId);
   };
 
-  const handleChangeStatus = (bookId: number, status: Book['status']) => {
+  const handleChangeStatus = async (bookId: number, status: Book['status']) => {
     console.log(`Changing book ${bookId} status to ${status}`);
+    await changeStatus(bookId, status);
   };
 
-  return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-md mx-auto">
-        <h1 className="text-2xl font-bold text-primary mb-6">Puka Reading Tracker</h1>
-        <div className="space-y-4">
-          {sampleBooks.map((book) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              onUpdateProgress={handleUpdateProgress}
-              onQuickUpdate={handleQuickUpdate}
-              onMarkComplete={handleMarkComplete}
-              onChangeStatus={handleChangeStatus}
-              showQuickActions={true}
-              interactive={true}
-            />
-          ))}
+  const handleAddBook = async () => {
+    console.log('Add book clicked');
+    
+    // Demo: Add a sample book for testing
+    const sampleBook = {
+      title: "New Book " + Date.now(),
+      author: "Demo Author",
+      status: 'want_to_read' as const,
+      progress: 0,
+      notes: "Added via FAB button"
+    };
+    
+    await addBook(sampleBook);
+  };
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-text-primary mb-2">
+            Something went wrong
+          </h2>
+          <p className="text-text-secondary mb-4">
+            {error}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Reload App
+          </button>
         </div>
       </div>
-    </div>
-  )
+    );
+  }
+
+  return (
+    <Dashboard
+      books={books}
+      onUpdateProgress={handleUpdateProgress}
+      onQuickUpdate={handleQuickUpdate}
+      onMarkComplete={handleMarkComplete}
+      onChangeStatus={handleChangeStatus}
+      onAddBook={handleAddBook}
+      loading={loading}
+    />
+  );
 }
 
 export default App

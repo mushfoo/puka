@@ -11,8 +11,8 @@ export interface ExportData {
 }
 
 export interface ImportData {
-  books: Book[];
-  settings?: UserSettings;
+  books: (Omit<Book, 'id' | 'dateAdded'> | Book)[];
+  settings?: Partial<UserSettings>;
 }
 
 export interface UserSettings {
