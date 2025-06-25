@@ -66,24 +66,42 @@ function App() {
     await saveData(updatedBooks);
   };
 
-  const handleUpdateProgress = async (bookId: number) => {
-    const newProgress = prompt('Enter new progress percentage (0-100):');
-    if (newProgress !== null && !isNaN(Number(newProgress))) {
-      const progressValue = Math.min(Math.max(parseInt(newProgress), 0), 100);
-      const updatedBooks = books.map(book => {
-        if (book.id === bookId) {
-          const updatedBook = { ...book, progress: progressValue };
-          if (progressValue === 100 && book.status !== 'finished') {
-            updatedBook.status = 'finished';
-            updatedBook.finishDate = new Date().toISOString().split('T')[0];
-          }
-          return updatedBook;
+  const handleUpdateProgress = async (bookId: number, progress: number) => {
+    const progressValue = Math.min(Math.max(progress, 0), 100);
+    const updatedBooks = books.map(book => {
+      if (book.id === bookId) {
+        const updatedBook = { ...book, progress: progressValue };
+        if (progressValue === 100 && book.status !== 'finished') {
+          updatedBook.status = 'finished';
+          updatedBook.finishDate = new Date().toISOString().split('T')[0];
         }
-        return book;
-      });
-      setBooks(updatedBooks);
-      await saveData(updatedBooks);
+        return updatedBook;
+      }
+      return book;
+    });
+    setBooks(updatedBooks);
+    await saveData(updatedBooks);
+  };
+
+  const handleQuickAction = async (bookId: number, action: 'add10' | 'add25' | 'complete') => {
+    const book = books.find(b => b.id === bookId);
+    if (!book) return;
+
+    let newProgress = book.progress;
+    
+    switch (action) {
+      case 'add10':
+        newProgress = Math.min(100, book.progress + 10);
+        break;
+      case 'add25':
+        newProgress = Math.min(100, book.progress + 25);
+        break;
+      case 'complete':
+        newProgress = 100;
+        break;
     }
+
+    await handleUpdateProgress(bookId, newProgress);
   };
 
   const filterButtons = [
@@ -122,7 +140,13 @@ function App() {
           {/* Currently Reading */}
           <CurrentlyReading 
             book={currentlyReadingBook} 
-            onUpdateProgress={handleUpdateProgress}
+            onUpdateProgress={(bookId) => {
+              // This will need to be updated when CurrentlyReading component is also enhanced
+              const newProgress = prompt('Enter new progress percentage (0-100):');
+              if (newProgress !== null && !isNaN(Number(newProgress))) {
+                handleUpdateProgress(bookId, parseInt(newProgress));
+              }
+            }}
           />
 
           {/* Navigation Tabs */}
@@ -163,7 +187,13 @@ function App() {
           {/* Book Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {filteredBooks.map(book => (
-              <BookCard key={book.id} book={book} />
+              <BookCard 
+                key={book.id} 
+                book={book}
+                onProgressUpdate={handleUpdateProgress}
+                onQuickAction={handleQuickAction}
+                showQuickActions={true}
+              />
             ))}
           </div>
 
