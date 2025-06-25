@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Data Flow Test - Puka Reading Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 450px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .test-info {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .test-info h3 {
+            color: #7b1fa2;
+            margin-bottom: 5px;
+        }
+
+        .success-criteria {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success-criteria h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .criteria-list {
+            list-style: none;
+        }
+
+        .criteria-list li {
+            margin-bottom: 5px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .criteria-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .flow-step {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .flow-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .upload-zone {
+            border: 2px dashed #d0d0d0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            border-color: #9c27b0;
+            background: #fafafa;
+        }
+
+        .upload-zone.dragover {
+            border-color: #9c27b0;
+            background: #f3e5f5;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: #d0d0d0;
+            margin-bottom: 15px;
+        }
+
+        .upload-zone.dragover .upload-icon {
+            color: #9c27b0;
+        }
+
+        .sample-data {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .sample-data h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .sample-csv {
+            background: white;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            border: 1px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 10px;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+        }
+
+        .btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(156, 39, 176, 0.4);
+        }
+
+        .btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .preview-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .validation-results {
+            margin-bottom: 20px;
+        }
+
+        .validation-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .validation-item.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .validation-item.warning {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .validation-item.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .validation-icon {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .import-options {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .option-group {
+            margin-bottom: 15px;
+        }
+
+        .option-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .option-group select,
+        .option-group input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9c27b0 0%, #673ab7 100%);
+            width: 0%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .results-summary {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .results-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        .navigation {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-link {
+            color: #9c27b0;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 0;
+                margin: -10px;
+            }
+            
+            .timer {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .results-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">00:00</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Import Data Flow Test</h1>
+            <p>CSV import flow testing with sample data</p>
+        </div>
+
+        <div class="content">
+            <div class="test-info">
+                <h3>Flow Test Objective</h3>
+                <p>Test the complete CSV import workflow including file upload, validation, preview, configuration, and import execution.</p>
+            </div>
+
+            <div class="success-criteria">
+                <h3>Success Criteria</h3>
+                <ul class="criteria-list">
+                    <li>Complete import in under 2 minutes</li>
+                    <li>CSV validation works correctly</li>
+                    <li>Preview shows accurate data</li>
+                    <li>Error handling is clear</li>
+                    <li>Progress feedback is helpful</li>
+                </ul>
+            </div>
+
+            <!-- Step 1: Upload -->
+            <div class="flow-step active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h3>Upload CSV File</h3>
+                </div>
+
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-icon">📁</div>
+                    <h4>Drag & Drop CSV File Here</h4>
+                    <p>or click to browse</p>
+                    <input type="file" id="file-input" accept=".csv" style="display: none;">
+                </div>
+
+                <div class="sample-data">
+                    <h4>Sample CSV Format</h4>
+                    <div class="sample-csv">
+Title,Author,Pages,Status,Current Page,Rating,Notes<br>
+"The Great Gatsby","F. Scott Fitzgerald",180,"completed",180,5,"Classic American novel"<br>
+"1984","George Orwell",328,"currently-reading",150,,"Dystopian masterpiece"<br>
+"To Kill a Mockingbird","Harper Lee",376,"want-to-read",0,,""
+                    </div>
+                </div>
+
+                <button class="btn secondary" onclick="loadSampleData()">Use Sample Data</button>
+            </div>
+
+            <!-- Step 2: Validation & Preview -->
+            <div class="flow-step" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <h3>Validate & Preview</h3>
+                </div>
+
+                <div class="validation-results" id="validation-results">
+                    <!-- Validation results will be populated here -->
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="preview-table" id="preview-table">
+                        <!-- Table will be populated here -->
+                    </table>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn secondary" onclick="goToStep(1)">Back</button>
+                    <button class="btn primary" onclick="goToStep(3)" id="continue-btn" disabled>Continue</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Import Options -->
+            <div class="flow-step" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <h3>Import Options</h3>
+                </div>
+
+                <div class="import-options">
+                    <div class="option-group">
+                        <label>Import Mode</label>
+                        <select id="import-mode">
+                            <option value="add">Add new books only</option>
+                            <option value="update">Update existing books</option>
+                            <option value="replace">Replace all data</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label>Duplicate Handling</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="skip-duplicates" checked>
+                            <label for="skip-duplicates">Skip duplicate books</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="merge-duplicates">
+                            <label for="merge-duplicates">Merge duplicate data</label>
+                        </div>
+                    </div>
+
+                    <div class="option-group">
+                        <label>Data Validation</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="validate-authors" checked>
+                            <label for="validate-authors">Validate author names</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="validate-pages" checked>
+                            <label for="validate-pages">Validate page numbers</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn secondary" onclick="goToStep(2)">Back</button>
+                    <button class="btn primary" onclick="startImport()">Start Import</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Import Progress -->
+            <div class="flow-step" id="step4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <h3>Importing Data</h3>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h4 id="import-status">Preparing import...</h4>
+                    <div class="progress-bar show">
+                        <div class="progress-fill" id="import-progress"></div>
+                    </div>
+                    <p id="import-details">Please wait while we process your data</p>
+                </div>
+            </div>
+
+            <!-- Step 5: Results -->
+            <div class="flow-step" id="step5">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <h3>Import Complete</h3>
+                </div>
+
+                <div class="results-summary">
+                    <h3>Import Successful!</h3>
+                    <p id="import-summary">Your books have been imported successfully.</p>
+                    
+                    <div class="results-stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-imported">0</div>
+                            <div class="stat-label">Books Imported</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-skipped">0</div>
+                            <div class="stat-label">Books Skipped</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-errors">0</div>
+                            <div class="stat-label">Errors</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="stat-time">0s</div>
+                            <div class="stat-label">Total Time</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn primary" onclick="resetTest()">Import Another File</button>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="../../index.html" class="nav-link">← Back to UI Prototypes</a>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let csvData = [];
+        let currentStep = 1;
+        let validationResults = [];
+
+        const sampleData = [
+            { title: "The Great Gatsby", author: "F. Scott Fitzgerald", pages: 180, status: "completed", currentPage: 180, rating: 5, notes: "Classic American novel" },
+            { title: "1984", author: "George Orwell", pages: 328, status: "currently-reading", currentPage: 150, rating: "", notes: "Dystopian masterpiece" },
+            { title: "To Kill a Mockingbird", author: "Harper Lee", pages: 376, status: "want-to-read", currentPage: 0, rating: "", notes: "" },
+            { title: "Pride and Prejudice", author: "Jane Austen", pages: 432, status: "completed", currentPage: 432, rating: 4, notes: "Wonderful romance" },
+            { title: "The Catcher in the Rye", author: "J.D. Salinger", pages: 277, status: "did-not-finish", currentPage: 50, rating: 2, notes: "Couldn't get into it" }
+        ];
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function goToStep(stepNumber) {
+            document.querySelectorAll('.flow-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(`step${stepNumber}`).classList.add('active');
+            currentStep = stepNumber;
+        }
+
+        function loadSampleData() {
+            csvData = [...sampleData];
+            processData();
+        }
+
+        function processData() {
+            validateData();
+            showPreview();
+            goToStep(2);
+        }
+
+        function validateData() {
+            validationResults = [];
+            
+            if (csvData.length === 0) {
+                validationResults.push({ type: 'error', message: 'No data found in file' });
+                return;
+            }
+
+            validationResults.push({ type: 'success', message: `${csvData.length} books found` });
+
+            // Validate required fields
+            let missingTitles = csvData.filter(book => !book.title).length;
+            let missingAuthors = csvData.filter(book => !book.author).length;
+            
+            if (missingTitles > 0) {
+                validationResults.push({ type: 'error', message: `${missingTitles} books missing titles` });
+            }
+            if (missingAuthors > 0) {
+                validationResults.push({ type: 'warning', message: `${missingAuthors} books missing authors` });
+            }
+
+            // Validate page numbers
+            let invalidPages = csvData.filter(book => book.pages && (isNaN(book.pages) || book.pages <= 0)).length;
+            if (invalidPages > 0) {
+                validationResults.push({ type: 'warning', message: `${invalidPages} books have invalid page counts` });
+            }
+
+            // Validate status values
+            const validStatuses = ['want-to-read', 'currently-reading', 'completed', 'did-not-finish'];
+            let invalidStatuses = csvData.filter(book => book.status && !validStatuses.includes(book.status)).length;
+            if (invalidStatuses > 0) {
+                validationResults.push({ type: 'warning', message: `${invalidStatuses} books have invalid status values` });
+            }
+
+            // Check for duplicates
+            const titles = csvData.map(book => book.title.toLowerCase());
+            const duplicates = titles.filter((title, index) => titles.indexOf(title) !== index).length;
+            if (duplicates > 0) {
+                validationResults.push({ type: 'warning', message: `${duplicates} duplicate books found` });
+            }
+
+            displayValidationResults();
+        }
+
+        function displayValidationResults() {
+            const container = document.getElementById('validation-results');
+            container.innerHTML = validationResults.map(result => `
+                <div class="validation-item ${result.type}">
+                    <span class="validation-icon">${result.type === 'success' ? '✓' : result.type === 'warning' ? '⚠' : '✗'}</span>
+                    ${result.message}
+                </div>
+            `).join('');
+
+            // Enable continue button if no errors
+            const hasErrors = validationResults.some(result => result.type === 'error');
+            document.getElementById('continue-btn').disabled = hasErrors;
+        }
+
+        function showPreview() {
+            const table = document.getElementById('preview-table');
+            const maxRows = 5; // Show first 5 rows
+            const displayData = csvData.slice(0, maxRows);
+
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Pages</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${displayData.map(book => `
+                        <tr>
+                            <td>${book.title}</td>
+                            <td>${book.author}</td>
+                            <td>${book.pages || 'N/A'}</td>
+                            <td>${book.status || 'N/A'}</td>
+                            <td>${book.currentPage || 0}${book.pages ? `/${book.pages}` : ''}</td>
+                            <td>${book.rating || 'N/A'}</td>
+                        </tr>
+                    `).join('')}
+                    ${csvData.length > maxRows ? `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #666; font-style: italic;">
+                                ... and ${csvData.length - maxRows} more books
+                            </td>
+                        </tr>
+                    ` : ''}
+                </tbody>
+            `;
+        }
+
+        function startImport() {
+            goToStep(4);
+            
+            const steps = [
+                { message: "Preparing import...", detail: "Validating data structure" },
+                { message: "Processing books...", detail: "Checking for duplicates" },
+                { message: "Importing data...", detail: "Adding books to library" },
+                { message: "Finalizing...", detail: "Updating indexes and statistics" }
+            ];
+
+            let currentProgressStep = 0;
+            const totalSteps = steps.length;
+            
+            function updateProgress() {
+                const progress = (currentProgressStep / totalSteps) * 100;
+                document.getElementById('import-progress').style.width = `${progress}%`;
+                
+                if (currentProgressStep < totalSteps) {
+                    document.getElementById('import-status').textContent = steps[currentProgressStep].message;
+                    document.getElementById('import-details').textContent = steps[currentProgressStep].detail;
+                    currentProgressStep++;
+                    
+                    setTimeout(updateProgress, 800 + Math.random() * 400); // Random delay for realism
+                } else {
+                    completeImport();
+                }
+            }
+
+            updateProgress();
+        }
+
+        function completeImport() {
+            const importTime = Date.now() - startTime;
+            const timeInSeconds = Math.round(importTime / 1000);
+            
+            // Simulate some books being skipped or having errors
+            const imported = csvData.length - 1;
+            const skipped = 1;
+            const errors = 0;
+
+            document.getElementById('stat-imported').textContent = imported;
+            document.getElementById('stat-skipped').textContent = skipped;
+            document.getElementById('stat-errors').textContent = errors;
+            document.getElementById('stat-time').textContent = `${timeInSeconds}s`;
+
+            document.getElementById('import-summary').textContent = 
+                `Successfully imported ${imported} books. ${skipped} books were skipped due to duplicates.`;
+
+            goToStep(5);
+        }
+
+        function resetTest() {
+            csvData = [];
+            validationResults = [];
+            startTime = Date.now();
+            goToStep(1);
+            
+            // Reset form elements
+            document.getElementById('import-mode').value = 'add';
+            document.getElementById('skip-duplicates').checked = true;
+            document.getElementById('merge-duplicates').checked = false;
+            document.getElementById('validate-authors').checked = true;
+            document.getElementById('validate-pages').checked = true;
+        }
+
+        // File upload handling
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            // For demo purposes, use sample data
+            // In real implementation, you would parse the CSV file here
+            loadSampleData();
+        }
+    </script>
+</body>
+</html>

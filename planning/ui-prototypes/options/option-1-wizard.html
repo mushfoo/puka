@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puka - Wizard-Style Reading Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #7c3aed;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background-color: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 768px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .streak-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: var(--warning-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 500;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            max-width: 768px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Home View */
+        .home-view {
+            display: none;
+        }
+
+        .home-view.active {
+            display: block;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .action-card {
+            background-color: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .action-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .action-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .action-description {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            margin-top: 0.5rem;
+        }
+
+        /* Book List */
+        .book-list {
+            background-color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .book-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .book-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .book-item:hover {
+            background-color: var(--gray-50);
+        }
+
+        .book-item:last-child {
+            border-bottom: none;
+        }
+
+        .book-info {
+            flex: 1;
+        }
+
+        .book-title {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .book-author {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .book-progress {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .progress-bar {
+            width: 100px;
+            height: 8px;
+            background-color: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--success-color);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            min-width: 40px;
+        }
+
+        /* Wizard Container */
+        .wizard-container {
+            display: none;
+            background-color: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .wizard-container.active {
+            display: block;
+        }
+
+        /* Progress Indicator */
+        .wizard-progress {
+            display: flex;
+            padding: 1.5rem;
+            background-color: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .progress-step {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background-color: var(--gray-300);
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .progress-step.completed:not(:last-child)::after {
+            background-color: var(--primary-color);
+        }
+
+        .step-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-step.active .step-indicator {
+            background-color: var(--primary-color);
+        }
+
+        .progress-step.completed .step-indicator {
+            background-color: var(--primary-color);
+        }
+
+        .step-label {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            white-space: nowrap;
+        }
+
+        /* Wizard Content */
+        .wizard-content {
+            padding: 2rem;
+        }
+
+        .wizard-step {
+            display: none;
+        }
+
+        .wizard-step.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--gray-900);
+        }
+
+        .step-description {
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-helper {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+        }
+
+        /* Slider */
+        .slider-container {
+            margin: 2rem 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--gray-200);
+            outline: none;
+            border-radius: 4px;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-color);
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-top: 1rem;
+        }
+
+        /* Status Cards */
+        .status-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .status-card {
+            padding: 1.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .status-card:hover {
+            border-color: var(--primary-color);
+            background-color: var(--gray-50);
+        }
+
+        .status-card.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .status-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: var(--gray-700);
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: var(--gray-50);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--gray-400);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        /* Preview Table */
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2rem;
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .preview-table th {
+            background-color: var(--gray-50);
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+        /* Buttons */
+        .wizard-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 2rem;
+            border-top: 1px solid var(--gray-200);
+            background-color: var(--gray-50);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--gray-50);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-icon {
+            font-size: 1.25rem;
+        }
+
+        /* Onboarding */
+        .onboarding-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .onboarding-content {
+            background-color: white;
+            border-radius: 1rem;
+            max-width: 500px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .onboarding-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .storage-options {
+            display: grid;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .storage-option {
+            padding: 1.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .storage-option:hover {
+            border-color: var(--primary-color);
+            background-color: var(--gray-50);
+        }
+
+        .storage-option.selected {
+            border-color: var(--primary-color);
+            background-color: rgba(37, 99, 235, 0.1);
+        }
+
+        .storage-option-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .storage-option-description {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        /* Streak Wizard */
+        .streak-display {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .streak-number {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--warning-color);
+            margin-bottom: 1rem;
+        }
+
+        .streak-message {
+            font-size: 1.25rem;
+            color: var(--gray-700);
+            margin-bottom: 2rem;
+        }
+
+        .daily-goal {
+            background-color: var(--gray-50);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .daily-goal-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .goal-progress {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .goal-progress-bar {
+            flex: 1;
+            height: 20px;
+            background-color: var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .goal-progress-fill {
+            height: 100%;
+            background-color: var(--warning-color);
+            transition: width 0.3s ease;
+        }
+
+        .goal-progress-text {
+            font-weight: 600;
+            color: var(--gray-700);
+            min-width: 80px;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 640px) {
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .step-label {
+                font-size: 0.625rem;
+            }
+
+            .wizard-content {
+                padding: 1.5rem;
+            }
+
+            .wizard-actions {
+                padding: 1.5rem;
+            }
+
+            .status-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .wizard-step.active {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--gray-800);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1001;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--gray-500);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-text {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-hint {
+            font-size: 0.875rem;
+            color: var(--gray-400);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">📚 Puka</div>
+            <div class="streak-indicator">
+                <span class="streak-icon">🔥</span>
+                <span class="streak-count">7 days</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home View -->
+        <div class="home-view active" id="homeView">
+            <div class="quick-actions">
+                <div class="action-card" onclick="startWizard('add-book')">
+                    <div class="action-icon">📖</div>
+                    <div class="action-title">Add New Book</div>
+                    <div class="action-description">Start tracking a new book</div>
+                </div>
+                <div class="action-card" onclick="startWizard('update-progress')">
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">Update Progress</div>
+                    <div class="action-description">Log your reading progress</div>
+                </div>
+                <div class="action-card" onclick="startWizard('import-data')">
+                    <div class="action-icon">📥</div>
+                    <div class="action-title">Import Data</div>
+                    <div class="action-description">Import from Goodreads</div>
+                </div>
+                <div class="action-card" onclick="startWizard('track-streak')">
+                    <div class="action-icon">🔥</div>
+                    <div class="action-title">Daily Check-in</div>
+                    <div class="action-description">Maintain your streak</div>
+                </div>
+            </div>
+
+            <div class="book-list">
+                <div class="book-list-header">
+                    <h2>Your Books</h2>
+                    <span class="book-count">3 books</span>
+                </div>
+                <div id="bookListContainer">
+                    <div class="book-item" onclick="startWizard('update-progress', 'The Great Gatsby')">
+                        <div class="book-info">
+                            <div class="book-title">The Great Gatsby</div>
+                            <div class="book-author">F. Scott Fitzgerald</div>
+                        </div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%"></div>
+                            </div>
+                            <span class="progress-text">65%</span>
+                        </div>
+                    </div>
+                    <div class="book-item" onclick="startWizard('update-progress', '1984')">
+                        <div class="book-info">
+                            <div class="book-title">1984</div>
+                            <div class="book-author">George Orwell</div>
+                        </div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 30%"></div>
+                            </div>
+                            <span class="progress-text">30%</span>
+                        </div>
+                    </div>
+                    <div class="book-item" onclick="startWizard('manage-status', 'To Kill a Mockingbird')">
+                        <div class="book-info">
+                            <div class="book-title">To Kill a Mockingbird</div>
+                            <div class="book-author">Harper Lee</div>
+                        </div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%"></div>
+                            </div>
+                            <span class="progress-text">Done</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Book Wizard -->
+        <div class="wizard-container" id="addBookWizard">
+            <div class="wizard-progress">
+                <div class="progress-step active" id="addBookStep1">
+                    <div class="step-indicator">1</div>
+                    <span class="step-label">Basic Info</span>
+                </div>
+                <div class="progress-step" id="addBookStep2">
+                    <div class="step-indicator">2</div>
+                    <span class="step-label">Notes</span>
+                </div>
+                <div class="progress-step" id="addBookStep3">
+                    <div class="step-indicator">3</div>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <div class="wizard-content">
+                <!-- Step 1: Basic Info -->
+                <div class="wizard-step active" id="addBookContent1">
+                    <h2 class="step-title">Add Book Details</h2>
+                    <p class="step-description">Let's start with the basic information about your book.</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Book Title *</label>
+                        <input type="text" class="form-input" id="bookTitle" placeholder="Enter book title">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Author *</label>
+                        <input type="text" class="form-input" id="bookAuthor" placeholder="Enter author name">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Total Pages</label>
+                        <input type="number" class="form-input" id="bookPages" placeholder="Number of pages">
+                        <p class="form-helper">Leave blank if you don't know the page count</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Reading Status</label>
+                        <select class="form-select" id="bookStatus">
+                            <option value="to-read">To Read</option>
+                            <option value="reading" selected>Currently Reading</option>
+                            <option value="finished">Finished</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Notes -->
+                <div class="wizard-step" id="addBookContent2">
+                    <h2 class="step-title">Add Notes</h2>
+                    <p class="step-description">Add any notes or thoughts about this book (optional).</p>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Your Notes</label>
+                        <textarea class="form-textarea" id="bookNotes" placeholder="What are your thoughts on this book?"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tags</label>
+                        <input type="text" class="form-input" id="bookTags" placeholder="fiction, classic, must-read">
+                        <p class="form-helper">Separate tags with commas</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Rating</label>
+                        <select class="form-select" id="bookRating">
+                            <option value="">No rating yet</option>
+                            <option value="1">⭐ 1 Star</option>
+                            <option value="2">⭐⭐ 2 Stars</option>
+                            <option value="3">⭐⭐⭐ 3 Stars</option>
+                            <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                            <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 3: Confirm -->
+                <div class="wizard-step" id="addBookContent3">
+                    <h2 class="step-title">Confirm Details</h2>
+                    <p class="step-description">Review your book details before adding.</p>
+                    
+                    <div class="preview-card" style="background-color: var(--gray-50); padding: 1.5rem; border-radius: 0.5rem; margin-top: 2rem;">
+                        <h3 id="previewTitle" style="margin-bottom: 0.5rem;">Book Title</h3>
+                        <p id="previewAuthor" style="color: var(--gray-600); margin-bottom: 1rem;">Author Name</p>
+                        <div id="previewDetails" style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                            <div><strong>Pages:</strong> <span id="previewPages">Not specified</span></div>
+                            <div><strong>Status:</strong> <span id="previewStatus">Currently Reading</span></div>
+                            <div><strong>Rating:</strong> <span id="previewRating">No rating</span></div>
+                            <div><strong>Tags:</strong> <span id="previewTags">None</span></div>
+                        </div>
+                        <div id="previewNotes" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                            <strong>Notes:</strong>
+                            <p id="previewNotesText" style="margin-top: 0.5rem; color: var(--gray-600);">No notes added</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" onclick="previousStep('addBook')">
+                    <span class="btn-icon">←</span> Back
+                </button>
+                <button class="btn btn-primary" onclick="nextStep('addBook')">
+                    Next <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Update Progress Wizard -->
+        <div class="wizard-container" id="updateProgressWizard">
+            <div class="wizard-progress">
+                <div class="progress-step active completed">
+                    <div class="step-indicator">✓</div>
+                    <span class="step-label">Select Book</span>
+                </div>
+                <div class="progress-step active">
+                    <div class="step-indicator">2</div>
+                    <span class="step-label">Update Progress</span>
+                </div>
+            </div>
+
+            <div class="wizard-content">
+                <h2 class="step-title">Update Reading Progress</h2>
+                <p class="step-description">How far have you read in <strong id="progressBookTitle">The Great Gatsby</strong>?</p>
+                
+                <div class="slider-container">
+                    <label class="form-label">Current Page</label>
+                    <input type="range" class="slider" id="progressSlider" min="0" max="300" value="195" oninput="updateProgressValue()">
+                    <div class="slider-value">
+                        <span id="currentPage">195</span> / <span id="totalPages">300</span> pages
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quick Note (optional)</label>
+                    <textarea class="form-textarea" placeholder="Any thoughts on your reading session?"></textarea>
+                </div>
+
+                <div class="daily-goal">
+                    <div class="daily-goal-title">Today's Reading Goal</div>
+                    <div class="goal-progress">
+                        <div class="goal-progress-bar">
+                            <div class="goal-progress-fill" style="width: 75%"></div>
+                        </div>
+                        <span class="goal-progress-text">15 / 20 pages</span>
+                    </div>
+                    <p class="form-helper">You're almost there! Just 5 more pages to hit your daily goal.</p>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" onclick="closeWizard()">
+                    Cancel
+                </button>
+                <button class="btn btn-success" onclick="saveProgress()">
+                    <span class="btn-icon">✓</span> Save Progress
+                </button>
+            </div>
+        </div>
+
+        <!-- Manage Status Wizard -->
+        <div class="wizard-container" id="manageStatusWizard">
+            <div class="wizard-content">
+                <h2 class="step-title">Update Book Status</h2>
+                <p class="step-description">Change the reading status for <strong id="statusBookTitle">Book Title</strong></p>
+                
+                <div class="status-options">
+                    <div class="status-card" onclick="selectStatus(this, 'to-read')">
+                        <div class="status-icon">📚</div>
+                        <div class="status-label">To Read</div>
+                    </div>
+                    <div class="status-card" onclick="selectStatus(this, 'reading')">
+                        <div class="status-icon">📖</div>
+                        <div class="status-label">Reading</div>
+                    </div>
+                    <div class="status-card selected" onclick="selectStatus(this, 'finished')">
+                        <div class="status-icon">✅</div>
+                        <div class="status-label">Finished</div>
+                    </div>
+                    <div class="status-card" onclick="selectStatus(this, 'abandoned')">
+                        <div class="status-icon">🚫</div>
+                        <div class="status-label">Abandoned</div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="finishDateGroup">
+                    <label class="form-label">Finish Date</label>
+                    <input type="date" class="form-input" id="finishDate">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Final Rating</label>
+                    <select class="form-select">
+                        <option value="">No rating</option>
+                        <option value="1">⭐ 1 Star</option>
+                        <option value="2">⭐⭐ 2 Stars</option>
+                        <option value="3">⭐⭐⭐ 3 Stars</option>
+                        <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                        <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" onclick="closeWizard()">
+                    Cancel
+                </button>
+                <button class="btn btn-primary" onclick="saveStatus()">
+                    <span class="btn-icon">✓</span> Update Status
+                </button>
+            </div>
+        </div>
+
+        <!-- Import Data Wizard -->
+        <div class="wizard-container" id="importDataWizard">
+            <div class="wizard-progress">
+                <div class="progress-step active" id="importStep1">
+                    <div class="step-indicator">1</div>
+                    <span class="step-label">Upload</span>
+                </div>
+                <div class="progress-step" id="importStep2">
+                    <div class="step-indicator">2</div>
+                    <span class="step-label">Preview</span>
+                </div>
+                <div class="progress-step" id="importStep3">
+                    <div class="step-indicator">3</div>
+                    <span class="step-label">Confirm</span>
+                </div>
+            </div>
+
+            <div class="wizard-content">
+                <!-- Step 1: Upload -->
+                <div class="wizard-step active" id="importContent1">
+                    <h2 class="step-title">Import Your Library</h2>
+                    <p class="step-description">Upload your Goodreads export file to import your reading history.</p>
+                    
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                        <div class="upload-icon">📁</div>
+                        <p class="upload-text">Drop your CSV file here or click to browse</p>
+                        <p class="upload-hint">Supports Goodreads CSV exports</p>
+                        <input type="file" id="fileInput" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                    </div>
+
+                    <div class="form-helper" style="margin-top: 2rem;">
+                        <strong>How to export from Goodreads:</strong>
+                        <ol style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                            <li>Go to My Books on Goodreads</li>
+                            <li>Click on "Import and export" at the bottom</li>
+                            <li>Click "Export Library"</li>
+                            <li>Upload the downloaded CSV file here</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Step 2: Preview -->
+                <div class="wizard-step" id="importContent2">
+                    <h2 class="step-title">Preview Import</h2>
+                    <p class="step-description">Review the books that will be imported.</p>
+                    
+                    <div style="background-color: var(--gray-50); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <strong>Import Summary:</strong> 42 books found
+                    </div>
+
+                    <table class="preview-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Status</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>The Hobbit</td>
+                                <td>J.R.R. Tolkien</td>
+                                <td>Read</td>
+                                <td>⭐⭐⭐⭐⭐</td>
+                            </tr>
+                            <tr>
+                                <td>Dune</td>
+                                <td>Frank Herbert</td>
+                                <td>Read</td>
+                                <td>⭐⭐⭐⭐</td>
+                            </tr>
+                            <tr>
+                                <td>Project Hail Mary</td>
+                                <td>Andy Weir</td>
+                                <td>Currently Reading</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <p class="form-helper" style="margin-top: 1rem;">Showing first 3 of 42 books</p>
+                </div>
+
+                <!-- Step 3: Confirm -->
+                <div class="wizard-step" id="importContent3">
+                    <h2 class="step-title">Import Complete!</h2>
+                    <p class="step-description">Your books have been successfully imported.</p>
+                    
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                        <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">42 books imported</h3>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 400px; margin: 0 auto;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--primary-color);">28</div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600);">Read</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--warning-color);">3</div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600);">Reading</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--gray-400);">11</div>
+                                <div style="font-size: 0.875rem; color: var(--gray-600);">To Read</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" onclick="previousStep('import')" id="importBackBtn">
+                    <span class="btn-icon">←</span> Back
+                </button>
+                <button class="btn btn-primary" onclick="nextStep('import')" id="importNextBtn">
+                    Next <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Track Streak Wizard -->
+        <div class="wizard-container" id="trackStreakWizard">
+            <div class="wizard-content">
+                <div class="streak-display">
+                    <div class="streak-number">🔥 7</div>
+                    <div class="streak-message">Great job! You've been reading for 7 days straight!</div>
+                    
+                    <div class="daily-goal">
+                        <div class="daily-goal-title">Today's Progress</div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar">
+                                <div class="goal-progress-fill" id="dailyProgressFill" style="width: 0%"></div>
+                            </div>
+                            <span class="goal-progress-text" id="dailyProgressText">0 / 20 pages</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">How many pages did you read today?</label>
+                        <input type="number" class="form-input" id="dailyPages" placeholder="Enter number of pages" oninput="updateDailyProgress()">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Which book(s) did you read?</label>
+                        <select class="form-select" multiple style="height: 100px;">
+                            <option value="gatsby" selected>The Great Gatsby</option>
+                            <option value="1984">1984</option>
+                            <option value="mockingbird">To Kill a Mockingbird</option>
+                        </select>
+                        <p class="form-helper">Hold Ctrl/Cmd to select multiple books</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-secondary" onclick="closeWizard()">
+                    Skip Today
+                </button>
+                <button class="btn btn-success" onclick="saveStreak()">
+                    <span class="btn-icon">✓</span> Log Reading
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Onboarding Modal -->
+    <div class="onboarding-container" id="onboardingModal" style="display: none;">
+        <div class="onboarding-content">
+            <h2 class="onboarding-title">Welcome to Puka! 📚</h2>
+            <p style="text-align: center; color: var(--gray-600); margin-bottom: 2rem;">Choose where to store your reading data:</p>
+            
+            <div class="storage-options">
+                <div class="storage-option" onclick="selectStorage(this, 'local')">
+                    <div class="storage-option-title">💾 Local Storage</div>
+                    <div class="storage-option-description">Store data on this device only. Simple and private.</div>
+                </div>
+                <div class="storage-option" onclick="selectStorage(this, 'cloud')">
+                    <div class="storage-option-title">☁️ Cloud Sync</div>
+                    <div class="storage-option-description">Sync across devices. Requires sign-in.</div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="completeOnboarding()" disabled id="onboardingBtn">
+                    Get Started
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Check if first time user
+        window.onload = function() {
+            if (!localStorage.getItem('pukaOnboarded')) {
+                document.getElementById('onboardingModal').style.display = 'flex';
+            }
+        };
+
+        // Wizard Management
+        let currentWizard = null;
+        let currentStep = 1;
+
+        function startWizard(type, bookTitle = null) {
+            currentWizard = type;
+            currentStep = 1;
+            
+            // Hide home view
+            document.getElementById('homeView').classList.remove('active');
+            
+            // Show appropriate wizard
+            switch(type) {
+                case 'add-book':
+                    document.getElementById('addBookWizard').classList.add('active');
+                    resetAddBookWizard();
+                    break;
+                case 'update-progress':
+                    document.getElementById('updateProgressWizard').classList.add('active');
+                    if (bookTitle) {
+                        document.getElementById('progressBookTitle').textContent = bookTitle;
+                    }
+                    break;
+                case 'manage-status':
+                    document.getElementById('manageStatusWizard').classList.add('active');
+                    if (bookTitle) {
+                        document.getElementById('statusBookTitle').textContent = bookTitle;
+                    }
+                    break;
+                case 'import-data':
+                    document.getElementById('importDataWizard').classList.add('active');
+                    resetImportWizard();
+                    break;
+                case 'track-streak':
+                    document.getElementById('trackStreakWizard').classList.add('active');
+                    resetStreakWizard();
+                    break;
+            }
+        }
+
+        function closeWizard() {
+            // Hide all wizards
+            document.querySelectorAll('.wizard-container').forEach(wizard => {
+                wizard.classList.remove('active');
+            });
+            
+            // Show home view
+            document.getElementById('homeView').classList.add('active');
+            
+            currentWizard = null;
+            currentStep = 1;
+        }
+
+        function nextStep(wizardType) {
+            if (wizardType === 'addBook') {
+                if (currentStep === 1) {
+                    // Validate step 1
+                    const title = document.getElementById('bookTitle').value;
+                    const author = document.getElementById('bookAuthor').value;
+                    
+                    if (!title || !author) {
+                        showToast('Please fill in all required fields');
+                        return;
+                    }
+                    
+                    // Move to step 2
+                    document.getElementById('addBookContent1').classList.remove('active');
+                    document.getElementById('addBookContent2').classList.add('active');
+                    document.getElementById('addBookStep1').classList.add('completed');
+                    document.getElementById('addBookStep2').classList.add('active');
+                    currentStep = 2;
+                } else if (currentStep === 2) {
+                    // Update preview
+                    updateBookPreview();
+                    
+                    // Move to step 3
+                    document.getElementById('addBookContent2').classList.remove('active');
+                    document.getElementById('addBookContent3').classList.add('active');
+                    document.getElementById('addBookStep2').classList.add('completed');
+                    document.getElementById('addBookStep3').classList.add('active');
+                    currentStep = 3;
+                    
+                    // Change button to finish
+                    const nextBtn = event.target;
+                    nextBtn.textContent = 'Add Book';
+                    nextBtn.classList.remove('btn-primary');
+                    nextBtn.classList.add('btn-success');
+                    nextBtn.innerHTML = '<span class="btn-icon">✓</span> Add Book';
+                } else if (currentStep === 3) {
+                    // Save book
+                    saveBook();
+                }
+            } else if (wizardType === 'import') {
+                if (currentStep === 1) {
+                    // Move to preview
+                    document.getElementById('importContent1').classList.remove('active');
+                    document.getElementById('importContent2').classList.add('active');
+                    document.getElementById('importStep1').classList.add('completed');
+                    document.getElementById('importStep2').classList.add('active');
+                    currentStep = 2;
+                } else if (currentStep === 2) {
+                    // Move to confirm
+                    document.getElementById('importContent2').classList.remove('active');
+                    document.getElementById('importContent3').classList.add('active');
+                    document.getElementById('importStep2').classList.add('completed');
+                    document.getElementById('importStep3').classList.add('active');
+                    currentStep = 3;
+                    
+                    // Update buttons
+                    document.getElementById('importBackBtn').style.display = 'none';
+                    document.getElementById('importNextBtn').textContent = 'Done';
+                    document.getElementById('importNextBtn').onclick = closeWizard;
+                }
+            }
+        }
+
+        function previousStep(wizardType) {
+            if (wizardType === 'addBook') {
+                if (currentStep === 2) {
+                    document.getElementById('addBookContent2').classList.remove('active');
+                    document.getElementById('addBookContent1').classList.add('active');
+                    document.getElementById('addBookStep2').classList.remove('active');
+                    currentStep = 1;
+                } else if (currentStep === 3) {
+                    document.getElementById('addBookContent3').classList.remove('active');
+                    document.getElementById('addBookContent2').classList.add('active');
+                    document.getElementById('addBookStep3').classList.remove('active');
+                    currentStep = 2;
+                    
+                    // Reset button
+                    const nextBtn = document.querySelector('#addBookWizard .btn-success, #addBookWizard .btn-primary');
+                    nextBtn.textContent = 'Next →';
+                    nextBtn.classList.remove('btn-success');
+                    nextBtn.classList.add('btn-primary');
+                    nextBtn.innerHTML = 'Next <span class="btn-icon">→</span>';
+                }
+            } else if (wizardType === 'import') {
+                if (currentStep === 2) {
+                    document.getElementById('importContent2').classList.remove('active');
+                    document.getElementById('importContent1').classList.add('active');
+                    document.getElementById('importStep2').classList.remove('active');
+                    document.getElementById('importStep1').classList.remove('completed');
+                    currentStep = 1;
+                }
+            }
+        }
+
+        function updateBookPreview() {
+            document.getElementById('previewTitle').textContent = document.getElementById('bookTitle').value;
+            document.getElementById('previewAuthor').textContent = document.getElementById('bookAuthor').value;
+            document.getElementById('previewPages').textContent = document.getElementById('bookPages').value || 'Not specified';
+            document.getElementById('previewStatus').textContent = document.getElementById('bookStatus').options[document.getElementById('bookStatus').selectedIndex].text;
+            
+            const rating = document.getElementById('bookRating').value;
+            document.getElementById('previewRating').textContent = rating ? '⭐'.repeat(parseInt(rating)) : 'No rating';
+            
+            const tags = document.getElementById('bookTags').value;
+            document.getElementById('previewTags').textContent = tags || 'None';
+            
+            const notes = document.getElementById('bookNotes').value;
+            document.getElementById('previewNotesText').textContent = notes || 'No notes added';
+        }
+
+        function saveBook() {
+            showToast('Book added successfully! 📚');
+            closeWizard();
+            
+            // Add book to list (in real app, this would save to storage)
+            const bookList = document.getElementById('bookListContainer');
+            const newBook = document.createElement('div');
+            newBook.className = 'book-item';
+            newBook.onclick = () => startWizard('update-progress', document.getElementById('bookTitle').value);
+            newBook.innerHTML = `
+                <div class="book-info">
+                    <div class="book-title">${document.getElementById('bookTitle').value}</div>
+                    <div class="book-author">${document.getElementById('bookAuthor').value}</div>
+                </div>
+                <div class="book-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-text">0%</span>
+                </div>
+            `;
+            bookList.appendChild(newBook);
+        }
+
+        function resetAddBookWizard() {
+            // Reset form
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookPages').value = '';
+            document.getElementById('bookStatus').value = 'reading';
+            document.getElementById('bookNotes').value = '';
+            document.getElementById('bookTags').value = '';
+            document.getElementById('bookRating').value = '';
+            
+            // Reset steps
+            document.querySelectorAll('#addBookWizard .wizard-step').forEach(step => step.classList.remove('active'));
+            document.getElementById('addBookContent1').classList.add('active');
+            
+            document.querySelectorAll('#addBookWizard .progress-step').forEach(step => step.classList.remove('active', 'completed'));
+            document.getElementById('addBookStep1').classList.add('active');
+            
+            // Reset button
+            const nextBtn = document.querySelector('#addBookWizard .wizard-actions button:last-child');
+            nextBtn.textContent = 'Next →';
+            nextBtn.classList.remove('btn-success');
+            nextBtn.classList.add('btn-primary');
+            nextBtn.innerHTML = 'Next <span class="btn-icon">→</span>';
+            nextBtn.onclick = () => nextStep('addBook');
+            
+            currentStep = 1;
+        }
+
+        function resetImportWizard() {
+            // Reset steps
+            document.querySelectorAll('#importDataWizard .wizard-step').forEach(step => step.classList.remove('active'));
+            document.getElementById('importContent1').classList.add('active');
+            
+            document.querySelectorAll('#importDataWizard .progress-step').forEach(step => step.classList.remove('active', 'completed'));
+            document.getElementById('importStep1').classList.add('active');
+            
+            // Reset buttons
+            document.getElementById('importBackBtn').style.display = 'block';
+            document.getElementById('importNextBtn').textContent = 'Next →';
+            document.getElementById('importNextBtn').innerHTML = 'Next <span class="btn-icon">→</span>';
+            document.getElementById('importNextBtn').onclick = () => nextStep('import');
+            
+            currentStep = 1;
+        }
+
+        function resetStreakWizard() {
+            document.getElementById('dailyPages').value = '';
+            document.getElementById('dailyProgressFill').style.width = '0%';
+            document.getElementById('dailyProgressText').textContent = '0 / 20 pages';
+        }
+
+        // Progress Update Functions
+        function updateProgressValue() {
+            const slider = document.getElementById('progressSlider');
+            const current = document.getElementById('currentPage');
+            current.textContent = slider.value;
+        }
+
+        function saveProgress() {
+            showToast('Progress updated! Keep it up! 📖');
+            closeWizard();
+        }
+
+        // Status Management
+        function selectStatus(element, status) {
+            document.querySelectorAll('.status-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+            
+            // Show/hide finish date based on status
+            const finishDateGroup = document.getElementById('finishDateGroup');
+            if (status === 'finished') {
+                finishDateGroup.style.display = 'block';
+                document.getElementById('finishDate').value = new Date().toISOString().split('T')[0];
+            } else {
+                finishDateGroup.style.display = 'none';
+            }
+        }
+
+        function saveStatus() {
+            showToast('Book status updated! ✅');
+            closeWizard();
+        }
+
+        // Import Functions
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        }
+
+        function processFile(file) {
+            if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+                showToast('File uploaded successfully! 📁');
+                // In real app, would parse CSV here
+                setTimeout(() => nextStep('import'), 500);
+            } else {
+                showToast('Please upload a CSV file');
+            }
+        }
+
+        // Streak Functions
+        function updateDailyProgress() {
+            const pages = parseInt(document.getElementById('dailyPages').value) || 0;
+            const goal = 20;
+            const percentage = Math.min((pages / goal) * 100, 100);
+            
+            document.getElementById('dailyProgressFill').style.width = percentage + '%';
+            document.getElementById('dailyProgressText').textContent = `${pages} / ${goal} pages`;
+        }
+
+        function saveStreak() {
+            showToast('Daily reading logged! 🔥 Streak maintained!');
+            closeWizard();
+        }
+
+        // Onboarding
+        function selectStorage(element, type) {
+            document.querySelectorAll('.storage-option').forEach(option => option.classList.remove('selected'));
+            element.classList.add('selected');
+            document.getElementById('onboardingBtn').disabled = false;
+        }
+
+        function completeOnboarding() {
+            localStorage.setItem('pukaOnboarded', 'true');
+            document.getElementById('onboardingModal').style.display = 'none';
+            showToast('Welcome to Puka! Let\'s start tracking your reading journey 📚');
+        }
+
+        // Toast Notifications
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize empty state if no books
+        function checkEmptyState() {
+            const bookList = document.getElementById('bookListContainer');
+            if (bookList.children.length === 0) {
+                bookList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📚</div>
+                        <div class="empty-text">No books yet</div>
+                        <div class="empty-hint">Add your first book to start tracking</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

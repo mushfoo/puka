@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puka - Option 2: Contextual Dashboard Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #5B4636;
+            --primary-dark: #3D2F24;
+            --accent: #FF6B6B;
+            --success: #4CAF50;
+            --warning: #FFA726;
+            --surface: #FFFFFF;
+            --background: #FAF9F7;
+            --text-primary: #212121;
+            --text-secondary: #666666;
+            --border: #E0E0E0;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-fab: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        /* Header with Streak */
+        .header {
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            z-index: 100;
+            padding: 16px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        /* Streak Card */
+        .streak-card {
+            background: linear-gradient(135deg, var(--accent), #FF8787);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .streak-info h3 {
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .streak-count {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .streak-icon {
+            font-size: 40px;
+        }
+
+        /* Filter Tabs */
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .filter-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .filter-tab {
+            background: none;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .filter-count {
+            display: inline-block;
+            margin-left: 4px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 16px;
+        }
+
+        /* Book Grid */
+        .book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        /* Book Card */
+        .book-card {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .book-card:active {
+            transform: scale(0.98);
+        }
+
+        .book-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .book-status.reading {
+            background: var(--warning);
+        }
+
+        .book-status.want {
+            background: var(--border);
+        }
+
+        .book-cover {
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #E0E0E0, #F5F5F5);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #BDBDBD;
+        }
+
+        .book-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .book-author {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Progress Slider */
+        .progress-container {
+            margin-top: 12px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .progress-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .progress-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .progress-slider::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: none;
+        }
+
+        /* Quick Update Buttons */
+        .quick-updates {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .quick-update-btn {
+            flex: 1;
+            background: var(--background);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-update-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: var(--shadow-fab);
+            z-index: 1000;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        /* Quick Add Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 40px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .isbn-scanner {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .isbn-input {
+            flex: 1;
+        }
+
+        .scan-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: none;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .status-option.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .add-btn {
+            width: 100%;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #FF5252;
+        }
+
+        /* Settings Menu */
+        .settings-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background: var(--surface);
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 1500;
+            overflow-y: auto;
+        }
+
+        .settings-menu.active {
+            right: 0;
+        }
+
+        .settings-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .settings-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            font-size: 16px;
+        }
+
+        .settings-icon {
+            color: var(--text-secondary);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #E0E0E0;
+            margin-bottom: 16px;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .empty-cta {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        /* Overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1400;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 480px) {
+            .book-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+
+            .book-cover {
+                height: 160px;
+            }
+
+            .modal-content {
+                margin: 20px 0;
+                border-radius: 16px 16px 0 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">Puka</h1>
+            <button class="menu-btn" onclick="toggleSettings()">☰</button>
+        </div>
+
+        <!-- Streak Card -->
+        <div class="streak-card">
+            <div class="streak-info">
+                <h3>Reading Streak</h3>
+                <div class="streak-count">7 days</div>
+            </div>
+            <div class="streak-icon">🔥</div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterBooks('all')">
+                All Books <span class="filter-count">(12)</span>
+            </button>
+            <button class="filter-tab" onclick="filterBooks('reading')">
+                Reading <span class="filter-count">(3)</span>
+            </button>
+            <button class="filter-tab" onclick="filterBooks('completed')">
+                Completed <span class="filter-count">(7)</span>
+            </button>
+            <button class="filter-tab" onclick="filterBooks('want')">
+                Want to Read <span class="filter-count">(2)</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Book Grid -->
+        <div class="book-grid" id="bookGrid">
+            <!-- Sample Book Cards -->
+            <div class="book-card" data-status="reading">
+                <div class="book-status reading"></div>
+                <div class="book-cover">📚</div>
+                <h3 class="book-title">The Design of Everyday Things</h3>
+                <p class="book-author">Don Norman</p>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <span class="progress-value">65%</span>
+                    </div>
+                    <input type="range" class="progress-slider" value="65" min="0" max="100" 
+                           oninput="updateProgress(this)">
+                    <div class="quick-updates">
+                        <button class="quick-update-btn" onclick="quickUpdate(this, 10)">+10%</button>
+                        <button class="quick-update-btn" onclick="quickUpdate(this, 25)">+25%</button>
+                        <button class="quick-update-btn" onclick="markComplete(this)">✓</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="book-card" data-status="reading">
+                <div class="book-status reading"></div>
+                <div class="book-cover">📖</div>
+                <h3 class="book-title">Atomic Habits</h3>
+                <p class="book-author">James Clear</p>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <span class="progress-value">30%</span>
+                    </div>
+                    <input type="range" class="progress-slider" value="30" min="0" max="100" 
+                           oninput="updateProgress(this)">
+                    <div class="quick-updates">
+                        <button class="quick-update-btn" onclick="quickUpdate(this, 10)">+10%</button>
+                        <button class="quick-update-btn" onclick="quickUpdate(this, 25)">+25%</button>
+                        <button class="quick-update-btn" onclick="markComplete(this)">✓</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="book-card" data-status="completed">
+                <div class="book-status"></div>
+                <div class="book-cover">📘</div>
+                <h3 class="book-title">Thinking, Fast and Slow</h3>
+                <p class="book-author">Daniel Kahneman</p>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Completed</span>
+                        <span class="progress-value">100%</span>
+                    </div>
+                    <input type="range" class="progress-slider" value="100" min="0" max="100" disabled>
+                </div>
+            </div>
+
+            <div class="book-card" data-status="want">
+                <div class="book-status want"></div>
+                <div class="book-cover">📗</div>
+                <h3 class="book-title">The Lean Startup</h3>
+                <p class="book-author">Eric Ries</p>
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Want to Read</span>
+                    </div>
+                    <button class="quick-update-btn" style="width: 100%; margin-top: 8px;" 
+                            onclick="startReading(this)">Start Reading</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State (hidden by default) -->
+        <div class="empty-state" style="display: none;">
+            <div class="empty-icon">📚</div>
+            <h2 class="empty-title">No books yet</h2>
+            <p class="empty-text">Start building your reading list</p>
+            <button class="empty-cta" onclick="showAddModal()">Add Your First Book</button>
+        </div>
+    </main>
+
+    <!-- Floating Action Button -->
+    <button class="fab" onclick="showAddModal()">+</button>
+
+    <!-- Quick Add Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Book</h2>
+                <button class="close-btn" onclick="hideAddModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">ISBN Scanner</label>
+                    <div class="isbn-scanner">
+                        <input type="text" class="form-input isbn-input" placeholder="Enter ISBN">
+                        <button class="scan-btn">
+                            📷 Scan
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" placeholder="Book title">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Author</label>
+                    <input type="text" class="form-input" placeholder="Author name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div class="status-options">
+                        <button class="status-option" onclick="selectStatus(this)">Want to Read</button>
+                        <button class="status-option selected" onclick="selectStatus(this)">Reading</button>
+                        <button class="status-option" onclick="selectStatus(this)">Completed</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="add-btn" onclick="addBook()">Add Book</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Menu -->
+    <div class="settings-menu" id="settingsMenu">
+        <div class="settings-header">
+            <h2 class="modal-title">Settings</h2>
+            <button class="close-btn" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-content">
+            <div class="settings-item" onclick="importBooks()">
+                <span class="settings-label">Import Books</span>
+                <span class="settings-icon">📥</span>
+            </div>
+            <div class="settings-item" onclick="exportBooks()">
+                <span class="settings-label">Export Books</span>
+                <span class="settings-icon">📤</span>
+            </div>
+            <div class="settings-item">
+                <span class="settings-label">Reading Goals</span>
+                <span class="settings-icon">🎯</span>
+            </div>
+            <div class="settings-item">
+                <span class="settings-label">Notifications</span>
+                <span class="settings-icon">🔔</span>
+            </div>
+            <div class="settings-item">
+                <span class="settings-label">About</span>
+                <span class="settings-icon">ℹ️</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSettings()"></div>
+
+    <script>
+        // State
+        let currentFilter = 'all';
+
+        // Filter books
+        function filterBooks(status) {
+            currentFilter = status;
+            const tabs = document.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const books = document.querySelectorAll('.book-card');
+            books.forEach(book => {
+                if (status === 'all' || book.dataset.status === status) {
+                    book.style.display = 'block';
+                } else {
+                    book.style.display = 'none';
+                }
+            });
+        }
+
+        // Update progress
+        function updateProgress(slider) {
+            const value = slider.value;
+            const label = slider.parentElement.querySelector('.progress-value');
+            label.textContent = value + '%';
+
+            // Update status if completed
+            if (value === '100') {
+                const card = slider.closest('.book-card');
+                card.dataset.status = 'completed';
+                const statusDot = card.querySelector('.book-status');
+                statusDot.className = 'book-status';
+            }
+        }
+
+        // Quick update progress
+        function quickUpdate(btn, amount) {
+            const slider = btn.closest('.progress-container').querySelector('.progress-slider');
+            const currentValue = parseInt(slider.value);
+            const newValue = Math.min(100, currentValue + amount);
+            slider.value = newValue;
+            updateProgress(slider);
+        }
+
+        // Mark as complete
+        function markComplete(btn) {
+            const slider = btn.closest('.progress-container').querySelector('.progress-slider');
+            slider.value = 100;
+            updateProgress(slider);
+        }
+
+        // Start reading
+        function startReading(btn) {
+            const card = btn.closest('.book-card');
+            card.dataset.status = 'reading';
+            const statusDot = card.querySelector('.book-status');
+            statusDot.className = 'book-status reading';
+
+            // Replace button with progress controls
+            const progressContainer = card.querySelector('.progress-container');
+            progressContainer.innerHTML = `
+                <div class="progress-label">
+                    <span>Progress</span>
+                    <span class="progress-value">0%</span>
+                </div>
+                <input type="range" class="progress-slider" value="0" min="0" max="100" 
+                       oninput="updateProgress(this)">
+                <div class="quick-updates">
+                    <button class="quick-update-btn" onclick="quickUpdate(this, 10)">+10%</button>
+                    <button class="quick-update-btn" onclick="quickUpdate(this, 25)">+25%</button>
+                    <button class="quick-update-btn" onclick="markComplete(this)">✓</button>
+                </div>
+            `;
+        }
+
+        // Modal functions
+        function showAddModal() {
+            document.getElementById('addModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideAddModal() {
+            document.getElementById('addModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Settings menu
+        function toggleSettings() {
+            const menu = document.getElementById('settingsMenu');
+            const overlay = document.getElementById('overlay');
+            
+            if (menu.classList.contains('active')) {
+                menu.classList.remove('active');
+                overlay.classList.remove('active');
+            } else {
+                menu.classList.add('active');
+                overlay.classList.add('active');
+            }
+        }
+
+        // Status selection
+        function selectStatus(btn) {
+            const options = btn.parentElement.querySelectorAll('.status-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        // Add book
+        function addBook() {
+            // Simulate adding book
+            console.log('Book added');
+            hideAddModal();
+            
+            // Show success feedback
+            const fab = document.querySelector('.fab');
+            fab.style.background = 'var(--success)';
+            fab.textContent = '✓';
+            setTimeout(() => {
+                fab.style.background = 'var(--accent)';
+                fab.textContent = '+';
+            }, 2000);
+        }
+
+        // Import/Export functions
+        function importBooks() {
+            console.log('Import books');
+            toggleSettings();
+        }
+
+        function exportBooks() {
+            console.log('Export books');
+            toggleSettings();
+        }
+
+        // Close modal on outside click
+        document.getElementById('addModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hideAddModal();
+            }
+        });
+
+        // Simulate real-time streak update
+        setInterval(() => {
+            const streakCount = document.querySelector('.streak-count');
+            if (streakCount) {
+                const currentStreak = parseInt(streakCount.textContent);
+                // Update at midnight
+                const now = new Date();
+                if (now.getHours() === 0 && now.getMinutes() === 0) {
+                    streakCount.textContent = (currentStreak + 1) + ' days';
+                }
+            }
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>
