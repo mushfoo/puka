@@ -1,738 +1,1191 @@
-# Puka Reading Tracker: PRD-to-Tasks Breakdown
+# Puka Reading Tracker - Task Breakdown
 
 ## Executive Summary
 
-This document provides a comprehensive task breakdown for the Puka Reading Tracker project, derived from the PRD requirements and UI Option 2 (Contextual Dashboard) recommendation. The breakdown follows the PRD-to-tasks methodology, organizing development into 4 main epics with 47 detailed tasks across 8 weeks.
+**Total Tasks**: 45 development tasks
+**Estimated Timeline**: 6-8 weeks for MVP (Phase 1)
+**Major Milestones**:
+- Week 1-2: Foundation & Storage Setup (10 tasks)
+- Week 3-4: Core Features Implementation (15 tasks)
+- Week 5-6: Advanced MVP Features (12 tasks)
+- Week 7-8: Polish & Testing (8 tasks)
 
-**Key Metrics:**
-- **Total Tasks**: 47 tasks across 4 epics
-- **Estimated Timeline**: 8 weeks (6 core + 2 polish)
-- **Target Architecture**: React 18+ with TypeScript, Tailwind CSS, File System Access API
-- **UI Implementation**: Option 2 (Contextual Dashboard) with 18s average task completion
+**Critical Path**: Foundation → Storage Service → Book Management → Progress Tracking → Import/Export → Final Testing
 
-## 1. Epic Organization & Dependencies
+## Task Completion Status
 
-### Epic Flow Diagram
+### Quick Status Overview
+| Epic | Total Tasks | Completed | In Progress | Not Started |
+|------|------------|-----------|-------------|-------------|
+| Project Foundation | 5 | 0 | 0 | 5 |
+| Storage & Data | 4 | 0 | 0 | 4 |
+| Book Management | 4 | 0 | 0 | 4 |
+| Progress Tracking | 3 | 0 | 0 | 3 |
+| Reading Streaks | 2 | 0 | 0 | 2 |
+| Import/Export | 3 | 0 | 0 | 3 |
+| Polish & Performance | 4 | 0 | 0 | 4 |
+
+**Last Updated**: [Update this timestamp when marking tasks complete]
+
+## Epic Breakdown
+
+### Epic 1: Project Foundation & Setup (10 tasks)
+Establish development environment, project structure, and core infrastructure.
+
+### Epic 2: Storage & Data Persistence (8 tasks)
+Implement File System Access API storage service with JSON data persistence.
+
+### Epic 3: Book Management (7 tasks)
+CRUD operations for books with validation and UI components.
+
+### Epic 4: Progress Tracking & Status (6 tasks)
+Progress updates, visual indicators, and automatic status management.
+
+### Epic 5: Reading Streaks (4 tasks)
+Daily streak tracking with visual motivation and persistence.
+
+### Epic 6: Import/Export & Data Portability (5 tasks)
+CSV import for existing data and export capabilities for backup.
+
+### Epic 7: Polish & Performance (5 tasks)
+UI/UX refinements, performance optimization, and production readiness.
+
+## Detailed Task List
+
+### Task Tracking Instructions
+
+Each task below includes checkboxes in the "Acceptance Criteria", "Testing Requirements", and "Definition of Done" sections. These should be checked off as you complete each item:
+
+1. **During Development**: Check off acceptance criteria as you implement each feature
+2. **During Testing**: Check off testing requirements as you write and run tests
+3. **Before Task Completion**: Ensure all "Definition of Done" items are checked
+4. **Task Status**: Once all checkboxes are complete, mark the entire task as done by:
+   - Adding `✅ COMPLETED` to the task title
+   - Creating a commit with message: `Task [ID]: Mark as completed`
+   - Moving to the next task in the dependency chain
+
+**Example of completed task:**
+```markdown
+## Task F001: Initialize React + TypeScript + Vite Project ✅ COMPLETED
 ```
-Epic 1: Foundation (Weeks 1-2)
-    ↓
-Epic 2: Core Dashboard (Weeks 3-5)
-    ↓
-Epic 3: Enhanced Features (Weeks 6-7)
-    ↓
-Epic 4: Polish & Deployment (Week 8)
+
+---
+
+## Task F001: Initialize React + TypeScript + Vite Project
+
+**Epic**: Project Foundation & Setup
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: None
+
+### Description
+
+Set up a new React project using Vite with TypeScript support, including essential development tools and configurations.
+
+### Acceptance Criteria
+
+- [ ] Vite project created with React 18+ and TypeScript template
+- [ ] Essential dependencies installed (react, react-dom, typescript)
+- [ ] TypeScript configured with strict mode enabled
+- [ ] Basic project structure established (src/, public/, tests/)
+- [ ] Development server runs successfully on localhost
+
+### Technical Notes
+
+- Use `npm create vite@latest puka -- --template react-ts`
+- Configure TypeScript tsconfig.json with strict settings
+- Set up absolute imports with @ alias for src/
+
+### Testing Requirements
+
+- [ ] Development server starts without errors
+- [ ] TypeScript compilation succeeds
+- [ ] Basic App component renders
+
+### Definition of Done
+
+- [ ] Code committed to repository
+- [ ] README updated with setup instructions
+- [ ] Development environment documented
+- [ ] Basic smoke test passes
+
+---
+
+## Task F002: Configure Tailwind CSS
+
+**Epic**: Project Foundation & Setup
+**Priority**: High
+**Estimated Effort**: 1 hour
+**Dependencies**: F001
+
+### Description
+
+Install and configure Tailwind CSS for mobile-first responsive design with custom theme configuration.
+
+### Acceptance Criteria
+
+- [ ] Tailwind CSS installed and configured
+- [ ] Custom theme colors defined for reading app
+- [ ] Mobile-first breakpoints configured
+- [ ] Basic utility classes working in components
+- [ ] Dark mode support configured (for future use)
+
+### Technical Notes
+
+- Install tailwindcss, postcss, autoprefixer
+- Configure tailwind.config.js with custom theme
+- Set up CSS file with Tailwind directives
+- Include Inter font for clean typography
+
+### Testing Requirements
+
+- [ ] Tailwind classes apply correctly
+- [ ] Custom theme values accessible
+- [ ] Responsive utilities work as expected
+
+### Definition of Done
+
+- [ ] Tailwind fully integrated
+- [ ] Theme configuration documented
+- [ ] Example component styled with Tailwind
+- [ ] Mobile responsive utilities verified
+
+---
+
+## Task F003: Set Up Testing Framework
+
+**Epic**: Project Foundation & Setup
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: F001
+
+### Description
+
+Configure Vitest and React Testing Library for comprehensive testing capabilities.
+
+### Acceptance Criteria
+
+- [ ] Vitest installed and configured
+- [ ] React Testing Library set up
+- [ ] Testing utilities and helpers created
+- [ ] Coverage reporting configured
+- [ ] Example test suite passing
+
+### Technical Notes
+
+- Install vitest, @testing-library/react, @testing-library/user-event
+- Configure vitest.config.ts for React testing
+- Set up test utilities for custom render functions
+- Configure coverage thresholds (90% target)
+
+### Testing Requirements
+
+- [ ] Example unit test passes
+- [ ] Example component test passes
+- [ ] Coverage report generates successfully
+
+### Definition of Done
+
+- [ ] Testing framework operational
+- [ ] Test commands added to package.json
+- [ ] Testing guidelines documented
+- [ ] CI-ready test configuration
+
+---
+
+## Task F004: Configure ESLint & Prettier
+
+**Epic**: Project Foundation & Setup
+**Priority**: High
+**Estimated Effort**: 1 hour
+**Dependencies**: F001
+
+### Description
+
+Set up code quality tools with ESLint and Prettier for consistent code style and quality.
+
+### Acceptance Criteria
+
+- [ ] ESLint configured for React + TypeScript
+- [ ] Prettier configured with project style guide
+- [ ] Pre-commit hooks set up with husky
+- [ ] VS Code settings configured
+- [ ] All existing code passes linting
+
+### Technical Notes
+
+- Use ESLint with recommended React and TypeScript rules
+- Configure Prettier for consistent formatting
+- Set up lint-staged for pre-commit validation
+- Include editor configuration files
+
+### Testing Requirements
+
+- [ ] Lint command runs without errors
+- [ ] Format command applies consistently
+- [ ] Pre-commit hooks trigger correctly
+
+### Definition of Done
+
+- [ ] Linting rules documented
+- [ ] All code formatted consistently
+- [ ] Pre-commit validation working
+- [ ] Team coding standards established
+
+---
+
+## Task F005: Create Component Library Structure
+
+**Epic**: Project Foundation & Setup
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: F001, F002
+
+### Description
+
+Establish a scalable component library structure with atomic design principles.
+
+### Acceptance Criteria
+
+- [ ] Component folder structure created (atoms, molecules, organisms)
+- [ ] Component template with TypeScript interfaces
+- [ ] Storybook configured for component development (optional)
+- [ ] Example components demonstrating patterns
+- [ ] Component documentation template
+
+### Technical Notes
+
+- Create src/components/ with atomic structure
+- Set up component index files for clean imports
+- Include TypeScript interfaces for all props
+- Consider CSS modules or styled-components approach
+
+### Testing Requirements
+
+- [ ] Component template includes test file
+- [ ] Example component has full test coverage
+- [ ] Component renders without errors
+
+### Definition of Done
+
+- [ ] Component structure documented
+- [ ] Development patterns established
+- [ ] Example components created
+- [ ] Import aliases configured
+
+---
+
+## Task S001: Design Storage Service Interface
+
+**Epic**: Storage & Data Persistence
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: F001
+
+### Description
+
+Create a unified storage service interface that supports multiple backend implementations.
+
+### Acceptance Criteria
+
+- [ ] TypeScript interface for storage operations defined
+- [ ] Support for CRUD operations on books
+- [ ] Support for settings and user preferences
+- [ ] Error handling patterns established
+- [ ] Migration strategy interface included
+
+### Technical Notes
+
+```typescript
+interface StorageService {
+  initialize(): Promise<void>;
+  getBooks(): Promise<Book[]>;
+  saveBook(book: Book): Promise<void>;
+  updateBook(id: string, book: Partial<Book>): Promise<void>;
+  deleteBook(id: string): Promise<void>;
+  exportData(): Promise<ExportData>;
+  importData(data: ImportData): Promise<void>;
+}
 ```
 
-### Dependency Matrix
-| Epic | Depends On | Blocks |
-|------|------------|---------|
-| Foundation | None | Core Dashboard |
-| Core Dashboard | Foundation | Enhanced Features |
-| Enhanced Features | Core Dashboard | Polish & Deployment |
-| Polish & Deployment | Enhanced Features | Release |
-
-## 2. Epic 1: Foundation & Storage (Weeks 1-2)
-
-**Epic Goal**: Establish robust foundation with file-based storage, enhanced types, and core infrastructure.
-
-### Tasks (Priority: Critical)
-
-#### Task F001: Enhanced Type System
-**Story**: As a developer, I need comprehensive type definitions to ensure type safety across the application.
-
-**Acceptance Criteria**:
-- [ ] Extend `Book` interface with optional fields (isbn, coverUrl, tags, rating, totalPages, currentPage, genre, publishedDate)
-- [ ] Create `ReadingSession` interface for future session tracking
-- [ ] Add `ToastMessage` interface for notifications
-- [ ] Create `FilterOptions` interface for advanced filtering
-- [ ] Add `QuickAction` interface for contextual actions
-- [ ] All interfaces exported from `/src/types/index.ts`
-- [ ] TypeScript strict mode compliance
-- [ ] No type errors in build
-
-**Dependencies**: None  
-**Estimate**: 1 day  
-**Component Impact**: All components  
-
-#### Task F002: File System Storage Service Enhancement
-**Story**: As a user, I need reliable file-based storage that persists across browser sessions.
-
-**Acceptance Criteria**:
-- [ ] Enhance `FileSystemStorageService` with error handling
-- [ ] Add file validation and corruption detection
-- [ ] Implement automatic backup creation
-- [ ] Add data migration utilities for schema changes
-- [ ] Support concurrent access protection
-- [ ] File size optimization for large libraries (>500 books)
-- [ ] Comprehensive error messages for user feedback
-- [ ] Unit tests with 90%+ coverage
-
-**Dependencies**: F001  
-**Estimate**: 3 days  
-**Component Impact**: All data operations  
-
-#### Task F003: Storage Interface Abstraction
-**Story**: As a developer, I need a consistent storage interface that can support multiple backends.
-
-**Acceptance Criteria**:
-- [ ] Create `StorageService` interface with CRUD operations
-- [ ] Implement `FileSystemStorageService` conforming to interface
-- [ ] Add storage service factory pattern
-- [ ] Create mock storage service for testing
-- [ ] Implement data validation layer
-- [ ] Add storage service switching capability
-- [ ] Performance monitoring hooks
-- [ ] Error boundary integration
-
-**Dependencies**: F001, F002  
-**Estimate**: 2 days  
-**Component Impact**: Data layer  
-
-#### Task F004: Enhanced Validation System
-**Story**: As a user, I need comprehensive data validation to prevent errors and data corruption.
-
-**Acceptance Criteria**:
-- [ ] Book validation with required fields enforcement
-- [ ] Progress validation (0-100% range)
-- [ ] Duplicate book detection (title + author)
-- [ ] Import data validation with detailed error messages
-- [ ] File format validation (JSON structure)
-- [ ] Data sanitization for user inputs
-- [ ] Real-time validation feedback
-- [ ] Validation error recovery mechanisms
-
-**Dependencies**: F001  
-**Estimate**: 2 days  
-**Component Impact**: Forms, import/export  
-
-#### Task F005: Testing Infrastructure Setup
-**Story**: As a developer, I need comprehensive testing infrastructure for reliable development.
-
-**Acceptance Criteria**:
-- [ ] Vitest configuration with React Testing Library
-- [ ] Test utilities for storage mocking
-- [ ] Component testing helpers
-- [ ] Coverage reporting setup (90% target)
-- [ ] CI/CD pipeline configuration
-- [ ] Visual regression testing setup
-- [ ] Performance testing benchmarks
-- [ ] Integration test framework
-
-**Dependencies**: F001-F004  
-**Estimate**: 2 days  
-**Component Impact**: All components  
-
-## 3. Epic 2: Core Dashboard Implementation (Weeks 3-5)
-
-**Epic Goal**: Implement Option 2 (Contextual Dashboard) with enhanced BookCard, FilterTabs, and core interactions.
-
-### Tasks (Priority: High)
-
-#### Task C001: Enhanced BookCard Component
-**Story**: As a user, I need interactive book cards with inline progress controls for quick updates.
-
-**Acceptance Criteria**:
-- [ ] Inline progress slider with real-time updates
-- [ ] Quick action buttons (+10%, +25%, Mark Done)
-- [ ] Hover-revealed contextual actions
-- [ ] Status indicator dots with color coding
-- [ ] Touch-optimized controls (≥44px tap targets)
-- [ ] Smooth animations for state changes
-- [ ] Accessibility compliance (WCAG 2.1 AA)
-- [ ] Responsive design (320px to 1200px)
-- [ ] Optimistic UI updates with error recovery
-- [ ] Progress updates save within 100ms
-
-**Dependencies**: F001-F005  
-**Estimate**: 4 days  
-**Component Impact**: BookCard, ProgressBar  
-
-#### Task C002: BookGrid with Responsive Layout
-**Story**: As a user, I need a responsive grid layout that adapts to different screen sizes and book collections.
-
-**Acceptance Criteria**:
-- [ ] CSS Grid layout with responsive breakpoints
-- [ ] Virtual scrolling for large collections (500+ books)
-- [ ] Masonry layout option for varied card heights
-- [ ] Smooth transitions between grid and list views
-- [ ] Touch-friendly spacing and interactions
-- [ ] Loading states and skeleton screens
-- [ ] Empty state handling with onboarding
-- [ ] Performance optimization for large datasets
-- [ ] Keyboard navigation support
-
-**Dependencies**: C001  
-**Estimate**: 3 days  
-**Component Impact**: New BookGrid component  
-
-#### Task C003: FilterTabs Component
-**Story**: As a user, I need quick filtering options to view books by status with live counts.
-
-**Acceptance Criteria**:
-- [ ] Tab interface for status filtering (All, Want to Read, Reading, Finished)
-- [ ] Live count badges showing books in each status
-- [ ] Smooth tab transitions with animations
-- [ ] Mobile-optimized horizontal scrolling
-- [ ] Keyboard navigation support
-- [ ] Active state styling and focus indicators
-- [ ] Filter state persistence across sessions
-- [ ] Integration with URL routing for bookmarks
-
-**Dependencies**: C002  
-**Estimate**: 2 days  
-**Component Impact**: New FilterTabs component  
-
-#### Task C004: ProgressSlider Component
-**Story**: As a user, I need an intuitive progress slider for quick reading progress updates.
-
-**Acceptance Criteria**:
-- [ ] Draggable slider with percentage display
-- [ ] Touch-optimized thumb size and interaction area
-- [ ] Snap-to-increment functionality (5% increments)
-- [ ] Visual feedback during dragging
-- [ ] Keyboard accessibility (arrow keys)
-- [ ] Real-time progress bar updates
-- [ ] Integration with quick action buttons
-- [ ] Smooth animations and transitions
-- [ ] Works across all modern browsers
-
-**Dependencies**: C001  
-**Estimate**: 2 days  
-**Component Impact**: New ProgressSlider component  
-
-#### Task C005: FloatingActionButton (FAB)
-**Story**: As a user, I need quick access to the primary action (Add Book) from anywhere in the app.
-
-**Acceptance Criteria**:
-- [ ] Floating action button with book add icon
-- [ ] Expandable menu for secondary actions
-- [ ] Smooth animation and micro-interactions
-- [ ] Proper z-index layering
-- [ ] Mobile-optimized positioning
-- [ ] Accessibility compliance with proper labels
-- [ ] Integration with keyboard shortcuts
-- [ ] Proper focus management
-
-**Dependencies**: C001-C004  
-**Estimate**: 2 days  
-**Component Impact**: New FAB component  
-
-#### Task C006: Toast Notification System
-**Story**: As a user, I need immediate feedback for actions like adding books, updating progress, and errors.
-
-**Acceptance Criteria**:
-- [ ] Toast notifications for success, error, warning, info
-- [ ] Auto-dismiss with configurable duration
-- [ ] Swipe-to-dismiss functionality
-- [ ] Stacking support for multiple notifications
-- [ ] Position management (top-right, bottom-center)
-- [ ] Accessibility announcements for screen readers
-- [ ] Animation system for enter/exit
-- [ ] Global notification state management
-
-**Dependencies**: C001-C005  
-**Estimate**: 2 days  
-**Component Impact**: New Toast system  
-
-#### Task C007: Enhanced StreakCard Integration
-**Story**: As a user, I need prominent streak display with goal tracking to maintain motivation.
-
-**Acceptance Criteria**:
-- [ ] Prominent header position with streak count
-- [ ] Daily goal integration with progress ring
-- [ ] Streak status indicators (active, at-risk, broken)
-- [ ] Motivational messaging based on streak state
-- [ ] Touch-friendly design for goal adjustment
-- [ ] Integration with daily reading tracking
-- [ ] Celebration animations for milestones
-- [ ] Historical streak data visualization
-
-**Dependencies**: C001-C006  
-**Estimate**: 3 days  
-**Component Impact**: Enhanced StreakCard  
-
-#### Task C008: Dashboard Layout Integration
-**Story**: As a user, I need a cohesive dashboard layout that organizes all components effectively.
-
-**Acceptance Criteria**:
-- [ ] Header with streak display and navigation
-- [ ] FilterTabs integration with smooth transitions
-- [ ] BookGrid with responsive layout
-- [ ] FAB positioning and interaction
-- [ ] Settings panel slide-in integration
-- [ ] Proper component hierarchy and z-indexing
-- [ ] Mobile-first responsive design
-- [ ] Performance optimization for large libraries
-- [ ] Accessibility compliance throughout
-
-**Dependencies**: C001-C007  
-**Estimate**: 3 days  
-**Component Impact**: Main dashboard layout  
-
-## 4. Epic 3: Enhanced Features & Data Management (Weeks 6-7)
-
-**Epic Goal**: Implement advanced features including import/export, search, settings, and data management.
-
-### Tasks (Priority: Medium)
-
-#### Task E001: CSV Import/Export System
-**Story**: As a user, I need to import existing reading data and export backups for data portability.
-
-**Acceptance Criteria**:
-- [ ] CSV import with field mapping interface
-- [ ] Data validation and error reporting
-- [ ] Preview table before import confirmation
-- [ ] Export to CSV with custom field selection
-- [ ] JSON export for complete data backup
-- [ ] Duplicate detection and handling
-- [ ] Progress tracking during import/export
-- [ ] File size validation and optimization
-- [ ] Error recovery and rollback mechanisms
-
-**Dependencies**: F002, F004  
-**Estimate**: 4 days  
-**Component Impact**: New import/export components  
-
-#### Task E002: Advanced Search and Filtering
-**Story**: As a user, I need powerful search capabilities to find books in large collections.
-
-**Acceptance Criteria**:
-- [ ] Real-time search across title, author, notes
-- [ ] Advanced filters (genre, rating, date range)
-- [ ] Search history and suggestions
-- [ ] Fuzzy search for typo tolerance
-- [ ] Keyboard shortcuts for search activation
-- [ ] Search result highlighting
-- [ ] Filter combination logic (AND/OR)
-- [ ] Saved search/filter presets
-- [ ] Performance optimization for large datasets
-
-**Dependencies**: C003, C008  
-**Estimate**: 3 days  
-**Component Impact**: Search overlay, filter system  
-
-#### Task E003: Settings Panel Implementation
-**Story**: As a user, I need a settings panel to configure app preferences and data management.
-
-**Acceptance Criteria**:
-- [ ] Slide-in settings panel from right edge
-- [ ] Theme selection (light/dark mode)
-- [ ] Data storage location management
-- [ ] Backup and restore functionality
-- [ ] Notification preferences
-- [ ] Display preferences (grid/list, card size)
-- [ ] Privacy and data management options
-- [ ] Settings persistence across sessions
-- [ ] Factory reset option with confirmation
-
-**Dependencies**: C008, E001  
-**Estimate**: 3 days  
-**Component Impact**: New settings panel  
-
-#### Task E004: Enhanced AddBookModal
-**Story**: As a user, I need an improved book addition form with progressive disclosure and validation.
-
-**Acceptance Criteria**:
-- [ ] Progressive form with basic/advanced modes
-- [ ] Auto-complete for author names
-- [ ] ISBN scanning preparation (UI placeholder)
-- [ ] Genre selection with custom options
-- [ ] Rating system integration
-- [ ] Notes field with rich text support
-- [ ] Form validation with real-time feedback
-- [ ] Duplicate book detection
-- [ ] Quick-add mode for power users
-
-**Dependencies**: C001, F004  
-**Estimate**: 3 days  
-**Component Impact**: Enhanced AddBookModal  
-
-#### Task E005: Data Analytics Dashboard
-**Story**: As a user, I need insights into my reading patterns and progress over time.
-
-**Acceptance Criteria**:
-- [ ] Reading statistics overview
-- [ ] Monthly/yearly reading goals
-- [ ] Progress charts and visualizations
-- [ ] Reading pace analysis
-- [ ] Genre distribution insights
-- [ ] Streak history and trends
-- [ ] Books completed timeline
-- [ ] Export analytics data option
-
-**Dependencies**: C007, E003  
-**Estimate**: 4 days  
-**Component Impact**: New analytics components  
-
-#### Task E006: Mobile PWA Enhancements
-**Story**: As a user, I need Progressive Web App features for mobile-first experience.
-
-**Acceptance Criteria**:
-- [ ] PWA manifest configuration
-- [ ] Service worker for offline functionality
-- [ ] App installation prompt
-- [ ] Offline indicator and graceful degradation
-- [ ] Background sync preparation
-- [ ] Push notification infrastructure
-- [ ] App icon and splash screen optimization
-- [ ] iOS/Android specific optimizations
-
-**Dependencies**: C008, E003  
-**Estimate**: 3 days  
-**Component Impact**: PWA infrastructure  
-
-## 5. Epic 4: Polish & Deployment (Week 8)
-
-**Epic Goal**: Final polish, comprehensive testing, performance optimization, and production deployment.
-
-### Tasks (Priority: Medium-Low)
-
-#### Task P001: Performance Optimization
-**Story**: As a user, I need fast, responsive interactions that meet the <2s load, <100ms interaction requirements.
-
-**Acceptance Criteria**:
-- [ ] Bundle size optimization (<500KB target)
-- [ ] Code splitting by feature/route
-- [ ] Image optimization and lazy loading
-- [ ] Virtual scrolling performance tuning
-- [ ] Memory leak detection and fixes
-- [ ] Performance monitoring integration
-- [ ] Lighthouse score optimization (90+ PWA score)
-- [ ] Mobile performance testing on real devices
-
-**Dependencies**: All previous tasks  
-**Estimate**: 3 days  
-**Component Impact**: All components  
-
-#### Task P002: Accessibility Compliance
-**Story**: As a user with accessibility needs, I need full WCAG 2.1 AA compliance for inclusive access.
-
-**Acceptance Criteria**:
-- [ ] Screen reader testing and optimization
-- [ ] Keyboard navigation throughout app
-- [ ] Color contrast validation (AA level)
-- [ ] Focus management and visual indicators
-- [ ] ARIA labels and semantic HTML
-- [ ] High contrast mode support
-- [ ] Voice control compatibility
-- [ ] Accessibility audit and remediation
-
-**Dependencies**: All previous tasks  
-**Estimate**: 2 days  
-**Component Impact**: All components  
-
-#### Task P003: Cross-Browser Testing
-**Story**: As a user, I need consistent functionality across all modern browsers.
-
-**Acceptance Criteria**:
-- [ ] Chrome, Firefox, Safari, Edge testing
-- [ ] Mobile browser compatibility (iOS Safari, Chrome Mobile)
-- [ ] File System Access API fallbacks
-- [ ] CSS compatibility and polyfills
-- [ ] JavaScript feature detection
-- [ ] Error handling across browsers
-- [ ] Performance consistency validation
-
-**Dependencies**: P001, P002  
-**Estimate**: 2 days  
-**Component Impact**: All components  
-
-#### Task P004: Comprehensive Testing Suite
-**Story**: As a developer, I need comprehensive test coverage to ensure reliability.
-
-**Acceptance Criteria**:
-- [ ] Unit tests for all components (90%+ coverage)
-- [ ] Integration tests for user flows
-- [ ] End-to-end tests for critical paths
+### Testing Requirements
+
+- [ ] Interface properly typed
+- [ ] Mock implementation created for testing
+- [ ] Error scenarios defined
+
+### Definition of Done
+
+- [ ] Interface documented
+- [ ] Type definitions complete
+- [ ] Mock service implemented
+- [ ] Integration patterns defined
+
+---
+
+## Task S002: Implement File System Access API Storage
+
+**Epic**: Storage & Data Persistence
+**Priority**: High
+**Estimated Effort**: 4 hours
+**Dependencies**: S001
+
+### Description
+
+Create FileSystemStorageService using the File System Access API for persistent local storage.
+
+### Acceptance Criteria
+
+- [ ] User can select storage directory on first run
+- [ ] Data persists to user-selected JSON file
+- [ ] Automatic save after each operation
+- [ ] File validation and error recovery
+- [ ] Fallback for unsupported browsers
+
+### Technical Notes
+
+- Check browser support with feature detection
+- Implement file lock mechanism for data integrity
+- Use JSON schema validation for data files
+- Handle permission prompts gracefully
+
+### Testing Requirements
+
+- [ ] Unit tests with mocked File System API
+- [ ] Integration tests for data persistence
+- [ ] Error handling tests
+- [ ] Browser compatibility tests
+
+### Definition of Done
+
+- [ ] Storage service fully functional
+- [ ] Data persists across sessions
+- [ ] Error handling comprehensive
+- [ ] Performance benchmarked
+
+---
+
+## Task S003: Create Data Models & Schema
+
+**Epic**: Storage & Data Persistence
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: S001
+
+### Description
+
+Define TypeScript interfaces and JSON schema for all data models.
+
+### Acceptance Criteria
+
+- [ ] Book model with all required fields
+- [ ] Reading session model for progress tracking
+- [ ] User preferences model
+- [ ] JSON schema validation implemented
+- [ ] Migration utilities for schema changes
+
+### Technical Notes
+
+```typescript
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  notes?: string;
+  progress: number; // 0-100
+  status: 'wantToRead' | 'currentlyReading' | 'finished';
+  dateAdded: string;
+  dateModified: string;
+  dateFinished?: string;
+  progressHistory: ProgressEntry[];
+}
+```
+
+### Testing Requirements
+
+- [ ] Schema validation tests
+- [ ] Model factory functions tested
+- [ ] Migration scenarios tested
+
+### Definition of Done
+
+- [ ] All models documented
+- [ ] Validation working correctly
+- [ ] Migration strategy defined
+- [ ] Type safety enforced
+
+---
+
+## Task S004: Implement Storage Context & Hooks
+
+**Epic**: Storage & Data Persistence
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: S002, S003
+
+### Description
+
+Create React context and custom hooks for storage operations throughout the app.
+
+### Acceptance Criteria
+
+- [ ] StorageContext provides storage service
+- [ ] useBooks hook for book operations
+- [ ] useSettings hook for preferences
+- [ ] Optimistic updates implemented
+- [ ] Loading and error states handled
+
+### Technical Notes
+
+- Use React Context for dependency injection
+- Implement optimistic UI updates
+- Cache data in memory for performance
+- Handle offline scenarios gracefully
+
+### Testing Requirements
+
+- [ ] Hook tests with React Testing Library
+- [ ] Context provider tests
+- [ ] Error scenario tests
+- [ ] Performance tests for large datasets
+
+### Definition of Done
+
+- [ ] Hooks documented with examples
+- [ ] Type-safe implementations
+- [ ] Error boundaries configured
+- [ ] Performance optimized
+
+---
+
+## Task B001: Create Book Form Component
+
+**Epic**: Book Management
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: F005, S004
+
+### Description
+
+Build responsive form component for adding and editing books with validation.
+
+### Acceptance Criteria
+
+- [ ] Form with title, author, and notes fields
+- [ ] Client-side validation with error messages
+- [ ] Responsive mobile-first design
+- [ ] Loading states during submission
+- [ ] Success feedback after save
+
+### Technical Notes
+
+- Use controlled components with React Hook Form
+- Implement debounced duplicate checking
+- Auto-focus first field on mount
+- Keyboard navigation support
+
+### Testing Requirements
+
+- [ ] Form validation tests
+- [ ] Submission flow tests
+- [ ] Accessibility tests
+- [ ] Mobile responsiveness tests
+
+### Definition of Done
+
+- [ ] Form fully functional
+- [ ] Validation comprehensive
+- [ ] Mobile UX optimized
+- [ ] Accessibility compliant
+
+---
+
+## Task B002: Build Book Card Component
+
+**Epic**: Book Management
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: F005
+
+### Description
+
+Create reusable book card component displaying book information and progress.
+
+### Acceptance Criteria
+
+- [ ] Display title, author, and progress
+- [ ] Visual progress bar
+- [ ] Status badge (Want to Read, Reading, Finished)
+- [ ] Edit and delete actions
+- [ ] Responsive card layout
+
+### Technical Notes
+
+- Use CSS Grid for responsive layout
+- Implement touch-friendly tap targets
+- Progressive disclosure for actions
+- Smooth animations for interactions
+
+### Testing Requirements
+
+- [ ] Component renders all states correctly
+- [ ] Interaction tests for actions
 - [ ] Visual regression tests
-- [ ] Performance benchmarking tests
-- [ ] Error boundary testing
-- [ ] Accessibility testing automation
-- [ ] Mock service worker testing
+- [ ] Performance tests with many cards
 
-**Dependencies**: All previous tasks  
-**Estimate**: 3 days  
-**Component Impact**: All components  
+### Definition of Done
 
-#### Task P005: Production Deployment
-**Story**: As a user, I need a deployed application that's ready for daily use.
+- [ ] Component pixel-perfect
+- [ ] All interactions smooth
+- [ ] Performance optimized
+- [ ] Documentation complete
 
-**Acceptance Criteria**:
-- [ ] Vite production build optimization
-- [ ] Static hosting deployment (Netlify/Vercel)
-- [ ] CDN configuration for assets
-- [ ] SSL certificate setup
-- [ ] Domain configuration
-- [ ] Environment variable management
-- [ ] Monitoring and error tracking setup
-- [ ] Backup and disaster recovery plan
+---
 
-**Dependencies**: P001-P004  
-**Estimate**: 2 days  
-**Component Impact**: Build and deployment  
+## Task B003: Implement Book List View
 
-## 6. Task Priority Matrix
+**Epic**: Book Management
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: B002, S004
 
-### Critical Path (Must Complete for MVP)
-1. **Epic 1: Foundation** (F001-F005) - 2 weeks
-2. **Epic 2: Core Dashboard** (C001-C008) - 3 weeks
-3. **Essential Epic 3** (E001, E003, E004) - 1 week
-4. **Essential Epic 4** (P001, P005) - 1 week
+### Description
 
-### High Priority (Core Features)
-- Enhanced BookCard with inline controls (C001)
-- BookGrid responsive layout (C002)
-- FilterTabs with live counts (C003)
-- CSV Import/Export (E001)
-- Settings Panel (E003)
+Create main book list view with filtering and sorting capabilities.
 
-### Medium Priority (User Experience)
-- Advanced Search (E002)
-- Analytics Dashboard (E005)
-- PWA Features (E006)
-- Performance Optimization (P001)
+### Acceptance Criteria
 
-### Low Priority (Polish)
-- Accessibility Compliance (P002)
-- Cross-Browser Testing (P003)
-- Comprehensive Testing (P004)
+- [ ] Display all books in card grid
+- [ ] Filter by status (tabs or dropdown)
+- [ ] Sort by date added, title, or progress
+- [ ] Empty state for no books
+- [ ] Loading state during data fetch
 
-## 7. Time Estimates & Milestones
+### Technical Notes
 
-### Week-by-Week Breakdown
+- Use CSS Grid for responsive layout
+- Implement virtual scrolling for large lists
+- Maintain filter state in URL params
+- Optimize re-renders with React.memo
 
-**Week 1: Foundation Setup**
-- F001: Enhanced Type System (1 day)
-- F002: File System Storage Service (3 days)
-- F003: Storage Interface Abstraction (1 day)
+### Testing Requirements
 
-**Week 2: Infrastructure Completion**
-- F003: Storage Interface Abstraction (1 day)
-- F004: Enhanced Validation System (2 days)
-- F005: Testing Infrastructure (2 days)
+- [ ] Filter functionality tests
+- [ ] Sort functionality tests
+- [ ] Performance tests with 1000+ books
+- [ ] Empty state tests
 
-**Week 3: Core Components**
-- C001: Enhanced BookCard (4 days)
-- C002: BookGrid Layout (1 day)
+### Definition of Done
 
-**Week 4: Dashboard Features**
-- C002: BookGrid Layout (2 days)
-- C003: FilterTabs (2 days)
-- C004: ProgressSlider (1 day)
+- [ ] List view fully functional
+- [ ] Filters and sorts working
+- [ ] Performance acceptable
+- [ ] Mobile experience smooth
 
-**Week 5: Dashboard Integration**
-- C004: ProgressSlider (1 day)
-- C005: FloatingActionButton (2 days)
-- C006: Toast Notifications (2 days)
+---
 
-**Week 6: Enhanced Features**
-- C007: Enhanced StreakCard (3 days)
-- C008: Dashboard Layout (2 days)
+## Task B004: Add Quick Actions & Bulk Operations
 
-**Week 7: Advanced Features**
-- E001: CSV Import/Export (4 days)
-- E003: Settings Panel (1 day)
+**Epic**: Book Management
+**Priority**: Medium
+**Estimated Effort**: 2 hours
+**Dependencies**: B003
 
-**Week 8: Polish & Deployment**
-- E003: Settings Panel (2 days)
-- P001: Performance Optimization (3 days)
+### Description
 
-### Milestone Checkpoints
+Implement quick actions for common operations and bulk selection capabilities.
 
-**Milestone 1 (End Week 2): Foundation Complete**
-- [ ] All type definitions implemented
-- [ ] File storage service functional
-- [ ] Testing infrastructure operational
-- [ ] Data validation system working
+### Acceptance Criteria
 
-**Milestone 2 (End Week 5): Core Dashboard Complete**
-- [ ] Enhanced BookCard with inline controls
-- [ ] Responsive BookGrid layout
-- [ ] FilterTabs with live counts
-- [ ] FAB and toast notifications
-- [ ] 18-second task completion achieved
+- [ ] Quick progress update from card
+- [ ] Swipe actions on mobile (optional)
+- [ ] Bulk select mode
+- [ ] Bulk delete confirmation
+- [ ] Undo capability for destructive actions
 
-**Milestone 3 (End Week 7): MVP Feature Complete**
-- [ ] CSV import/export functional
-- [ ] Settings panel implemented
-- [ ] Advanced search operational
-- [ ] All core user stories complete
+### Technical Notes
 
-**Milestone 4 (End Week 8): Production Ready**
+- Use optimistic updates for instant feedback
+- Implement touch gestures carefully
+- Add confirmation dialogs for bulk operations
+- Consider undo snackbar pattern
+
+### Testing Requirements
+
+- [ ] Quick action flow tests
+- [ ] Bulk operation tests
+- [ ] Undo functionality tests
+- [ ] Mobile gesture tests
+
+### Definition of Done
+
+- [ ] Quick actions responsive
+- [ ] Bulk operations safe
+- [ ] Undo working reliably
+- [ ] User experience fluid
+
+---
+
+## Task P001: Create Progress Input Component
+
+**Epic**: Progress Tracking & Status
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: F005
+
+### Description
+
+Build intuitive progress input component with percentage slider and manual input.
+
+### Acceptance Criteria
+
+- [ ] Slider input for 0-100% range
+- [ ] Number input for precise values
+- [ ] Visual progress bar preview
+- [ ] Touch-optimized for mobile
+- [ ] Incremental buttons (+5%, +10%)
+
+### Technical Notes
+
+- Use native range input with custom styling
+- Debounce updates to prevent excessive saves
+- Show visual feedback during update
+- Support keyboard navigation
+
+### Testing Requirements
+
+- [ ] Input validation tests
+- [ ] Touch interaction tests
+- [ ] Keyboard navigation tests
+- [ ] Update flow tests
+
+### Definition of Done
+
+- [ ] Component intuitive to use
+- [ ] Mobile experience excellent
+- [ ] Updates performant
+- [ ] Accessibility compliant
+
+---
+
+## Task P002: Implement Progress History Tracking
+
+**Epic**: Progress Tracking & Status
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: P001, S003
+
+### Description
+
+Track and store progress updates with timestamps for historical data.
+
+### Acceptance Criteria
+
+- [ ] Store progress entries with timestamps
+- [ ] Display progress history in book details
+- [ ] Calculate reading velocity
+- [ ] Show progress over time graph (basic)
+- [ ] Export progress data
+
+### Technical Notes
+
+- Store as array of {progress, timestamp} objects
+- Limit history to last 100 entries
+- Calculate pages/day if page count available
+- Use lightweight charting library
+
+### Testing Requirements
+
+- [ ] Progress tracking accuracy tests
+- [ ] History storage tests
+- [ ] Calculation tests
+- [ ] Performance tests with long history
+
+### Definition of Done
+
+- [ ] History tracking accurate
+- [ ] Visualizations clear
+- [ ] Performance acceptable
+- [ ] Data exportable
+
+---
+
+## Task P003: Build Status Management System
+
+**Epic**: Progress Tracking & Status
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: S003
+
+### Description
+
+Implement automatic status changes based on progress with manual override capability.
+
+### Acceptance Criteria
+
+- [ ] Automatic status: 0% = Want to Read
+- [ ] Automatic status: 1-99% = Currently Reading
+- [ ] Automatic status: 100% = Finished
+- [ ] Manual status override option
+- [ ] Status change triggers and events
+
+### Technical Notes
+
+- Implement status as computed property
+- Allow manual override flag
+- Trigger events for status changes
+- Update filters when status changes
+
+### Testing Requirements
+
+- [ ] Automatic status change tests
+- [ ] Manual override tests
+- [ ] Edge case tests (0%, 100%)
+- [ ] Integration tests with filters
+
+### Definition of Done
+
+- [ ] Status logic correct
+- [ ] Manual override working
+- [ ] UI updates properly
+- [ ] Events firing correctly
+
+---
+
+## Task R001: Design Streak Calculation Logic
+
+**Epic**: Reading Streaks
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: P002
+
+### Description
+
+Implement streak calculation algorithm considering timezone and daily progress.
+
+### Acceptance Criteria
+
+- [ ] Calculate consecutive days with progress
+- [ ] Handle timezone considerations
+- [ ] Reset after 24 hours of inactivity
+- [ ] Store streak history
+- [ ] Support streak recovery (optional)
+
+### Technical Notes
+
+- Use UTC dates for consistency
+- Check any progress update counts for the day
+- Store last activity timestamp
+- Consider local timezone for display
+
+### Testing Requirements
+
+- [ ] Streak calculation tests
+- [ ] Timezone handling tests
+- [ ] Reset logic tests
+- [ ] Edge case tests
+
+### Definition of Done
+
+- [ ] Algorithm documented
+- [ ] All edge cases handled
+- [ ] Performance optimized
+- [ ] Tests comprehensive
+
+---
+
+## Task R002: Create Streak Display Component
+
+**Epic**: Reading Streaks
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: R001, F005
+
+### Description
+
+Build motivational streak display component with fire emoji and active status.
+
+### Acceptance Criteria
+
+- [ ] Display current streak count
+- [ ] Fire emoji with animation
+- [ ] "Active" badge for today's reading
+- [ ] Streak history calendar (optional)
+- [ ] Motivational messages at milestones
+
+### Technical Notes
+
+- Use CSS animations for fire effect
+- Show different messages for milestones
+- Include share functionality (future)
+- Make component reusable
+
+### Testing Requirements
+
+- [ ] Component render tests
+- [ ] Animation performance tests
+- [ ] Milestone trigger tests
+- [ ] Accessibility tests
+
+### Definition of Done
+
+- [ ] Component visually appealing
+- [ ] Animations smooth
+- [ ] Milestones working
+- [ ] Mobile optimized
+
+---
+
+## Task I001: Build CSV Import Parser
+
+**Epic**: Import/Export & Data Portability
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: S003
+
+### Description
+
+Create robust CSV parser for importing existing reading data from other apps.
+
+### Acceptance Criteria
+
+- [ ] Parse CSV with flexible column mapping
+- [ ] Support common formats (Goodreads, etc.)
+- [ ] Validate data before import
+- [ ] Handle duplicates intelligently
+- [ ] Show import preview
+
+### Technical Notes
+
+- Use Papa Parse or similar library
+- Allow column mapping UI
+- Detect common formats automatically
+- Support UTF-8 encoding
+
+### Testing Requirements
+
+- [ ] Parser tests with various formats
+- [ ] Validation tests
+- [ ] Large file performance tests
+- [ ] Error handling tests
+
+### Definition of Done
+
+- [ ] Parser robust and flexible
+- [ ] Common formats supported
+- [ ] Error handling comprehensive
+- [ ] Performance acceptable
+
+---
+
+## Task I002: Create Import UI Flow
+
+**Epic**: Import/Export & Data Portability
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: I001
+
+### Description
+
+Build user-friendly import interface with file selection and mapping options.
+
+### Acceptance Criteria
+
+- [ ] Drag-and-drop file upload
+- [ ] Column mapping interface
+- [ ] Import preview with validation
+- [ ] Progress indicator for import
+- [ ] Success/error feedback
+
+### Technical Notes
+
+- Use native file input with styling
+- Show sample data during mapping
+- Implement cancelable import
+- Clear error messages
+
+### Testing Requirements
+
+- [ ] File upload tests
+- [ ] Mapping interface tests
+- [ ] Import flow tests
+- [ ] Error scenario tests
+
+### Definition of Done
+
+- [ ] Import flow intuitive
+- [ ] Mapping clear
+- [ ] Feedback helpful
+- [ ] Errors handled gracefully
+
+---
+
+## Task I003: Implement Export Functionality
+
+**Epic**: Import/Export & Data Portability
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: S003
+
+### Description
+
+Create export feature for CSV and JSON formats with all reading data.
+
+### Acceptance Criteria
+
+- [ ] Export to CSV format
+- [ ] Export to JSON format
+- [ ] Include all book data and history
+- [ ] Filename with timestamp
+- [ ] Download triggers automatically
+
+### Technical Notes
+
+- Generate CSV with proper escaping
+- Include all fields in export
+- Pretty-print JSON for readability
+- Use Blob API for downloads
+
+### Testing Requirements
+
+- [ ] Export format tests
+- [ ] Data completeness tests
+- [ ] Large dataset tests
+- [ ] Download trigger tests
+
+### Definition of Done
+
+- [ ] Exports complete and accurate
+- [ ] Formats properly structured
+- [ ] Download reliable
+- [ ] Re-import successful
+
+---
+
+## Task PF001: Optimize for Mobile Performance
+
+**Epic**: Polish & Performance
+**Priority**: High
+**Estimated Effort**: 3 hours
+**Dependencies**: All core features
+
+### Description
+
+Optimize app performance specifically for mobile devices and slow networks.
+
+### Acceptance Criteria
+
+- [ ] Bundle size under 500KB
+- [ ] First paint under 2 seconds on 3G
+- [ ] 60fps scrolling performance
+- [ ] Touch interactions responsive
+- [ ] Images/assets optimized
+
+### Technical Notes
+
+- Implement code splitting
+- Use React.lazy for routes
+- Optimize re-renders
+- Compress all assets
+- Use performance budget
+
+### Testing Requirements
+
+- [ ] Lighthouse performance tests
+- [ ] Real device testing
+- [ ] Network throttling tests
+- [ ] Bundle size analysis
+
+### Definition of Done
+
 - [ ] Performance targets met
-- [ ] Production deployment complete
-- [ ] All acceptance criteria validated
-- [ ] Ready for daily use
+- [ ] Mobile experience smooth
+- [ ] Bundle optimized
+- [ ] Loading states appropriate
 
-## 8. Component Development Specifics
+---
 
-### New Components to Create
+## Task PF002: Add PWA Capabilities
 
-#### BookGrid.tsx
-```typescript
-interface BookGridProps {
-  books: Book[];
-  filter: FilterOptions;
-  onBookClick: (book: Book) => void;
-  onBookUpdate: (bookId: number, updates: Partial<Book>) => void;
-  layout: 'grid' | 'list';
-  showQuickActions: boolean;
-}
+**Epic**: Polish & Performance
+**Priority**: Medium
+**Estimated Effort**: 2 hours
+**Dependencies**: PF001
+
+### Description
+
+Configure Progressive Web App features for installability and offline use.
+
+### Acceptance Criteria
+
+- [ ] Web manifest configured
+- [ ] Service worker for offline
+- [ ] App installable on mobile
+- [ ] Offline functionality works
+- [ ] Update prompts implemented
+
+### Technical Notes
+
+- Use Vite PWA plugin
+- Configure workbox for caching
+- Design app icons
+- Test install flow
+
+### Testing Requirements
+
+- [ ] Install flow tests
+- [ ] Offline functionality tests
+- [ ] Update mechanism tests
+- [ ] Icon display tests
+
+### Definition of Done
+
+- [ ] App installable
+- [ ] Offline mode working
+- [ ] Updates handled gracefully
+- [ ] Icons display correctly
+
+---
+
+## Task PF003: Implement Comprehensive Error Handling
+
+**Epic**: Polish & Performance
+**Priority**: High
+**Estimated Effort**: 2 hours
+**Dependencies**: All features
+
+### Description
+
+Add global error handling with user-friendly messages and recovery options.
+
+### Acceptance Criteria
+
+- [ ] Global error boundary implemented
+- [ ] User-friendly error messages
+- [ ] Recovery actions available
+- [ ] Error logging configured
+- [ ] Offline error handling
+
+### Technical Notes
+
+- Use React Error Boundaries
+- Implement retry mechanisms
+- Log errors to console (production)
+- Show actionable error messages
+
+### Testing Requirements
+
+- [ ] Error boundary tests
+- [ ] Recovery action tests
+- [ ] Offline scenario tests
+- [ ] Error message clarity tests
+
+### Definition of Done
+
+- [ ] All errors caught gracefully
+- [ ] Messages helpful to users
+- [ ] Recovery options work
+- [ ] No unhandled errors
+
+---
+
+## Task PF004: Final Testing & Documentation
+
+**Epic**: Polish & Performance
+**Priority**: High
+**Estimated Effort**: 4 hours
+**Dependencies**: All tasks
+
+### Description
+
+Comprehensive testing pass and documentation updates for production release.
+
+### Acceptance Criteria
+
+- [ ] All features tested end-to-end
+- [ ] README complete with setup instructions
+- [ ] User guide created
+- [ ] API documentation (if applicable)
+- [ ] Deployment guide written
+
+### Technical Notes
+
+- Test all user workflows
+- Document known limitations
+- Include troubleshooting guide
+- Add contributing guidelines
+
+### Testing Requirements
+
+- [ ] Full regression testing
+- [ ] Cross-browser testing
+- [ ] Accessibility audit
+- [ ] Performance validation
+
+### Definition of Done
+
+- [ ] All tests passing
+- [ ] Documentation complete
+- [ ] No critical bugs
+- [ ] Ready for production
+
+---
+
+## Dependency Graph
+
+```
+Foundation Tasks (F001-F005)
+    ↓
+Storage Implementation (S001-S004)
+    ↓
+    ├── Book Management (B001-B004)
+    ├── Progress Tracking (P001-P003)
+    └── Reading Streaks (R001-R002)
+         ↓
+    Import/Export (I001-I003)
+         ↓
+    Polish & Performance (PF001-PF004)
 ```
 
-#### FilterTabs.tsx
-```typescript
-interface FilterTabsProps {
-  currentFilter: StatusFilter;
-  onFilterChange: (filter: StatusFilter) => void;
-  bookCounts: Record<StatusFilter, number>;
-  className?: string;
-}
-```
+## Sprint Planning Suggestions
 
-#### ProgressSlider.tsx
-```typescript
-interface ProgressSliderProps {
-  value: number;
-  max: number;
-  onChange: (value: number) => void;
-  onChangeComplete?: (value: number) => void;
-  showQuickIncrements: boolean;
-  disabled?: boolean;
-}
-```
+### Sprint 1 (Week 1-2): Foundation
+- All F00X tasks (Foundation)
+- All S00X tasks (Storage)
+- **Goal**: Development environment ready with working storage
 
-#### FloatingActionButton.tsx
-```typescript
-interface FABProps {
-  primaryAction: () => void;
-  menuItems?: {
-    label: string;
-    icon: string;
-    action: () => void;
-  }[];
-  className?: string;
-}
-```
+### Sprint 2 (Week 3-4): Core Features
+- All B00X tasks (Book Management)
+- All P00X tasks (Progress Tracking)
+- **Goal**: Basic reading tracker functional
 
-### Component Enhancement Specifications
+### Sprint 3 (Week 5-6): Advanced Features
+- All R00X tasks (Reading Streaks)
+- All I00X tasks (Import/Export)
+- **Goal**: Feature-complete MVP
 
-#### Enhanced BookCard.tsx
-- Add inline progress slider
-- Implement quick action buttons (+10%, +25%, Mark Done)
-- Include hover-revealed contextual actions
-- Add status indicator dots
-- Ensure touch-optimized controls (≥44px tap targets)
-- Implement smooth animations for state changes
+### Sprint 4 (Week 7-8): Polish
+- All PF00X tasks (Polish & Performance)
+- Bug fixes and refinements
+- **Goal**: Production-ready application
 
-#### Enhanced AddBookModal.tsx
-- Add progressive disclosure (basic/advanced modes)
-- Include author auto-complete
-- Add ISBN scanning UI preparation
-- Implement genre selection
-- Add rating system integration
-- Include rich text notes field
+## Git Workflow Requirements
 
-#### Enhanced StreakCard.tsx
-- Add daily goal integration with progress ring
-- Include streak status indicators
-- Add motivational messaging
-- Implement celebration animations
-- Add historical streak visualization
+Each task should follow:
+- Branch: `feature/task-[id]-[description]` (e.g., `feature/task-f001-react-setup`)
+- Commit: `Task [ID]: [Description]` (e.g., `Task F001: Initialize React + TypeScript + Vite project`)
+- PR must include:
+  - Link to task description
+  - Screenshot/recording for UI changes
+  - Test results
+  - Performance impact (if applicable)
 
-## 9. Integration Requirements
+## Development Guidelines Reminders
 
-### UI Prototype Integration
-- **Design System**: Implement Option 2 (Contextual Dashboard) design patterns
-- **Interaction Patterns**: 18-second average task completion
-- **Mobile-First**: Touch-optimized controls with ≥44px tap targets
-- **Responsive Breakpoints**: 320px, 768px, 1024px, 1200px
-- **Animation System**: Smooth transitions and micro-interactions
-
-### Existing Component Integration
-- **BookCard**: Enhance with inline controls and hover states
-- **StreakCard**: Integrate with daily goals and progress tracking
-- **ProgressBar**: Integrate with new ProgressSlider component
-- **Button**: Utilize for quick actions and FAB implementation
-- **Card**: Base component for new grid layouts
-
-### State Management Integration
-- **React Hooks**: Continue using useState and useEffect for local state
-- **Context API**: Theme and user preferences
-- **Custom Hooks**: Data fetching and business logic
-- **Optimistic Updates**: Progress changes with error recovery
-
-## 10. Risk Assessment & Mitigation
-
-### High-Risk Tasks
-1. **C001: Enhanced BookCard** - Complex interaction patterns
-   - *Mitigation*: Incremental development, early user testing
-2. **E001: CSV Import/Export** - Data integrity critical
-   - *Mitigation*: Comprehensive validation, backup mechanisms
-3. **P001: Performance Optimization** - Bundle size and speed targets
-   - *Mitigation*: Continuous monitoring, progressive optimization
-
-### Medium-Risk Tasks
-1. **C002: BookGrid Layout** - Virtual scrolling complexity
-   - *Mitigation*: Proven libraries, performance testing
-2. **E003: Settings Panel** - State management complexity
-   - *Mitigation*: Clear data flow, isolated state management
-
-### Technical Risks
-- **File System Access API**: Limited browser support
-  - *Mitigation*: Progressive enhancement, fallback mechanisms
-- **Large Library Performance**: 500+ books handling
-  - *Mitigation*: Virtual scrolling, data pagination
-- **Mobile Performance**: Touch interactions and animations
-  - *Mitigation*: Regular testing on target devices
-
-### Timeline Risks
-- **Scope Creep**: Feature additions beyond MVP
-  - *Mitigation*: Strict adherence to acceptance criteria
-- **Integration Complexity**: Component interaction issues
-  - *Mitigation*: Incremental integration, continuous testing
-
-## 11. Success Metrics & Validation
-
-### Development Metrics
-- [ ] All 47 tasks completed within 8-week timeline
-- [ ] 90%+ test coverage maintained throughout
-- [ ] TypeScript strict mode compliance
-- [ ] Zero critical bugs in production
-
-### Performance Metrics
-- [ ] Page load time <2 seconds
-- [ ] UI interactions <100ms response time
-- [ ] Bundle size <500KB
-- [ ] Mobile Lighthouse score 90+
-
-### User Experience Metrics
-- [ ] 18-second average task completion (Option 2 target)
-- [ ] Sub-30 second book addition time
-- [ ] Mobile usability score >4.5/5
-- [ ] Accessibility WCAG 2.1 AA compliance
-
-### Technical Metrics
-- [ ] Cross-browser compatibility (Chrome, Safari, Firefox, Edge)
-- [ ] Mobile browser compatibility (iOS Safari, Chrome Mobile)
-- [ ] File System Access API working with fallbacks
-- [ ] Offline functionality operational
-
-## 12. Conclusion
-
-This comprehensive task breakdown provides a clear roadmap for implementing the Puka Reading Tracker according to the PRD requirements and UI Option 2 (Contextual Dashboard) recommendation. The 47 tasks are organized into 4 epics with clear dependencies, acceptance criteria, and time estimates.
-
-The implementation prioritizes:
-1. **Solid Foundation** (Weeks 1-2): Type system, storage, validation
-2. **Core Dashboard** (Weeks 3-5): Enhanced BookCard, responsive layout, interactions
-3. **Enhanced Features** (Weeks 6-7): Import/export, search, settings
-4. **Polish & Deployment** (Week 8): Performance, testing, production
-
-**Key Success Factors:**
-- Incremental development with continuous testing
-- Mobile-first approach with touch optimization
-- Performance monitoring throughout development
-- User feedback validation at each milestone
-- Comprehensive error handling and recovery
-
-This breakdown ensures the MVP delivers maximum value while maintaining code quality and user experience standards. The phased approach allows for continuous validation and ensures the 6-8 week timeline is achievable with high-quality results.
+- Keep it simple - avoid over-engineering
+- Mobile-first design approach
+- Test everything - maintain 90% coverage
+- Performance matters - especially on mobile
+- Focus on core functionality - no feature creep
+- User data safety is paramount
+- Document as you code

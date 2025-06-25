@@ -2,30 +2,63 @@ export interface Book {
   id: number;
   title: string;
   author: string;
-  progress: number;
-  status: 'want-to-read' | 'reading' | 'finished';
-  startDate?: string;
-  finishDate?: string;
+  status: 'want_to_read' | 'currently_reading' | 'finished';
+  progress: number; // 0-100
+  notes?: string;
+  dateAdded: Date;
+  dateStarted?: Date;
+  dateFinished?: Date;
+  isbn?: string;
+  coverUrl?: string;
+  tags?: string[];
+  rating?: number;
+  totalPages?: number;
+  currentPage?: number;
+  genre?: string;
+  publishedDate?: string;
+}
+
+export interface ReadingSession {
+  id: number;
+  bookId: number;
+  startTime: Date;
+  endTime: Date;
+  pagesRead: number;
   notes?: string;
 }
 
-export interface ReadingData {
-  version: string;
-  lastModified: string;
-  books: Book[];
-  streaks: StreakData;
-  settings: UserSettings;
-}
-
 export interface StreakData {
-  current: number;
-  longest: number;
-  lastUpdate: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastReadDate: Date | null;
+  dailyGoal: number;
+  todayProgress: number;
 }
 
-export interface UserSettings {
-  theme: 'light' | 'dark';
-  notifications: boolean;
+export type StatusFilter = 'all' | 'want_to_read' | 'currently_reading' | 'finished';
+
+export interface FilterOptions {
+  status?: StatusFilter;
+  search?: string;
+  genre?: string;
+  rating?: number;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
 }
 
-export type StatusFilter = 'all' | 'want-to-read' | 'reading' | 'finished';
+export interface ToastMessage {
+  id: number;
+  type: 'success' | 'error' | 'warning' | 'info';
+  message: string;
+  duration?: number;
+}
+
+export interface QuickAction {
+  id: string;
+  label: string;
+  icon: string;
+  action: (bookId: number) => void;
+  condition?: (book: Book) => boolean;
+}

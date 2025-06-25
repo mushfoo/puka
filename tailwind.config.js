@@ -7,21 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#8b5cf6',
-        secondary: {
-          green: '#22c55e',
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
+        primary: {
+          DEFAULT: '#5B4636',
+          dark: '#3D2F24',
         },
-        background: '#f8f9fa',
-        text: '#1a1a1a',
+        accent: '#FF6B6B',
+        success: '#4CAF50',
+        warning: '#FFA726',
+        surface: '#FFFFFF',
+        background: '#FAF9F7',
+        text: {
+          primary: '#212121',
+          secondary: '#666666',
+        },
+        border: '#E0E0E0',
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
       },
+      boxShadow: {
+        card: '0 2px 8px rgba(0,0,0,0.1)',
+        fab: '0 4px 12px rgba(0,0,0,0.15)',
+      },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-  ],
+  plugins: [],
 }
