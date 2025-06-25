@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Streak Flow Test - Puka Reading Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .test-info {
+            background: #fce4ec;
+            border-left: 4px solid #e91e63;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .test-info h3 {
+            color: #c2185b;
+            margin-bottom: 5px;
+        }
+
+        .success-criteria {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success-criteria h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .criteria-list {
+            list-style: none;
+        }
+
+        .criteria-list li {
+            margin-bottom: 5px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .criteria-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .streak-display::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+        }
+
+        .streak-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .streak-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .streak-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .calendar-section {
+            margin-bottom: 25px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-nav {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #e91e63;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .calendar-nav:hover {
+            background: #fce4ec;
+        }
+
+        .month-year {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            margin-bottom: 15px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #666;
+            padding: 8px 4px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background: #f0f0f0;
+        }
+
+        .calendar-day.other-month {
+            color: #ccc;
+        }
+
+        .calendar-day.today {
+            background: #e91e63;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-day.reading-day {
+            background: #4caf50;
+            color: white;
+            position: relative;
+        }
+
+        .calendar-day.reading-day::after {
+            content: '📚';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 10px;
+        }
+
+        .calendar-day.partial-day {
+            background: #ff9800;
+            color: white;
+        }
+
+        .calendar-day.missed-day {
+            background: #f44336;
+            color: white;
+            opacity: 0.7;
+        }
+
+        .streak-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e91e63;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .reading-actions {
+            margin-bottom: 25px;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .action-btn {
+            padding: 12px;
+            border: 2px solid #e91e63;
+            border-radius: 8px;
+            background: white;
+            color: #e91e63;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: #e91e63;
+            color: white;
+        }
+
+        .action-btn.active {
+            background: #e91e63;
+            color: white;
+        }
+
+        .reading-input {
+            display: none;
+            margin-top: 15px;
+            animation: fadeIn 0.3s;
+        }
+
+        .reading-input.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #e91e63;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #e91e63 0%, #ad1457 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.4);
+        }
+
+        .milestone-alerts {
+            margin-bottom: 20px;
+        }
+
+        .milestone-alert {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: none;
+            animation: slideIn 0.5s;
+        }
+
+        .milestone-alert.show {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .milestone-alert h4 {
+            color: #ef6c00;
+            margin-bottom: 5px;
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        .navigation {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-link {
+            color: #e91e63;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .test-completion {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .test-completion.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 0;
+                margin: -10px;
+            }
+            
+            .timer {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .streak-number {
+                font-size: 2.5rem;
+            }
+
+            .calendar-grid {
+                gap: 1px;
+            }
+
+            .calendar-day {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">00:00</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Track Streak Flow Test</h1>
+            <p>Streak calculation and display testing</p>
+        </div>
+
+        <div class="content">
+            <div class="test-info">
+                <h3>Flow Test Objective</h3>
+                <p>Test the reading streak tracking system including visual calendar, streak calculations, milestone alerts, and daily reading logging.</p>
+            </div>
+
+            <div class="success-criteria">
+                <h3>Success Criteria</h3>
+                <ul class="criteria-list">
+                    <li>Calendar displays streak accurately</li>
+                    <li>Logging reading takes under 30 seconds</li>
+                    <li>Streak calculations are correct</li>
+                    <li>Milestone alerts appear appropriately</li>
+                    <li>Visual feedback is motivating</li>
+                </ul>
+            </div>
+
+            <div class="milestone-alerts">
+                <div class="milestone-alert" id="milestone-alert">
+                    <h4>🎉 Milestone Achieved!</h4>
+                    <p id="milestone-text">Congratulations on your reading achievement!</p>
+                </div>
+            </div>
+
+            <div class="streak-display">
+                <div class="streak-number" id="current-streak">7</div>
+                <div class="streak-label">Day Reading Streak</div>
+                <div class="streak-subtitle" id="streak-subtitle">Keep it up! You're on fire 🔥</div>
+            </div>
+
+            <div class="streak-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-days">15</div>
+                    <div class="stat-label">Total Days Read</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="longest-streak">12</div>
+                    <div class="stat-label">Longest Streak</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="this-month">8</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="success-rate">73%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <button class="calendar-nav" onclick="changeMonth(-1)">‹</button>
+                    <div class="month-year" id="month-year">January 2024</div>
+                    <button class="calendar-nav" onclick="changeMonth(1)">›</button>
+                </div>
+
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+                    <!-- Calendar days will be populated here -->
+                </div>
+            </div>
+
+            <div class="reading-actions">
+                <h3>Log Today's Reading</h3>
+                <div class="action-buttons">
+                    <div class="action-btn" onclick="quickLog('yes')">✓ Read Today</div>
+                    <div class="action-btn" onclick="quickLog('no')">✗ Missed Today</div>
+                    <div class="action-btn" onclick="showDetailedLog()">📝 Add Details</div>
+                    <div class="action-btn" onclick="editPreviousDay()">📅 Edit Previous</div>
+                </div>
+
+                <div class="reading-input" id="detailed-input">
+                    <div class="form-group">
+                        <label for="reading-time">Reading Time (minutes)</label>
+                        <input type="number" id="reading-time" min="1" max="1440" placeholder="30">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pages-read">Pages Read</label>
+                        <input type="number" id="pages-read" min="0" placeholder="10">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reading-mood">How was your reading?</label>
+                        <select id="reading-mood">
+                            <option value="">Select mood...</option>
+                            <option value="excellent">😍 Excellent - Couldn't put it down!</option>
+                            <option value="good">😊 Good - Enjoyed it</option>
+                            <option value="okay">😐 Okay - It was fine</option>
+                            <option value="struggled">😔 Struggled - Hard to focus</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="saveDetailedLog()">Save Reading Log</button>
+                </div>
+
+                <div class="reading-input" id="edit-previous">
+                    <div class="form-group">
+                        <label for="edit-date">Select Date</label>
+                        <input type="date" id="edit-date">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-status">Reading Status</label>
+                        <select id="edit-status">
+                            <option value="read">Read that day</option>
+                            <option value="partial">Partial reading</option>
+                            <option value="missed">Missed that day</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="saveEditedDay()">Update Day</button>
+                </div>
+            </div>
+
+            <div class="test-completion" id="test-completion">
+                <h3>Streak Test Completed!</h3>
+                <p id="completion-message">Great job testing the streak tracking system!</p>
+                <button class="btn" onclick="resetTest()" style="margin-top: 15px;">Reset Test</button>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="../../index.html" class="nav-link">← Back to UI Prototypes</a>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let currentDate = new Date();
+        let displayMonth = new Date();
+        let streakData = {
+            currentStreak: 7,
+            longestStreak: 12,
+            totalDays: 15,
+            thisMonth: 8,
+            successRate: 73
+        };
+        let logCount = 0;
+        let readingDays = new Set();
+
+        // Initialize with some sample reading days
+        const today = new Date();
+        for (let i = 1; i <= 7; i++) {
+            const day = new Date(today);
+            day.setDate(today.getDate() - i);
+            readingDays.add(day.toDateString());
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function generateCalendar() {
+            const year = displayMonth.getFullYear();
+            const month = displayMonth.getMonth();
+            
+            // Update month/year display
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            document.getElementById('month-year').textContent = `${monthNames[month]} ${year}`;
+
+            // Clear existing calendar days
+            const calendarGrid = document.querySelector('.calendar-grid');
+            const dayHeaders = calendarGrid.querySelectorAll('.calendar-day-header');
+            calendarGrid.innerHTML = '';
+            dayHeaders.forEach(header => calendarGrid.appendChild(header));
+
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            // Add empty cells for days before month starts
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day other-month';
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                dayElement.textContent = day;
+                
+                const dayDate = new Date(year, month, day);
+                const dateString = dayDate.toDateString();
+                
+                // Check if this is today
+                if (dayDate.toDateString() === currentDate.toDateString()) {
+                    dayElement.classList.add('today');
+                }
+                
+                // Check if this is a reading day
+                if (readingDays.has(dateString)) {
+                    dayElement.classList.add('reading-day');
+                }
+                
+                // Add some sample missed days
+                if (day === 10 || day === 15) {
+                    dayElement.classList.add('missed-day');
+                }
+                
+                // Add some partial reading days
+                if (day === 12 || day === 18) {
+                    dayElement.classList.add('partial-day');
+                }
+
+                dayElement.addEventListener('click', () => selectDay(dayDate));
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        function changeMonth(direction) {
+            displayMonth.setMonth(displayMonth.getMonth() + direction);
+            generateCalendar();
+        }
+
+        function selectDay(date) {
+            // For demo purposes, just show that day was selected
+            console.log('Selected day:', date.toDateString());
+        }
+
+        function quickLog(status) {
+            logCount++;
+            const logTime = Date.now() - startTime;
+            
+            if (status === 'yes') {
+                // Add today to reading days
+                readingDays.add(currentDate.toDateString());
+                
+                // Update streak
+                streakData.currentStreak++;
+                streakData.totalDays++;
+                streakData.thisMonth++;
+                
+                // Check for milestones
+                checkMilestones();
+                
+                updateStreakDisplay();
+                generateCalendar();
+                
+                // Show success feedback
+                showMilestone(`Great! You've extended your streak to ${streakData.currentStreak} days!`);
+            } else {
+                // Break streak
+                streakData.currentStreak = 0;
+                updateStreakDisplay();
+                showMilestone("Don't worry! Tomorrow is a new chance to start your streak again.", "😔 Streak Reset");
+            }
+
+            // Check if test should complete
+            if (logCount >= 3) {
+                setTimeout(() => {
+                    const totalTime = Math.round(logTime / 1000);
+                    document.getElementById('completion-message').innerHTML = `
+                        You completed ${logCount} reading logs in ${totalTime} seconds!<br>
+                        Average time per log: ${Math.round(totalTime / logCount)} seconds<br>
+                        <span style="color: ${totalTime / logCount <= 30 ? '#4caf50' : '#ff9800'}">
+                            Target: ${totalTime / logCount <= 30 ? 'ACHIEVED' : 'NEEDS IMPROVEMENT'} (≤30s per log)
+                        </span>
+                    `;
+                    document.getElementById('test-completion').classList.add('show');
+                }, 1500);
+            }
+        }
+
+        function showDetailedLog() {
+            hideAllInputs();
+            document.getElementById('detailed-input').classList.add('show');
+        }
+
+        function editPreviousDay() {
+            hideAllInputs();
+            document.getElementById('edit-previous').classList.add('show');
+            
+            // Set default date to yesterday
+            const yesterday = new Date(currentDate);
+            yesterday.setDate(yesterday.getDate() - 1);
+            document.getElementById('edit-date').value = yesterday.toISOString().split('T')[0];
+        }
+
+        function hideAllInputs() {
+            document.querySelectorAll('.reading-input').forEach(input => {
+                input.classList.remove('show');
+            });
+        }
+
+        function saveDetailedLog() {
+            const time = document.getElementById('reading-time').value;
+            const pages = document.getElementById('pages-read').value;
+            const mood = document.getElementById('reading-mood').value;
+            
+            if (!time) {
+                alert('Please enter reading time');
+                return;
+            }
+
+            // Add to reading days
+            readingDays.add(currentDate.toDateString());
+            streakData.currentStreak++;
+            streakData.totalDays++;
+            streakData.thisMonth++;
+            
+            updateStreakDisplay();
+            generateCalendar();
+            hideAllInputs();
+            
+            showMilestone(`Excellent! ${time} minutes of reading logged. ${mood ? 'Mood: ' + mood : ''}`);
+            logCount++;
+        }
+
+        function saveEditedDay() {
+            const date = document.getElementById('edit-date').value;
+            const status = document.getElementById('edit-status').value;
+            
+            if (!date) {
+                alert('Please select a date');
+                return;
+            }
+
+            const editDate = new Date(date);
+            const dateString = editDate.toDateString();
+            
+            if (status === 'read') {
+                readingDays.add(dateString);
+            } else {
+                readingDays.delete(dateString);
+            }
+            
+            generateCalendar();
+            hideAllInputs();
+            
+            showMilestone(`Updated ${editDate.toLocaleDateString()} as ${status}`);
+            logCount++;
+        }
+
+        function updateStreakDisplay() {
+            document.getElementById('current-streak').textContent = streakData.currentStreak;
+            document.getElementById('total-days').textContent = streakData.totalDays;
+            document.getElementById('longest-streak').textContent = Math.max(streakData.longestStreak, streakData.currentStreak);
+            document.getElementById('this-month').textContent = streakData.thisMonth;
+            
+            // Update success rate
+            const rate = Math.round((streakData.totalDays / 30) * 100);
+            document.getElementById('success-rate').textContent = `${rate}%`;
+            
+            // Update subtitle based on streak
+            const subtitles = [
+                "Let's get started! 💪",
+                "Good start! Keep going 📚",
+                "You're building momentum! 🚀",
+                "Excellent habit! 🌟",
+                "You're on fire! 🔥",
+                "Incredible consistency! 👏",
+                "Reading master! 🎯"
+            ];
+            
+            const subtitleIndex = Math.min(Math.floor(streakData.currentStreak / 2), subtitles.length - 1);
+            document.getElementById('streak-subtitle').textContent = subtitles[subtitleIndex];
+        }
+
+        function checkMilestones() {
+            const milestones = [
+                { days: 3, message: "3-day streak! You're building a habit! 🌱" },
+                { days: 7, message: "One week streak! Fantastic! 🎉" },
+                { days: 14, message: "Two weeks! You're unstoppable! 💪" },
+                { days: 30, message: "One month streak! Reading champion! 🏆" }
+            ];
+            
+            const milestone = milestones.find(m => m.days === streakData.currentStreak);
+            if (milestone) {
+                showMilestone(milestone.message, "🎉 Milestone Achieved!");
+            }
+        }
+
+        function showMilestone(message, title = "🎉 Great Job!") {
+            document.getElementById('milestone-text').textContent = message;
+            document.querySelector('#milestone-alert h4').textContent = title;
+            document.getElementById('milestone-alert').classList.add('show');
+            
+            setTimeout(() => {
+                document.getElementById('milestone-alert').classList.remove('show');
+            }, 4000);
+        }
+
+        function resetTest() {
+            logCount = 0;
+            startTime = Date.now();
+            
+            // Reset streak data
+            streakData = {
+                currentStreak: 7,
+                longestStreak: 12,
+                totalDays: 15,
+                thisMonth: 8,
+                successRate: 73
+            };
+            
+            // Reset reading days
+            readingDays.clear();
+            const today = new Date();
+            for (let i = 1; i <= 7; i++) {
+                const day = new Date(today);
+                day.setDate(today.getDate() - i);
+                readingDays.add(day.toDateString());
+            }
+            
+            updateStreakDisplay();
+            generateCalendar();
+            hideAllInputs();
+            document.getElementById('test-completion').classList.remove('show');
+            
+            // Clear form inputs
+            document.getElementById('reading-time').value = '';
+            document.getElementById('pages-read').value = '';
+            document.getElementById('reading-mood').value = '';
+            document.getElementById('edit-status').value = 'read';
+        }
+
+        // Initialize calendar
+        generateCalendar();
+        updateStreakDisplay();
+    </script>
+</body>
+</html>

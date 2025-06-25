@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puka - Option 3: Progressive Disclosure Design</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #fafafa;
+            color: #1a1a1a;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Progressive Disclosure Principles */
+        .hidden {
+            display: none;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* Header - Minimal by default */
+        header {
+            background: #fff;
+            padding: 1rem 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .search-container {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .search-icon {
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .search-icon:hover {
+            background: #f0f0f0;
+        }
+        
+        .search-box {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem;
+            width: 300px;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        /* Stats Bar - Initially minimal */
+        .stats-bar {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .stats-bar:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        
+        .stats-summary {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .stats-details {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        /* Book Grid - Clean and minimal */
+        .books-section {
+            margin-top: 2rem;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-btn {
+            padding: 0.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .view-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .view-btn.active {
+            background: #ff6b6b;
+            color: #fff;
+        }
+        
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 2rem;
+        }
+        
+        .book-card {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .book-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .book-cover {
+            width: 100%;
+            aspect-ratio: 2/3;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .book-actions {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .book-card:hover .book-actions {
+            opacity: 1;
+        }
+        
+        .action-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #fff;
+            transform: scale(1.1);
+        }
+        
+        .book-info {
+            margin-top: 0.75rem;
+        }
+        
+        .book-title {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .book-author {
+            font-size: 0.75rem;
+            color: #666;
+        }
+        
+        .book-progress {
+            margin-top: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .book-card:hover .book-progress {
+            opacity: 1;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #ff6b6b;
+            transition: width 0.3s ease;
+        }
+        
+        /* Floating Action Button */
+        .fab-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+        
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255,107,107,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        }
+        
+        .fab-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .fab-menu.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .fab-option {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .fab-menu.active .fab-option {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .fab-menu.active .fab-option:nth-child(1) { transition-delay: 0.1s; }
+        .fab-menu.active .fab-option:nth-child(2) { transition-delay: 0.2s; }
+        .fab-menu.active .fab-option:nth-child(3) { transition-delay: 0.3s; }
+        
+        .fab-label {
+            background: #333;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin-right: 1rem;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        
+        .fab-mini {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .fab-mini:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Modals */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        /* Forms - Progressive */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #ff6b6b;
+        }
+        
+        .form-helper {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        
+        .advanced-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: #ff6b6b;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+        }
+        
+        .advanced-toggle:hover {
+            text-decoration: underline;
+        }
+        
+        .advanced-fields {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        /* Progress Update - Adaptive */
+        .progress-update {
+            padding: 1.5rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        
+        .progress-slider {
+            margin: 1.5rem 0;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .slider-fill {
+            height: 100%;
+            background: #ff6b6b;
+            border-radius: 4px;
+            transition: width 0.2s;
+        }
+        
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #ff6b6b;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            cursor: grab;
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .progress-options {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .option-chip {
+            padding: 0.5rem 1rem;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .option-chip:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        /* Import Data - Progressive Complexity */
+        .import-options {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .import-method {
+            padding: 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .import-method:hover {
+            border-color: #ff6b6b;
+            background: #fff5f5;
+        }
+        
+        .import-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .import-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+        
+        .import-desc {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        .import-advanced {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        
+        /* Streak Tracking - Grows with usage */
+        .streak-display {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .streak-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #ff6b6b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .streak-label {
+            font-size: 1.25rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        
+        .streak-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            background: #e0e0e0;
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .calendar-day.active {
+            background: #ff6b6b;
+        }
+        
+        .calendar-day:hover {
+            transform: scale(1.1);
+        }
+        
+        .streak-insights {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .books-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+            
+            .stats-summary {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .fab-container {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header - Minimal by default -->
+    <header>
+        <div class="header-content">
+            <div class="logo">📚 Puka</div>
+            <div class="header-actions">
+                <div class="search-container">
+                    <div class="search-icon" onclick="toggleSearch()">🔍</div>
+                    <div class="search-box" id="searchBox">
+                        <input type="text" class="search-input" placeholder="Search books, authors...">
+                    </div>
+                </div>
+                <button class="view-btn" onclick="showProfile()">👤</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Stats Bar - Expandable -->
+        <div class="stats-bar" onclick="toggleStats()">
+            <div class="stats-summary">
+                <div class="stat-item">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Books Read</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Currently Reading</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">🔥 7</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+            </div>
+            <div class="stats-details hidden" id="statsDetails">
+                <div class="stat-item">
+                    <div class="stat-value">3,240</div>
+                    <div class="stat-label">Pages Read</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">18</div>
+                    <div class="stat-label">Hours This Week</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">4.2</div>
+                    <div class="stat-label">Avg Rating</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">85%</div>
+                    <div class="stat-label">Completion Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Section -->
+        <div class="books-section">
+            <div class="section-header">
+                <h2 class="section-title">Currently Reading</h2>
+                <div class="view-toggle">
+                    <button class="view-btn active">📚</button>
+                    <button class="view-btn">📋</button>
+                </div>
+            </div>
+            
+            <div class="books-grid">
+                <!-- Book Card with Progressive Actions -->
+                <div class="book-card">
+                    <div class="book-cover">
+                        <div class="book-actions">
+                            <button class="action-btn" onclick="updateProgress('book1')">📖</button>
+                            <button class="action-btn" onclick="showBookDetails('book1')">ℹ️</button>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <div class="book-title">The Design of Everyday Things</div>
+                        <div class="book-author">Don Norman</div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 65%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="book-card">
+                    <div class="book-cover" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="book-actions">
+                            <button class="action-btn" onclick="updateProgress('book2')">📖</button>
+                            <button class="action-btn" onclick="showBookDetails('book2')">ℹ️</button>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <div class="book-title">Atomic Habits</div>
+                        <div class="book-author">James Clear</div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="book-card">
+                    <div class="book-cover" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="book-actions">
+                            <button class="action-btn" onclick="updateProgress('book3')">📖</button>
+                            <button class="action-btn" onclick="showBookDetails('book3')">ℹ️</button>
+                        </div>
+                    </div>
+                    <div class="book-info">
+                        <div class="book-title">Deep Work</div>
+                        <div class="book-author">Cal Newport</div>
+                        <div class="book-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Floating Action Button with Progressive Menu -->
+    <div class="fab-container">
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-option">
+                <span class="fab-label">Add Book</span>
+                <button class="fab-mini" onclick="showAddBook()">📚</button>
+            </div>
+            <div class="fab-option">
+                <span class="fab-label">Import Data</span>
+                <button class="fab-mini" onclick="showImport()">📥</button>
+            </div>
+            <div class="fab-option">
+                <span class="fab-label">View Streak</span>
+                <button class="fab-mini" onclick="showStreak()">🔥</button>
+            </div>
+        </div>
+        <button class="fab" onclick="toggleFab()">+</button>
+    </div>
+
+    <!-- Modal: Add Book (Progressive Form) -->
+    <div class="modal" id="addBookModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Book</h3>
+                <button class="close-btn" onclick="closeModal('addBookModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label">Book Title</label>
+                        <input type="text" class="form-input" placeholder="Enter book title">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Author</label>
+                        <input type="text" class="form-input" placeholder="Enter author name">
+                    </div>
+                    
+                    <div class="advanced-toggle" onclick="toggleAdvanced('bookForm')">
+                        <span>➕ Add more details</span>
+                    </div>
+                    
+                    <div class="advanced-fields hidden" id="bookFormAdvanced">
+                        <div class="form-group">
+                            <label class="form-label">ISBN</label>
+                            <input type="text" class="form-input" placeholder="ISBN-13">
+                            <div class="form-helper">We'll use this to fetch cover and metadata</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Total Pages</label>
+                            <input type="number" class="form-input" placeholder="Number of pages">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <input type="text" class="form-input" placeholder="Fiction, Non-fiction, etc.">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="fab-mini" style="width: 100%; height: 48px; border-radius: 8px; background: #ff6b6b; color: #fff; margin-top: 1.5rem;">
+                        Add Book
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Update Progress (Adaptive) -->
+    <div class="modal" id="progressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Update Progress</h3>
+                <button class="close-btn" onclick="closeModal('progressModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="progress-update">
+                    <h4>The Design of Everyday Things</h4>
+                    <p style="color: #666; font-size: 0.875rem;">Page 195 of 300</p>
+                    
+                    <div class="progress-slider">
+                        <div class="slider" onclick="updateSlider(event)">
+                            <div class="slider-fill" style="width: 65%"></div>
+                            <div class="slider-handle" style="left: 65%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-info">
+                        <span>65% Complete</span>
+                        <span>Est. 2 days to finish</span>
+                    </div>
+                    
+                    <div class="progress-options hidden" id="progressOptions">
+                        <div class="option-chip" onclick="markFinished()">✅ Mark as Finished</div>
+                        <div class="option-chip" onclick="addNote()">📝 Add Note</div>
+                        <div class="option-chip" onclick="pauseReading()">⏸️ Pause Reading</div>
+                    </div>
+                    
+                    <div class="advanced-toggle" onclick="toggleProgressOptions()">
+                        <span>⚙️ More options</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Import Data (Progressive Complexity) -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Import Your Reading Data</h3>
+                <button class="close-btn" onclick="closeModal('importModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="import-options">
+                    <div class="import-method" onclick="selectImportMethod('goodreads')">
+                        <div class="import-icon">📚</div>
+                        <div class="import-title">Goodreads</div>
+                        <div class="import-desc">Import your library and shelves</div>
+                    </div>
+                    
+                    <div class="import-method" onclick="selectImportMethod('csv')">
+                        <div class="import-icon">📄</div>
+                        <div class="import-title">CSV File</div>
+                        <div class="import-desc">Upload a spreadsheet</div>
+                    </div>
+                </div>
+                
+                <div class="import-advanced hidden" id="importAdvanced">
+                    <h4>Advanced Import Settings</h4>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" checked> Import reading history
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" checked> Import ratings and reviews
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox"> Merge duplicates automatically
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Streak Tracking (Grows with usage) -->
+    <div class="modal" id="streakModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Your Reading Streak</h3>
+                <button class="close-btn" onclick="closeModal('streakModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="streak-display">
+                    <div class="streak-number">7</div>
+                    <div class="streak-label">Day Reading Streak 🔥</div>
+                    
+                    <div class="streak-calendar" id="streakCalendar">
+                        <!-- Calendar will be populated dynamically -->
+                    </div>
+                    
+                    <div class="streak-insights hidden" id="streakInsights">
+                        <h4>Your Reading Insights</h4>
+                        <ul style="text-align: left; list-style: none; padding: 0;">
+                            <li>📈 Best streak: 21 days</li>
+                            <li>⏰ Favorite reading time: 9-10 PM</li>
+                            <li>📖 Average session: 45 minutes</li>
+                            <li>🎯 Weekly goal: 5/7 days achieved</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="advanced-toggle" onclick="toggleStreakInsights()">
+                        <span>📊 View insights</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Progressive Disclosure Functions
+        function toggleSearch() {
+            const searchBox = document.getElementById('searchBox');
+            searchBox.classList.toggle('active');
+            if (searchBox.classList.contains('active')) {
+                searchBox.querySelector('input').focus();
+            }
+        }
+        
+        function toggleStats() {
+            const details = document.getElementById('statsDetails');
+            details.classList.toggle('hidden');
+            if (!details.classList.contains('hidden')) {
+                details.classList.add('fade-in');
+            }
+        }
+        
+        function toggleFab() {
+            const fabMenu = document.getElementById('fabMenu');
+            fabMenu.classList.toggle('active');
+        }
+        
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        function showAddBook() {
+            toggleFab();
+            showModal('addBookModal');
+        }
+        
+        function showImport() {
+            toggleFab();
+            showModal('importModal');
+        }
+        
+        function showStreak() {
+            toggleFab();
+            populateStreakCalendar();
+            showModal('streakModal');
+        }
+        
+        function updateProgress(bookId) {
+            showModal('progressModal');
+        }
+        
+        function toggleAdvanced(formId) {
+            const advanced = document.getElementById(formId + 'Advanced');
+            advanced.classList.toggle('hidden');
+            if (!advanced.classList.contains('hidden')) {
+                advanced.classList.add('fade-in');
+            }
+        }
+        
+        function toggleProgressOptions() {
+            const options = document.getElementById('progressOptions');
+            options.classList.toggle('hidden');
+            if (!options.classList.contains('hidden')) {
+                options.classList.add('fade-in');
+            }
+        }
+        
+        function updateSlider(event) {
+            const slider = event.currentTarget;
+            const rect = slider.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+            
+            slider.querySelector('.slider-fill').style.width = percent + '%';
+            slider.querySelector('.slider-handle').style.left = percent + '%';
+            
+            // Update progress info
+            const progressInfo = slider.parentElement.nextElementSibling;
+            progressInfo.querySelector('span').textContent = Math.round(percent) + '% Complete';
+        }
+        
+        function selectImportMethod(method) {
+            const advanced = document.getElementById('importAdvanced');
+            advanced.classList.remove('hidden');
+            advanced.classList.add('fade-in');
+        }
+        
+        function populateStreakCalendar() {
+            const calendar = document.getElementById('streakCalendar');
+            calendar.innerHTML = '';
+            
+            // Generate last 5 weeks
+            for (let i = 0; i < 35; i++) {
+                const day = document.createElement('div');
+                day.className = 'calendar-day';
+                
+                // Mark recent days as active
+                if (i >= 28) {
+                    day.classList.add('active');
+                }
+                
+                calendar.appendChild(day);
+            }
+        }
+        
+        function toggleStreakInsights() {
+            const insights = document.getElementById('streakInsights');
+            insights.classList.toggle('hidden');
+            if (!insights.classList.contains('hidden')) {
+                insights.classList.add('fade-in');
+            }
+        }
+        
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+        
+        // Close search on outside click
+        document.addEventListener('click', (e) => {
+            const searchContainer = document.querySelector('.search-container');
+            if (!searchContainer.contains(e.target)) {
+                document.getElementById('searchBox').classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

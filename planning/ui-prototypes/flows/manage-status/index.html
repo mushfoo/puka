@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Status Flow Test - Puka Reading Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .test-info {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .test-info h3 {
+            color: #ef6c00;
+            margin-bottom: 5px;
+        }
+
+        .success-criteria {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success-criteria h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .criteria-list {
+            list-style: none;
+        }
+
+        .criteria-list li {
+            margin-bottom: 5px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .criteria-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-tabs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .filter-tab {
+            padding: 8px 4px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .filter-tab.active {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-badge.want-to-read {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-badge.currently-reading {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .status-badge.completed {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .status-badge.dnf {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .book-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .book-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .book-item:hover {
+            border-color: #ff9800;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.2);
+        }
+
+        .book-item.selected {
+            border-color: #ff9800;
+            background: #fff8e1;
+        }
+
+        .book-cover {
+            width: 40px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .book-details {
+            flex: 1;
+        }
+
+        .book-details h4 {
+            margin-bottom: 3px;
+            font-size: 0.95rem;
+        }
+
+        .book-details p {
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+
+        .current-status {
+            background: #f0f0f0;
+            padding: 5px 8px;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .status-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .status-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            max-width: 350px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .status-options {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-option {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+        }
+
+        .status-option:hover {
+            border-color: #ff9800;
+            background: #fff8e1;
+        }
+
+        .status-option.selected {
+            border-color: #ff9800;
+            background: #fff3e0;
+        }
+
+        .status-option.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ff9800;
+            font-weight: bold;
+        }
+
+        .status-option h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .status-option p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        }
+
+        .btn.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        .navigation {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-link {
+            color: #ff9800;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .completion-stats {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .completion-stats.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 0;
+                margin: -10px;
+            }
+            
+            .timer {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .filter-tabs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-tab {
+                font-size: 0.9rem;
+                padding: 10px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">00:00</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Manage Status Flow Test</h1>
+            <p>Status change validation and filtering</p>
+        </div>
+
+        <div class="content">
+            <div class="test-info">
+                <h3>Flow Test Objective</h3>
+                <p>Test the efficiency of changing book statuses, filtering by status, and validating status transitions with clear visual feedback.</p>
+            </div>
+
+            <div class="success-criteria">
+                <h3>Success Criteria</h3>
+                <ul class="criteria-list">
+                    <li>Change status in under 10 seconds</li>
+                    <li>Filter responses instantly</li>
+                    <li>Status validation works correctly</li>
+                    <li>Visual feedback is clear</li>
+                    <li>Mobile interaction is smooth</li>
+                </ul>
+            </div>
+
+            <div class="filter-section">
+                <h3>Filter by Status</h3>
+                <div class="filter-tabs">
+                    <div class="filter-tab active" onclick="filterBooks('all')">All</div>
+                    <div class="filter-tab" onclick="filterBooks('want-to-read')">Want</div>
+                    <div class="filter-tab" onclick="filterBooks('currently-reading')">Reading</div>
+                    <div class="filter-tab" onclick="filterBooks('completed')">Done</div>
+                </div>
+                
+                <div class="status-badges">
+                    <div class="status-badge want-to-read" id="count-want">0 Want to Read</div>
+                    <div class="status-badge currently-reading" id="count-reading">0 Reading</div>
+                    <div class="status-badge completed" id="count-completed">0 Completed</div>
+                    <div class="status-badge dnf" id="count-dnf">0 DNF</div>
+                </div>
+            </div>
+
+            <div class="book-list" id="book-list">
+                <!-- Books will be populated here -->
+            </div>
+
+            <div class="completion-stats" id="completion-stats">
+                <h3>Status Changes Completed</h3>
+                <div id="stats-content"></div>
+                <button class="btn primary" onclick="resetTest()" style="margin-top: 15px;">Reset Test</button>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="../../index.html" class="nav-link">← Back to UI Prototypes</a>
+        </div>
+    </div>
+
+    <!-- Status Change Modal -->
+    <div class="status-modal" id="status-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Change Reading Status</h3>
+                <p id="modal-book-title">Book Title</p>
+            </div>
+
+            <div class="status-options">
+                <div class="status-option" onclick="selectStatus('want-to-read')">
+                    <h4>Want to Read</h4>
+                    <p>Add to your reading list</p>
+                </div>
+                
+                <div class="status-option" onclick="selectStatus('currently-reading')">
+                    <h4>Currently Reading</h4>
+                    <p>Mark as actively reading</p>
+                </div>
+                
+                <div class="status-option" onclick="selectStatus('completed')">
+                    <h4>Completed</h4>
+                    <p>Finished reading</p>
+                </div>
+                
+                <div class="status-option" onclick="selectStatus('did-not-finish')">
+                    <h4>Did Not Finish</h4>
+                    <p>Stopped reading</p>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn primary" onclick="saveStatus()" id="save-status-btn" disabled>Save Status</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let currentFilter = 'all';
+        let selectedBookId = null;
+        let newStatus = null;
+        let statusChangeCount = 0;
+        let changeStartTime = 0;
+
+        const books = [
+            { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald", status: "want-to-read", pages: 180 },
+            { id: 2, title: "To Kill a Mockingbird", author: "Harper Lee", status: "currently-reading", pages: 376 },
+            { id: 3, title: "1984", author: "George Orwell", status: "currently-reading", pages: 328 },
+            { id: 4, title: "Pride and Prejudice", author: "Jane Austen", status: "completed", pages: 432 },
+            { id: 5, title: "The Catcher in the Rye", author: "J.D. Salinger", status: "want-to-read", pages: 277 },
+            { id: 6, title: "Lord of the Flies", author: "William Golding", status: "did-not-finish", pages: 224 },
+            { id: 7, title: "Animal Farm", author: "George Orwell", status: "completed", pages: 112 },
+            { id: 8, title: "Brave New World", author: "Aldous Huxley", status: "want-to-read", pages: 268 }
+        ];
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function renderBooks() {
+            const bookList = document.getElementById('book-list');
+            const filteredBooks = currentFilter === 'all' ? books : books.filter(book => book.status === currentFilter);
+            
+            bookList.innerHTML = filteredBooks.map(book => `
+                <div class="book-item" onclick="openStatusModal(${book.id})">
+                    <div class="book-cover">BOOK</div>
+                    <div class="book-details">
+                        <h4>${book.title}</h4>
+                        <p>by ${book.author}</p>
+                        <p>${book.pages} pages</p>
+                        <div class="current-status">${formatStatus(book.status)}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            updateStatusCounts();
+        }
+
+        function updateStatusCounts() {
+            const counts = {
+                'want-to-read': 0,
+                'currently-reading': 0,
+                'completed': 0,
+                'did-not-finish': 0
+            };
+
+            books.forEach(book => {
+                counts[book.status]++;
+            });
+
+            document.getElementById('count-want').textContent = `${counts['want-to-read']} Want to Read`;
+            document.getElementById('count-reading').textContent = `${counts['currently-reading']} Reading`;
+            document.getElementById('count-completed').textContent = `${counts['completed']} Completed`;
+            document.getElementById('count-dnf').textContent = `${counts['did-not-finish']} DNF`;
+        }
+
+        function formatStatus(status) {
+            const statusMap = {
+                'want-to-read': 'Want to Read',
+                'currently-reading': 'Currently Reading',
+                'completed': 'Completed',
+                'did-not-finish': 'Did Not Finish'
+            };
+            return statusMap[status] || status;
+        }
+
+        function filterBooks(filter) {
+            currentFilter = filter;
+            
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderBooks();
+        }
+
+        function openStatusModal(bookId) {
+            selectedBookId = bookId;
+            changeStartTime = Date.now();
+            
+            const book = books.find(b => b.id === bookId);
+            document.getElementById('modal-book-title').textContent = book.title;
+            
+            // Reset status options
+            document.querySelectorAll('.status-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Highlight current status
+            const currentStatusElement = document.querySelector(`[onclick="selectStatus('${book.status}')"]`);
+            if (currentStatusElement) {
+                currentStatusElement.classList.add('selected');
+            }
+            
+            document.getElementById('status-modal').classList.add('active');
+            document.getElementById('save-status-btn').disabled = true;
+            newStatus = null;
+        }
+
+        function selectStatus(status) {
+            newStatus = status;
+            
+            // Update selected option
+            document.querySelectorAll('.status-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.closest('.status-option').classList.add('selected');
+            
+            // Enable save button if status is different
+            const currentBook = books.find(b => b.id === selectedBookId);
+            document.getElementById('save-status-btn').disabled = status === currentBook.status;
+        }
+
+        function saveStatus() {
+            if (!newStatus || !selectedBookId) return;
+            
+            const changeTime = Date.now() - changeStartTime;
+            statusChangeCount++;
+            
+            // Update book status
+            const book = books.find(b => b.id === selectedBookId);
+            const oldStatus = book.status;
+            book.status = newStatus;
+            
+            // Close modal and update display
+            closeModal();
+            renderBooks();
+            
+            // Show completion stats if this was a meaningful test
+            if (statusChangeCount >= 3) {
+                const totalTime = Date.now() - startTime;
+                const avgTime = Math.round(totalTime / statusChangeCount / 1000);
+                
+                document.getElementById('stats-content').innerHTML = `
+                    <p><strong>Changes Made:</strong> ${statusChangeCount}</p>
+                    <p><strong>Last Change:</strong> ${Math.round(changeTime / 1000)} seconds</p>
+                    <p><strong>Average Time:</strong> ${avgTime} seconds</p>
+                    <p><strong>Target Achievement:</strong> <span style="color: ${avgTime <= 10 ? '#4caf50' : '#ff9800'}">${avgTime <= 10 ? 'EXCELLENT' : 'NEEDS IMPROVEMENT'}</span></p>
+                `;
+                
+                document.getElementById('completion-stats').classList.add('show');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('status-modal').classList.remove('active');
+            selectedBookId = null;
+            newStatus = null;
+        }
+
+        function resetTest() {
+            statusChangeCount = 0;
+            startTime = Date.now();
+            document.getElementById('completion-stats').classList.remove('show');
+            
+            // Reset books to original statuses
+            books[0].status = 'want-to-read';
+            books[1].status = 'currently-reading';
+            books[2].status = 'currently-reading';
+            books[3].status = 'completed';
+            books[4].status = 'want-to-read';
+            books[5].status = 'did-not-finish';
+            books[6].status = 'completed';
+            books[7].status = 'want-to-read';
+            
+            renderBooks();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('status-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Initialize
+        renderBooks();
+    </script>
+</body>
+</html>

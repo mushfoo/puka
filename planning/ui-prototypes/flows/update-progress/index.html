@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Progress Flow Test - Puka Reading Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .test-info {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .test-info h3 {
+            color: #2e7d32;
+            margin-bottom: 5px;
+        }
+
+        .book-selector {
+            margin-bottom: 20px;
+        }
+
+        .book-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .book-card:hover {
+            border-color: #4caf50;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+        }
+
+        .book-card.selected {
+            border-color: #4caf50;
+            background: #f1f8e9;
+        }
+
+        .book-cover {
+            width: 50px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .book-info h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .book-info p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+
+        .progress-section {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-display {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50 0%, #81c784 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .input-methods {
+            margin-bottom: 25px;
+        }
+
+        .method-tabs {
+            display: flex;
+            margin-bottom: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .method-tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .method-tab.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .input-panel {
+            display: none;
+        }
+
+        .input-panel.active {
+            display: block;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .slider {
+            width: 100%;
+            height: 40px;
+            border-radius: 20px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+            position: relative;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.6);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4caf50;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4caf50;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quick-btn {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .quick-btn:hover {
+            border-color: #4caf50;
+            background: #f1f8e9;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 18px;
+            z-index: 1000;
+        }
+
+        .success-criteria {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .success-criteria h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .criteria-list {
+            list-style: none;
+        }
+
+        .criteria-list li {
+            margin-bottom: 5px;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .criteria-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2196f3;
+            font-weight: bold;
+        }
+
+        .navigation {
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-link {
+            color: #4caf50;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        .completion-message {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+            text-align: center;
+            display: none;
+        }
+
+        .completion-message.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 0;
+                margin: -10px;
+            }
+            
+            .timer {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .slider {
+                height: 50px;
+            }
+
+            .slider::-webkit-slider-thumb {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">00:00</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Update Progress Flow Test</h1>
+            <p>Testing progress updates with mobile sliders</p>
+        </div>
+
+        <div class="content">
+            <div class="test-info">
+                <h3>Flow Test Objective</h3>
+                <p>Measure efficiency of updating reading progress using various input methods, optimized for mobile interaction.</p>
+            </div>
+
+            <div class="success-criteria">
+                <h3>Success Criteria</h3>
+                <ul class="criteria-list">
+                    <li>Update progress in under 15 seconds</li>
+                    <li>Mobile slider works smoothly</li>
+                    <li>Progress validates correctly</li>
+                    <li>Visual feedback is clear</li>
+                    <li>Quick actions are accessible</li>
+                </ul>
+            </div>
+
+            <div class="book-selector">
+                <h3>Select Book to Update</h3>
+                <div class="book-card" onclick="selectBook(1)">
+                    <div class="book-cover">BOOK</div>
+                    <div class="book-info">
+                        <h4>The Great Gatsby</h4>
+                        <p>by F. Scott Fitzgerald</p>
+                        <p>Page 45 of 180 (25%)</p>
+                        <p>Currently Reading</p>
+                    </div>
+                </div>
+                
+                <div class="book-card" onclick="selectBook(2)">
+                    <div class="book-cover">BOOK</div>
+                    <div class="book-info">
+                        <h4>To Kill a Mockingbird</h4>
+                        <p>by Harper Lee</p>
+                        <p>Page 200 of 376 (53%)</p>
+                        <p>Currently Reading</p>
+                    </div>
+                </div>
+
+                <div class="book-card" onclick="selectBook(3)">
+                    <div class="book-cover">BOOK</div>
+                    <div class="book-info">
+                        <h4>1984</h4>
+                        <p>by George Orwell</p>
+                        <p>Page 15 of 328 (5%)</p>
+                        <p>Currently Reading</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progress-section">
+                <div class="progress-display">
+                    <h3 id="selected-book-title">Book Title</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="current-page-display">Page 0</span>
+                        <span id="progress-percentage">0%</span>
+                        <span id="total-pages">of 0</span>
+                    </div>
+                </div>
+
+                <div class="input-methods">
+                    <div class="method-tabs">
+                        <div class="method-tab active" onclick="switchMethod('slider')">Slider</div>
+                        <div class="method-tab" onclick="switchMethod('input')">Page #</div>
+                        <div class="method-tab" onclick="switchMethod('quick')">Quick</div>
+                    </div>
+
+                    <!-- Slider Method -->
+                    <div class="input-panel active" id="slider-panel">
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Current Page</span>
+                                <span id="slider-value">0</span>
+                            </div>
+                            <input type="range" class="slider" id="page-slider" min="0" max="100" value="0" oninput="updateSlider(this.value)">
+                        </div>
+                    </div>
+
+                    <!-- Input Method -->
+                    <div class="input-panel" id="input-panel">
+                        <div class="form-group">
+                            <label for="page-input">Enter Page Number</label>
+                            <input type="number" id="page-input" min="0" placeholder="Enter current page...">
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="input-panel" id="quick-panel">
+                        <div class="quick-actions">
+                            <div class="quick-btn" onclick="quickUpdate('+1')">+1 Page</div>
+                            <div class="quick-btn" onclick="quickUpdate('+5')">+5 Pages</div>
+                            <div class="quick-btn" onclick="quickUpdate('+10')">+10 Pages</div>
+                            <div class="quick-btn" onclick="quickUpdate('chapter')">Next Chapter</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="saveProgress()" id="save-btn" disabled>Save Progress</button>
+            </div>
+
+            <div class="completion-message" id="completion-message">
+                <h3>Progress Updated Successfully!</h3>
+                <p id="completion-stats"></p>
+                <button class="btn" onclick="resetTest()" style="margin-top: 15px;">Test Another Update</button>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="../../index.html" class="nav-link">← Back to UI Prototypes</a>
+        </div>
+    </div>
+
+    <script>
+        let startTime = Date.now();
+        let selectedBookData = null;
+        let currentMethod = 'slider';
+        let updateCount = 0;
+
+        const books = [
+            { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald", currentPage: 45, totalPages: 180 },
+            { id: 2, title: "To Kill a Mockingbird", author: "Harper Lee", currentPage: 200, totalPages: 376 },
+            { id: 3, title: "1984", author: "George Orwell", currentPage: 15, totalPages: 328 }
+        ];
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const minutes = Math.floor(elapsed / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        setInterval(updateTimer, 1000);
+
+        function selectBook(bookId) {
+            selectedBookData = books.find(book => book.id === bookId);
+            
+            // Highlight selected book
+            document.querySelectorAll('.book-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.book-card').classList.add('selected');
+            
+            // Show progress section
+            document.getElementById('progress-section').classList.add('active');
+            
+            // Update displays
+            updateBookDisplay();
+            startTime = Date.now(); // Reset timer for progress update
+        }
+
+        function updateBookDisplay() {
+            if (!selectedBookData) return;
+            
+            document.getElementById('selected-book-title').textContent = selectedBookData.title;
+            document.getElementById('current-page-display').textContent = `Page ${selectedBookData.currentPage}`;
+            document.getElementById('total-pages').textContent = `of ${selectedBookData.totalPages}`;
+            
+            const percentage = Math.round((selectedBookData.currentPage / selectedBookData.totalPages) * 100);
+            document.getElementById('progress-percentage').textContent = `${percentage}%`;
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            
+            // Update slider
+            const slider = document.getElementById('page-slider');
+            slider.max = selectedBookData.totalPages;
+            slider.value = selectedBookData.currentPage;
+            document.getElementById('slider-value').textContent = selectedBookData.currentPage;
+            
+            // Update input
+            document.getElementById('page-input').max = selectedBookData.totalPages;
+            document.getElementById('page-input').value = selectedBookData.currentPage;
+        }
+
+        function switchMethod(method) {
+            currentMethod = method;
+            
+            // Update tabs
+            document.querySelectorAll('.method-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update panels
+            document.querySelectorAll('.input-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(`${method}-panel`).classList.add('active');
+            
+            enableSaveButton();
+        }
+
+        function updateSlider(value) {
+            if (!selectedBookData) return;
+            
+            selectedBookData.currentPage = parseInt(value);
+            document.getElementById('slider-value').textContent = value;
+            updateProgressDisplay();
+            enableSaveButton();
+        }
+
+        function updateProgressDisplay() {
+            if (!selectedBookData) return;
+            
+            document.getElementById('current-page-display').textContent = `Page ${selectedBookData.currentPage}`;
+            
+            const percentage = Math.round((selectedBookData.currentPage / selectedBookData.totalPages) * 100);
+            document.getElementById('progress-percentage').textContent = `${percentage}%`;
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+        }
+
+        function quickUpdate(action) {
+            if (!selectedBookData) return;
+            
+            let newPage = selectedBookData.currentPage;
+            
+            switch(action) {
+                case '+1':
+                    newPage += 1;
+                    break;
+                case '+5':
+                    newPage += 5;
+                    break;
+                case '+10':
+                    newPage += 10;
+                    break;
+                case 'chapter':
+                    newPage += Math.ceil(selectedBookData.totalPages / 20); // Assume 20 chapters
+                    break;
+            }
+            
+            newPage = Math.min(newPage, selectedBookData.totalPages);
+            selectedBookData.currentPage = newPage;
+            
+            updateBookDisplay();
+            enableSaveButton();
+        }
+
+        function enableSaveButton() {
+            document.getElementById('save-btn').disabled = false;
+        }
+
+        function saveProgress() {
+            updateCount++;
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.round(elapsed / 1000);
+            
+            // Update input field if using input method
+            if (currentMethod === 'input') {
+                const inputValue = parseInt(document.getElementById('page-input').value);
+                if (inputValue >= 0 && inputValue <= selectedBookData.totalPages) {
+                    selectedBookData.currentPage = inputValue;
+                }
+            }
+            
+            const percentage = Math.round((selectedBookData.currentPage / selectedBookData.totalPages) * 100);
+            
+            document.getElementById('completion-stats').innerHTML = `
+                <strong>Update #${updateCount} completed in ${seconds} seconds</strong><br>
+                Book: ${selectedBookData.title}<br>
+                Progress: Page ${selectedBookData.currentPage} of ${selectedBookData.totalPages} (${percentage}%)<br>
+                Method: ${currentMethod.charAt(0).toUpperCase() + currentMethod.slice(1)}<br>
+                <span style="color: ${seconds <= 15 ? '#4caf50' : '#ff9800'}">
+                    Target: ${seconds <= 15 ? 'ACHIEVED' : 'NEEDS IMPROVEMENT'} (≤15s)
+                </span>
+            `;
+            
+            document.getElementById('completion-message').classList.add('show');
+            document.getElementById('save-btn').disabled = true;
+        }
+
+        function resetTest() {
+            document.getElementById('completion-message').classList.remove('show');
+            document.querySelectorAll('.book-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.getElementById('progress-section').classList.remove('active');
+            startTime = Date.now();
+        }
+
+        // Handle input changes
+        document.getElementById('page-input').addEventListener('input', function() {
+            if (!selectedBookData) return;
+            
+            const value = parseInt(this.value);
+            if (value >= 0 && value <= selectedBookData.totalPages) {
+                selectedBookData.currentPage = value;
+                updateProgressDisplay();
+                
+                // Update slider
+                document.getElementById('page-slider').value = value;
+                document.getElementById('slider-value').textContent = value;
+                
+                enableSaveButton();
+            }
+        });
+    </script>
+</body>
+</html>

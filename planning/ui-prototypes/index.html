@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puka Reading Tracker - UI Prototypes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .section-description {
+            margin-bottom: 30px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            padding: 20px 20px 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .card-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-description {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .card-features li {
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .card-features li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .card-button {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .flow-card {
+            border-left: 4px solid #4caf50;
+        }
+
+        .flow-card .card-header {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        }
+
+        .flow-card .card-button {
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        }
+
+        .flow-card .card-button:hover {
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .option-card {
+            border-left: 4px solid #ff9800;
+        }
+
+        .option-card .card-header {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%);
+        }
+
+        .option-card .card-button {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+
+        .option-card .card-button:hover {
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        }
+
+        .intro-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .intro-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .intro-section p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            margin: 0 15px;
+        }
+
+        .nav-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Puka Reading Tracker</h1>
+        <p>UI Prototypes & Flow Testing</p>
+    </div>
+
+    <div class="container">
+        <div class="intro-section">
+            <h2>Welcome to Puka UI Prototypes</h2>
+            <p>This testing environment contains interactive prototypes for the Puka reading tracker application. Each prototype demonstrates different approaches to core user flows and interface designs.</p>
+            <p>Use these prototypes to test user interactions, validate design decisions, and gather feedback on the reading experience before implementation.</p>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Flow-Specific Tests</h2>
+            <p class="section-description">
+                Test individual user flows in isolation with performance timing, mobile optimization, and clear success criteria.
+            </p>
+            
+            <div class="cards-grid">
+                <div class="card flow-card">
+                    <div class="card-header">
+                        <div class="card-title">Add Book Flow</div>
+                        <div class="card-subtitle">Book addition with timing validation</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            Test the complete flow of searching for and adding a new book to the reading tracker.
+                        </div>
+                        <ul class="card-features">
+                            <li>Book search functionality</li>
+                            <li>Metadata input validation</li>
+                            <li>Performance timing (target: &lt;60s)</li>
+                            <li>Mobile-optimized interface</li>
+                            <li>Success/failure criteria tracking</li>
+                        </ul>
+                        <a href="flows/add-book/index.html" class="card-button">Test Add Book Flow</a>
+                    </div>
+                </div>
+
+                <div class="card flow-card">
+                    <div class="card-header">
+                        <div class="card-title">Update Progress Flow</div>
+                        <div class="card-subtitle">Progress updates with mobile sliders</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            Test different methods for updating reading progress with mobile-optimized controls.
+                        </div>
+                        <ul class="card-features">
+                            <li>Mobile-friendly sliders</li>
+                            <li>Multiple input methods</li>
+                            <li>Real-time progress visualization</li>
+                            <li>Quick action buttons</li>
+                            <li>Target: &lt;15s per update</li>
+                        </ul>
+                        <a href="flows/update-progress/index.html" class="card-button">Test Progress Updates</a>
+                    </div>
+                </div>
+
+                <div class="card flow-card">
+                    <div class="card-header">
+                        <div class="card-title">Manage Status Flow</div>
+                        <div class="card-subtitle">Status changes and filtering</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            Test book status management including filtering, validation, and bulk operations.
+                        </div>
+                        <ul class="card-features">
+                            <li>Status change validation</li>
+                            <li>Real-time filtering</li>
+                            <li>Visual status indicators</li>
+                            <li>Bulk status operations</li>
+                            <li>Target: &lt;10s per change</li>
+                        </ul>
+                        <a href="flows/manage-status/index.html" class="card-button">Test Status Management</a>
+                    </div>
+                </div>
+
+                <div class="card flow-card">
+                    <div class="card-header">
+                        <div class="card-title">Import Data Flow</div>
+                        <div class="card-subtitle">CSV import with sample data</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            Test the complete CSV import workflow with validation, preview, and error handling.
+                        </div>
+                        <ul class="card-features">
+                            <li>File upload with drag & drop</li>
+                            <li>Data validation & preview</li>
+                            <li>Import configuration options</li>
+                            <li>Progress tracking</li>
+                            <li>Target: &lt;2 minutes total</li>
+                        </ul>
+                        <a href="flows/import-data/index.html" class="card-button">Test Data Import</a>
+                    </div>
+                </div>
+
+                <div class="card flow-card">
+                    <div class="card-header">
+                        <div class="card-title">Track Streak Flow</div>
+                        <div class="card-subtitle">Streak calculation and display</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            Test the reading streak tracking system with visual calendar and milestone alerts.
+                        </div>
+                        <ul class="card-features">
+                            <li>Visual streak calendar</li>
+                            <li>Reading habit tracking</li>
+                            <li>Milestone notifications</li>
+                            <li>Quick daily logging</li>
+                            <li>Target: &lt;30s per log</li>
+                        </ul>
+                        <a href="flows/track-streak/index.html" class="card-button">Test Streak Tracking</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Design Options</h2>
+            <p class="section-description">
+                Compare different UI approaches and design patterns for the main application interface.
+            </p>
+            
+            <div class="cards-grid">
+                <div class="card option-card">
+                    <div class="card-header">
+                        <div class="card-title">Option 1: Wizard Approach</div>
+                        <div class="card-subtitle">Step-by-step guided interface</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            A guided, step-by-step interface that walks users through each action with clear progression.
+                        </div>
+                        <ul class="card-features">
+                            <li>Clear step-by-step guidance</li>
+                            <li>Reduced cognitive load</li>
+                            <li>Built-in validation</li>
+                            <li>Perfect for new users</li>
+                        </ul>
+                        <a href="options/option-1-wizard.html" class="card-button">Try Wizard Interface</a>
+                    </div>
+                </div>
+
+                <div class="card option-card">
+                    <div class="card-header">
+                        <div class="card-title">Option 2: Dashboard Approach</div>
+                        <div class="card-subtitle">Comprehensive overview interface</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            A dashboard-style interface providing quick access to all features and comprehensive overview.
+                        </div>
+                        <ul class="card-features">
+                            <li>Complete information at a glance</li>
+                            <li>Quick access to all features</li>
+                            <li>Rich data visualization</li>
+                            <li>Power user friendly</li>
+                        </ul>
+                        <a href="options/option-2-dashboard.html" class="card-button">Try Dashboard Interface</a>
+                    </div>
+                </div>
+
+                <div class="card option-card">
+                    <div class="card-header">
+                        <div class="card-title">Option 3: Progressive Approach</div>
+                        <div class="card-subtitle">Adaptive complexity interface</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-description">
+                            A progressive interface that adapts complexity based on user experience and preferences.
+                        </div>
+                        <ul class="card-features">
+                            <li>Grows with user expertise</li>
+                            <li>Customizable complexity</li>
+                            <li>Smart feature discovery</li>
+                            <li>Flexible for all users</li>
+                        </ul>
+                        <a href="options/option-3-progressive.html" class="card-button">Try Progressive Interface</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <a href="../" class="nav-link">← Back to Planning</a>
+            <a href="component-mapping.md" class="nav-link">Component Mapping</a>
+            <a href="README.md" class="nav-link">Documentation</a>
+        </div>
+    </div>
+</body>
+</html>
