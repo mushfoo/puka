@@ -50,7 +50,7 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
   };
 
   const handleChangeComplete = () => {
-    if (onChangeComplete) {
+    if (onChangeComplete && localValue !== value) {
       onChangeComplete(localValue);
     }
   };
@@ -94,7 +94,7 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
       
       <div className="relative">
         {/* Progress Bar Background */}
-        <div className={`w-full bg-neutral-200 rounded-full ${getSizeClass()}`}>
+        <div className={`w-full bg-gray-200 rounded-full ${getSizeClass()}`}>
           {/* Progress Bar Fill */}
           <div 
             className={`${getColorClass()} ${getSizeClass()} rounded-full transition-all duration-300`}

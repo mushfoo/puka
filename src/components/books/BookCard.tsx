@@ -51,7 +51,7 @@ const BookCard: React.FC<BookCardProps> = ({
   };
 
   const handleProgressComplete = (newProgress: number) => {
-    if (onUpdateProgress) {
+    if (onUpdateProgress && newProgress !== book.progress) {
       onUpdateProgress(book.id, newProgress);
     }
   };
