@@ -6,6 +6,7 @@ export interface Book {
   progress: number; // 0-100
   notes?: string;
   dateAdded: Date;
+  dateModified?: Date;
   dateStarted?: Date;
   dateFinished?: Date;
   isbn?: string;

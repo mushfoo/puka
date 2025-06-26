@@ -14,6 +14,10 @@ export {
 
 export { MockStorageService } from './MockStorageService';
 
+// Import types for the factory function
+import { type StorageService } from './StorageService';
+import { MockStorageService } from './MockStorageService';
+
 // Storage service factory
 export function createStorageService(): StorageService {
   // For now, return the mock service

@@ -182,7 +182,6 @@ describe('MockStorageService', () => {
     });
 
     it('should apply pagination', async () => {
-      const allBooks = await storage.getBooks();
       const firstPage = await storage.getFilteredBooks({
         limit: 2,
         offset: 0
