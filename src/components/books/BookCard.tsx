@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Book } from '@/types';
+import ProgressSlider from '@/components/ProgressSlider';
 
 interface BookCardProps {
   book: Book;
@@ -49,14 +50,9 @@ const BookCard: React.FC<BookCardProps> = ({
     }
   };
 
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newProgress = parseInt(e.target.value);
-    setLocalProgress(newProgress);
-  };
-
-  const handleProgressComplete = () => {
-    if (onUpdateProgress && localProgress !== book.progress) {
-      onUpdateProgress(book.id, localProgress);
+  const handleProgressComplete = (newProgress: number) => {
+    if (onUpdateProgress && newProgress !== book.progress) {
+      onUpdateProgress(book.id, newProgress);
     }
   };
 
@@ -104,33 +100,16 @@ const BookCard: React.FC<BookCardProps> = ({
       {/* Progress Section */}
       {shouldShowProgressControls && (
         <div className="mb-4">
-          {/* Progress Bar */}
+          {/* Progress Slider */}
           <div className="mb-3">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-text-primary">Progress</span>
-              <span className="text-sm text-text-secondary">{progressPercentage}%</span>
-            </div>
-            <div className="relative">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-              {/* Interactive Progress Slider */}
-              {interactive && (
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={localProgress}
-                  onChange={handleProgressChange}
-                  onMouseUp={handleProgressComplete}
-                  onTouchEnd={handleProgressComplete}
-                  className="absolute top-0 left-0 w-full h-2 opacity-0 cursor-pointer"
-                />
-              )}
-            </div>
+            <ProgressSlider
+              value={localProgress}
+              onChange={setLocalProgress}
+              onChangeComplete={handleProgressComplete}
+              interactive={interactive}
+              showLabel={true}
+              label="Progress"
+            />
           </div>
 
           {/* Page Information */}
@@ -172,16 +151,12 @@ const BookCard: React.FC<BookCardProps> = ({
       {/* Static Progress for non-reading books */}
       {!shouldShowProgressControls && book.progress > 0 && (
         <div className="mb-3">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-text-primary">Progress</span>
-            <span className="text-sm text-text-secondary">{book.progress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full"
-              style={{ width: `${book.progress}%` }}
-            />
-          </div>
+          <ProgressSlider
+            value={book.progress}
+            interactive={false}
+            showLabel={true}
+            label="Progress"
+          />
         </div>
       )}
 

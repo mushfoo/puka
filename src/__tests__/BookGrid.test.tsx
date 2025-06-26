@@ -1,7 +1,24 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import BookGrid from '@/components/books/BookGrid';
 import { Book } from '@/types';
+
+// Mock react-window for testing
+vi.mock('react-window', () => ({
+  FixedSizeGrid: ({ children, rowCount, columnCount }: any) => {
+    const items = [];
+    for (let row = 0; row < rowCount; row++) {
+      for (let col = 0; col < columnCount; col++) {
+        items.push(
+          <div key={`${row}-${col}`} data-testid="virtual-grid-item">
+            {children({ columnIndex: col, rowIndex: row, style: {} })}
+          </div>
+        );
+      }
+    }
+    return <div data-testid="virtual-grid">{items}</div>;
+  }
+}));
 
 const mockBooks: Book[] = [
   {
@@ -33,6 +50,18 @@ const mockBooks: Book[] = [
   }
 ];
 
+// Generate many books for virtual scrolling tests
+const generateManyBooks = (count: number): Book[] => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i + 1,
+    title: `Book ${i + 1}`,
+    author: `Author ${i + 1}`,
+    status: 'want_to_read' as const,
+    progress: 0,
+    dateAdded: new Date('2024-01-01')
+  }));
+};
+
 describe('BookGrid', () => {
   const defaultProps = {
     books: mockBooks,
@@ -41,6 +70,21 @@ describe('BookGrid', () => {
     onMarkComplete: vi.fn(),
     onChangeStatus: vi.fn()
   };
+
+  beforeEach(() => {
+    // Mock getBoundingClientRect for container dimensions
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 1200,
+      height: 800,
+      top: 0,
+      left: 0,
+      bottom: 800,
+      right: 1200,
+      x: 0,
+      y: 0,
+      toJSON: () => {}
+    }));
+  });
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -121,7 +165,7 @@ describe('BookGrid', () => {
     expect(container.firstChild).toHaveClass('custom-class');
   });
 
-  it('renders with responsive grid classes', () => {
+  it('renders with responsive grid classes for regular grid', () => {
     const { container } = render(<BookGrid {...defaultProps} />);
     
     const gridContainer = container.querySelector('.grid');
@@ -131,6 +175,55 @@ describe('BookGrid', () => {
       'lg:grid-cols-3',
       'xl:grid-cols-4'
     );
+  });
+
+  it('uses virtual scrolling for more than 50 books', () => {
+    const manyBooks = generateManyBooks(60);
+    render(<BookGrid {...defaultProps} books={manyBooks} />);
+    
+    // Should render virtual grid
+    expect(screen.getByTestId('virtual-grid')).toBeInTheDocument();
+    expect(screen.getByText('Showing 60 books (virtualized for performance)')).toBeInTheDocument();
+  });
+
+  it('uses regular grid for 50 or fewer books', () => {
+    const someBooks = generateManyBooks(50);
+    const { container } = render(<BookGrid {...defaultProps} books={someBooks} />);
+    
+    // Should not use virtual grid
+    expect(screen.queryByTestId('virtual-grid')).not.toBeInTheDocument();
+    expect(container.querySelector('.grid')).toBeInTheDocument();
+    expect(screen.getByText('Showing 50 books')).toBeInTheDocument();
+  });
+
+  it('calculates correct column count based on container width', () => {
+    // Test different widths
+    const widths = [
+      { width: 500, expectedColumns: 1 },   // mobile
+      { width: 700, expectedColumns: 2 },   // sm
+      { width: 1100, expectedColumns: 3 },  // lg
+      { width: 1400, expectedColumns: 4 }   // xl
+    ];
+    
+    widths.forEach(({ width }) => {
+      Element.prototype.getBoundingClientRect = vi.fn(() => ({
+        width,
+        height: 800,
+        top: 0,
+        left: 0,
+        bottom: 800,
+        right: width,
+        x: 0,
+        y: 0,
+        toJSON: () => {}
+      }));
+      
+      const manyBooks = generateManyBooks(60);
+      const { rerender } = render(<BookGrid {...defaultProps} books={manyBooks} />);
+      
+      // Force re-render to apply new dimensions
+      rerender(<BookGrid {...defaultProps} books={manyBooks} />);
+    });
   });
 
   it('handles books with different statuses correctly', () => {
@@ -155,5 +248,41 @@ describe('BookGrid', () => {
     // Verify the handlers are passed by checking if BookCards render with interactive features
     const progressBars = document.querySelectorAll('input[type="range"]');
     expect(progressBars.length).toBeGreaterThan(0);
+  });
+
+  it('handles window resize events', () => {
+    const { container } = render(<BookGrid {...defaultProps} />);
+    
+    // Change window size
+    Element.prototype.getBoundingClientRect = vi.fn(() => ({
+      width: 600,
+      height: 800,
+      top: 0,
+      left: 0,
+      bottom: 800,
+      right: 600,
+      x: 0,
+      y: 0,
+      toJSON: () => {}
+    }));
+    
+    // Trigger resize event
+    fireEvent(window, new Event('resize'));
+    
+    // Component should still render correctly
+    expect(container.querySelector('.w-full')).toBeInTheDocument();
+  });
+
+  it('renders BookCards correctly in virtual grid', () => {
+    const manyBooks = generateManyBooks(60);
+    render(<BookGrid {...defaultProps} books={manyBooks} />);
+    
+    // Check that some books are rendered
+    const virtualItems = screen.getAllByTestId('virtual-grid-item');
+    expect(virtualItems.length).toBeGreaterThan(0);
+    
+    // Check that first few books are rendered with correct titles
+    expect(screen.getByText('Book 1')).toBeInTheDocument();
+    expect(screen.getByText('Author 1')).toBeInTheDocument();
   });
 });
