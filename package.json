@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:performance": "npx playwright test tests/performance/puka-performance-final.test.ts --reporter=list",
+    "test:perf": "npx playwright test --config=playwright.config.ts",
+    "test:perf:full": "node scripts/run-performance-tests.js",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -19,6 +22,7 @@
     "react-window": "^1.8.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.6.1",
