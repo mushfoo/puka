@@ -65,18 +65,24 @@ export class FileSystemStorageService implements StorageService {
       const booksData = localStorage.getItem('puka-books');
       if (booksData) {
         this.books = JSON.parse(booksData);
-        this.nextId = Math.max(...this.books.map(b => b.id || 0)) + 1;
+        this.nextId = this.books.length > 0 ? Math.max(...this.books.map(b => b.id || 0)) + 1 : 1;
+      } else {
+        this.books = [];
+        this.nextId = 1;
       }
 
       // Load settings from localStorage
       const settingsData = localStorage.getItem('puka-settings');
       if (settingsData) {
         this.settings = { ...this.getDefaultSettings(), ...JSON.parse(settingsData) };
+      } else {
+        this.settings = this.getDefaultSettings();
       }
     } catch (error) {
-      console.warn('Failed to load data from localStorage, starting fresh');
+      console.warn('Failed to load data from localStorage, starting fresh', error);
       this.books = [];
       this.settings = this.getDefaultSettings();
+      this.nextId = 1;
     }
   }
 
@@ -249,7 +255,7 @@ export class FileSystemStorageService implements StorageService {
       if (content.trim()) {
         const data = JSON.parse(content);
         this.books = data.books || [];
-        this.nextId = Math.max(...this.books.map(b => b.id || 0)) + 1;
+        this.nextId = this.books.length > 0 ? Math.max(...this.books.map(b => b.id || 0)) + 1 : 1;
       } else {
         this.books = [];
         this.nextId = 1;

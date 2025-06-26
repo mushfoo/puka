@@ -222,6 +222,96 @@ Don't solve performance problems that don't exist yet
 
 ---
 
+## UI/UX Testing with Playwright
+
+### 🎭 **Browser-Based User Experience Testing**
+
+While unit tests verify code behavior, Playwright tests validate actual user experience in real browsers. Use Playwright to ensure the UI works as intended across different devices and interaction patterns.
+
+### **When to Use Playwright Testing**
+- **Before PR Creation**: Test core user flows on mobile (375px) and desktop viewports
+- **After Major UI Changes**: Verify interactions still meet <100ms response requirement
+- **Epic Completion**: Validate acceptance criteria with real user journeys
+- **Mobile-First Validation**: Confirm touch targets, one-handed operation, responsive behavior
+- **Performance Validation**: Ensure UI interactions meet the <100ms standard in actual browsers
+
+### **Required Test Scenarios for Puka**
+- **Core User Flow**: Add book → update progress → filter by status → search
+- **Progress Management**: Test +10%, +25%, Done ✓ buttons for responsiveness
+- **Filter Functionality**: Verify All/Want to Read/Reading/Finished tabs work correctly
+- **Search Integration**: Confirm search works across different filter states
+- **Mobile Viewport**: Test all interactions at 375px width (primary mobile target)
+- **Toast Notifications**: Verify success/error messages appear and dismiss properly
+
+### **Playwright Testing Commands**
+```bash
+# Start development server
+npm run dev
+
+# In another terminal, delegate UI/UX testing to a sub-agent
+claude "Create a Task agent to test the core user flows with Playwright at localhost:5173. 
+The agent should:
+1. Navigate to the app and take screenshots
+2. Test the add book → progress update → filter workflow
+3. Verify mobile responsiveness at 375px
+4. Validate performance of interactions (<100ms)
+5. Report findings and any UX issues discovered"
+```
+
+### **Using Task Agents for Systematic Testing**
+Rather than manually testing each flow, delegate comprehensive UI/UX testing to Task agents:
+
+```bash
+# Create specialized testing agents
+claude "Create a Task agent to test mobile UX on Puka Reading Tracker:
+- Resize to 375px viewport
+- Test all touch interactions
+- Verify one-handed operation
+- Check filter tabs on mobile
+- Report mobile-specific issues"
+
+claude "Create a Task agent to test performance on Puka Reading Tracker:
+- Measure interaction response times
+- Test with multiple books
+- Verify animation smoothness
+- Check search responsiveness
+- Document any performance issues"
+```
+
+### **Mobile-First Testing Checklist**
+- [ ] Resize browser to 375px width and test all interactions
+- [ ] Verify touch targets are at least 44x44px
+- [ ] Confirm one-handed operation is possible
+- [ ] Test filter tabs work on mobile layout
+- [ ] Validate progress sliders are touch-friendly
+- [ ] Ensure floating action button doesn't interfere with content
+
+### **Performance Testing with Playwright**
+- [ ] Measure interaction response times (<100ms requirement)
+- [ ] Test with multiple books (validate with 6+ sample books)
+- [ ] Verify smooth animations and transitions
+- [ ] Confirm search results appear quickly
+- [ ] Test progress updates feel immediate
+
+### **User Experience Validation**
+```javascript
+// Example of user-focused Playwright testing approach:
+// 1. Navigate to app
+// 2. Add a new book with real data
+// 3. Update progress using quick actions
+// 4. Filter by different statuses
+// 5. Search for the book
+// 6. Verify all interactions feel smooth and responsive
+```
+
+### **Quality Gates**
+- **No PR without Playwright validation**: All UI changes must be tested in actual browser
+- **Mobile testing mandatory**: Every UI change must be verified at 375px viewport
+- **Performance requirements**: All interactions must feel under 100ms in real browser
+- **Real user workflows**: Test complete journeys, not isolated components
+
+---
+
 ## Practical Testing Guidelines
 
 ### 🧪 **User-Focused Testing**
