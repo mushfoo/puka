@@ -139,13 +139,13 @@ describe('ProgressSlider', () => {
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
 
-  it('does not call onChangeComplete if value has not changed', () => {
+  it('calls onChangeComplete even if value has not changed', () => {
     const mockOnChangeComplete = vi.fn();
     render(<ProgressSlider {...defaultProps} value={50} onChangeComplete={mockOnChangeComplete} />);
     
     const slider = screen.getByRole('slider');
     fireEvent.mouseUp(slider);
     
-    expect(mockOnChangeComplete).not.toHaveBeenCalled();
+    expect(mockOnChangeComplete).toHaveBeenCalledWith(50);
   });
 });

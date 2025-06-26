@@ -104,11 +104,11 @@ const BookForm: React.FC<BookFormProps> = ({
     }
 
     // Pages validation
-    if (formData.totalPages && isNaN(Number(formData.totalPages))) {
+    if (formData.totalPages && (isNaN(Number(formData.totalPages)) || Number(formData.totalPages) <= 0)) {
       newErrors.totalPages = 'Total pages must be a number';
     }
 
-    if (formData.currentPage && isNaN(Number(formData.currentPage))) {
+    if (formData.currentPage && (isNaN(Number(formData.currentPage)) || Number(formData.currentPage) <= 0)) {
       newErrors.currentPage = 'Current page must be a number';
     }
 
@@ -121,7 +121,7 @@ const BookForm: React.FC<BookFormProps> = ({
     }
 
     // Rating validation
-    if (formData.rating && (isNaN(Number(formData.rating)) || Number(formData.rating) < 1 || Number(formData.rating) > 5)) {
+    if (formData.rating && (isNaN(Number(formData.rating)) || Number(formData.rating) < 1 || Number(formData.rating) > 5 || !Number.isInteger(Number(formData.rating)))) {
       newErrors.rating = 'Rating must be between 1 and 5';
     }
 
@@ -143,6 +143,15 @@ const BookForm: React.FC<BookFormProps> = ({
     e.preventDefault();
     
     if (!validateForm()) {
+      // Mark all fields as touched so validation errors are displayed
+      setTouched({
+        title: true,
+        author: true,
+        progress: true,
+        totalPages: true,
+        currentPage: true,
+        rating: true
+      });
       return;
     }
 
@@ -172,31 +181,35 @@ const BookForm: React.FC<BookFormProps> = ({
     type: string = 'text',
     placeholder?: string,
     required: boolean = false
-  ) => (
-    <div className="form-group">
-      <label className="block text-sm font-medium text-text-primary mb-2">
-        {label} {required && <span className="text-error">*</span>}
-      </label>
-      <input
-        type={type}
-        value={formData[field]}
-        onChange={(e) => handleInputChange(field, e.target.value)}
-        placeholder={placeholder}
-        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${
-          errors[field as keyof FormErrors] && touched[field] 
-            ? 'border-error' 
-            : 'border-border'
-        }`}
-        disabled={loading}
-      />
-      {errors[field as keyof FormErrors] && touched[field] && (
-        <p className="mt-1 text-sm text-error">{errors[field as keyof FormErrors]}</p>
-      )}
-    </div>
-  );
+  ) => {
+    const inputId = `book-form-${field}`;
+    return (
+      <div className="form-group">
+        <label htmlFor={inputId} className="block text-sm font-medium text-text-primary mb-2">
+          {label} {required && <span className="text-error">*</span>}
+        </label>
+        <input
+          id={inputId}
+          type={type}
+          value={formData[field]}
+          onChange={(e) => handleInputChange(field, e.target.value)}
+          placeholder={placeholder}
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors ${
+            errors[field as keyof FormErrors] && touched[field] 
+              ? 'border-error' 
+              : 'border-border'
+          }`}
+          disabled={loading}
+        />
+        {errors[field as keyof FormErrors] && touched[field] && (
+          <p className="mt-1 text-sm text-error">{errors[field as keyof FormErrors]}</p>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" role="form">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
       </div>
@@ -246,7 +259,7 @@ const BookForm: React.FC<BookFormProps> = ({
           max="100"
           value={formData.progress}
           onChange={(e) => handleInputChange('progress', Number(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer"
           disabled={loading}
         />
         {errors.progress && (
@@ -258,18 +271,19 @@ const BookForm: React.FC<BookFormProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {renderInput('isbn', 'ISBN', 'text', 'Enter ISBN')}
         {renderInput('genre', 'Genre', 'text', 'Enter genre')}
-        {renderInput('totalPages', 'Total Pages', 'number', 'Enter total pages')}
-        {renderInput('currentPage', 'Current Page', 'number', 'Enter current page')}
-        {renderInput('rating', 'Rating (1-5)', 'number', 'Rate 1-5 stars')}
+        {renderInput('totalPages', 'Total Pages', 'text', 'Enter total pages')}
+        {renderInput('currentPage', 'Current Page', 'text', 'Enter current page')}
+        {renderInput('rating', 'Rating (1-5)', 'text', 'Rate 1-5 stars')}
         {renderInput('publishedDate', 'Published Date', 'text', 'YYYY or YYYY-MM-DD')}
       </div>
 
       {/* Notes */}
       <div className="form-group">
-        <label className="block text-sm font-medium text-text-primary mb-2">
+        <label htmlFor="book-form-notes" className="block text-sm font-medium text-text-primary mb-2">
           Notes
         </label>
         <textarea
+          id="book-form-notes"
           value={formData.notes}
           onChange={(e) => handleInputChange('notes', e.target.value)}
           placeholder="Add any notes about this book..."

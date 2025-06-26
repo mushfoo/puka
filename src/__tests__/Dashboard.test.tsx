@@ -208,14 +208,41 @@ describe('Dashboard', () => {
     });
   });
 
-  it('calls onAddBook when FAB is clicked', () => {
-    const mockOnAddBook = vi.fn();
-    render(<Dashboard {...defaultProps} onAddBook={mockOnAddBook} />);
+  it('opens add book modal when FAB is clicked', () => {
+    render(<Dashboard {...defaultProps} />);
     
     const fab = screen.getByLabelText('Add new book');
     fireEvent.click(fab);
     
-    expect(mockOnAddBook).toHaveBeenCalledTimes(1);
+    // Check that the modal opens
+    expect(screen.getByText('Add New Book')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('calls onAddBook when book is added through modal', async () => {
+    const mockOnAddBook = vi.fn().mockResolvedValue(undefined);
+    render(<Dashboard {...defaultProps} onAddBook={mockOnAddBook} />);
+    
+    // Open modal
+    const fab = screen.getByLabelText('Add new book');
+    fireEvent.click(fab);
+    
+    // Fill out form
+    fireEvent.change(screen.getByLabelText('Title *'), { target: { value: 'New Test Book' } });
+    fireEvent.change(screen.getByLabelText('Author *'), { target: { value: 'Test Author' } });
+    
+    // Submit form
+    fireEvent.click(screen.getByText('Add Book'));
+    
+    await waitFor(() => {
+      expect(mockOnAddBook).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'New Test Book',
+          author: 'Test Author',
+          status: 'want_to_read'
+        })
+      );
+    });
   });
 
   it('passes event handlers to BookGrid', () => {

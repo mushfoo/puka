@@ -50,10 +50,16 @@ export interface FilterOptions {
 }
 
 export interface ToastMessage {
-  id: number;
+  id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   message: string;
+  title?: string;
   duration?: number;
+  dismissible?: boolean;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 export interface QuickAction {
