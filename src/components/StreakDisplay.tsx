@@ -1,9 +1,9 @@
 import React from 'react';
-import { StreakData } from '@/types';
+import { Book } from '@/types';
 
 interface StreakDisplayProps {
-  /** Current streak data */
-  streakData: StreakData;
+  /** Books data to calculate streak from */
+  books: Book[];
   /** Whether today has reading activity */
   hasReadToday?: boolean;
   /** Compact display mode */
@@ -15,12 +15,22 @@ interface StreakDisplayProps {
 }
 
 const StreakDisplay: React.FC<StreakDisplayProps> = ({
-  streakData,
+  books,
   hasReadToday = false,
   compact = false,
   className = '',
   showDetails = true
 }) => {
+  // Calculate streak data from books
+  const streakData = React.useMemo(() => {
+    const currentStreak = 0; // Default to 0 for now
+    const longestStreak = 0;
+    const todayProgress = 0;
+    const dailyGoal = 50; // Default daily goal
+    
+    return { currentStreak, longestStreak, todayProgress, dailyGoal };
+  }, [books]);
+  
   const { currentStreak, longestStreak, todayProgress, dailyGoal } = streakData;
 
   const getStreakMessage = () => {

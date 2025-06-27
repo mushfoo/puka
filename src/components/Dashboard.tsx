@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Book, StatusFilter } from '@/types';
 import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
 import FloatingActionButton from './FloatingActionButton';
 import AddBookModal from './modals/AddBookModal';
+import StreakDisplay from './StreakDisplay';
 
 interface DashboardProps {
   books: Book[];
@@ -28,8 +29,18 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddingBook, setIsAddingBook] = useState(false);
+
+  // Debounce search query for better performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Filter books based on active filter and search query
   const filteredBooks = useMemo(() => {
@@ -41,8 +52,8 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
 
     // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase().trim();
       filtered = filtered.filter(book => 
         book.title.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query) ||
@@ -51,7 +62,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
 
     return filtered;
-  }, [books, activeFilter, searchQuery]);
+  }, [books, activeFilter, debouncedSearchQuery]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -93,13 +104,20 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl" role="img" aria-label="Books">📚</span>
-              <h1 className="text-xl sm:text-2xl font-bold text-primary">
-                Puka Reading Tracker
-              </h1>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-primary">
+                  Puka Reading Tracker
+                </h1>
+                {/* Streak Display - Mobile */}
+                <div className="sm:hidden">
+                  <StreakDisplay books={books} className="text-sm" />
+                </div>
+              </div>
             </div>
             
-            {/* Search - Desktop */}
+            {/* Search and Streak - Desktop */}
             <div className="hidden sm:flex items-center gap-4">
+              <StreakDisplay books={books} />
               <div className="relative">
                 <input
                   type="text"
@@ -174,13 +192,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         />
 
         {/* Search Results Info */}
-        {searchQuery && (
+        {debouncedSearchQuery && (
           <div className="mb-4 text-sm text-text-secondary">
             {filteredBooks.length === 0 ? (
-              <span>No books found for "{searchQuery}"</span>
+              <span>No books found for "{debouncedSearchQuery}"</span>
             ) : (
               <span>
-                {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found for "{searchQuery}"
+                {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found for "{debouncedSearchQuery}"
               </span>
             )}
           </div>

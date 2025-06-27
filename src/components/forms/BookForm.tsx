@@ -104,11 +104,15 @@ const BookForm: React.FC<BookFormProps> = ({
     }
 
     // Pages validation
-    if (formData.totalPages && (isNaN(Number(formData.totalPages)) || Number(formData.totalPages) <= 0)) {
+    if (formData.totalPages && isNaN(Number(formData.totalPages))) {
+      newErrors.totalPages = 'Total pages must be a number';
+    } else if (formData.totalPages && Number(formData.totalPages) <= 0) {
       newErrors.totalPages = 'Total pages must be a positive number';
     }
 
-    if (formData.currentPage && (isNaN(Number(formData.currentPage)) || Number(formData.currentPage) <= 0)) {
+    if (formData.currentPage && isNaN(Number(formData.currentPage))) {
+      newErrors.currentPage = 'Current page must be a number';
+    } else if (formData.currentPage && Number(formData.currentPage) <= 0) {
       newErrors.currentPage = 'Current page must be a positive number';
     }
 
@@ -121,7 +125,11 @@ const BookForm: React.FC<BookFormProps> = ({
     }
 
     // Rating validation
-    if (formData.rating && (isNaN(Number(formData.rating)) || Number(formData.rating) < 1 || Number(formData.rating) > 5 || !Number.isInteger(Number(formData.rating)))) {
+    if (formData.rating && isNaN(Number(formData.rating))) {
+      newErrors.rating = 'Rating must be between 1 and 5';
+    } else if (formData.rating && (Number(formData.rating) < 1 || Number(formData.rating) > 5)) {
+      newErrors.rating = 'Rating must be between 1 and 5';
+    } else if (formData.rating && !Number.isInteger(Number(formData.rating))) {
       newErrors.rating = 'Rating must be a whole number between 1 and 5';
     }
 
@@ -271,9 +279,9 @@ const BookForm: React.FC<BookFormProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {renderInput('isbn', 'ISBN', 'text', 'Enter ISBN')}
         {renderInput('genre', 'Genre', 'text', 'Enter genre')}
-        {renderInput('totalPages', 'Total Pages', 'number', 'Enter total pages')}
-        {renderInput('currentPage', 'Current Page', 'number', 'Enter current page')}
-        {renderInput('rating', 'Rating (1-5)', 'number', 'Rate 1-5 stars')}
+        {renderInput('totalPages', 'Total Pages', 'text', 'Enter total pages')}
+        {renderInput('currentPage', 'Current Page', 'text', 'Enter current page')}
+        {renderInput('rating', 'Rating (1-5)', 'text', 'Rate 1-5 stars')}
         {renderInput('publishedDate', 'Published Date', 'text', 'YYYY or YYYY-MM-DD')}
       </div>
 

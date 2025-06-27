@@ -121,25 +121,25 @@ const BookCard: React.FC<BookCardProps> = ({
 
           {/* Quick Action Buttons */}
           {showQuickActions && (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => handleQuickIncrement(10)}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 +10%
               </button>
               <button
                 onClick={() => handleQuickIncrement(25)}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-2 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 +25%
               </button>
               <button
                 onClick={handleMarkDone}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-success hover:bg-success/90 text-white font-medium py-2 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-success hover:bg-success/90 text-white font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
               >
                 Done ✓
               </button>
