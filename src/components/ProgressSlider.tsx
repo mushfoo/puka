@@ -36,13 +36,19 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
   size = 'md'
 }) => {
   const [localValue, setLocalValue] = useState(value);
+  const [initialValue, setInitialValue] = useState(value);
+  const [isUserInteracting, setIsUserInteracting] = useState(false);
 
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    if (!isUserInteracting) {
+      setLocalValue(value);
+      setInitialValue(value);
+    }
+  }, [value, isUserInteracting]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value);
+    setIsUserInteracting(true);
     setLocalValue(newValue);
     if (onChange) {
       onChange(newValue);
@@ -50,7 +56,8 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
   };
 
   const handleChangeComplete = () => {
-    if (onChangeComplete && localValue !== value) {
+    setIsUserInteracting(false);
+    if (onChangeComplete && localValue !== initialValue) {
       onChangeComplete(localValue);
     }
   };
@@ -113,7 +120,8 @@ const ProgressSlider: React.FC<ProgressSliderProps> = ({
             onMouseUp={handleChangeComplete}
             onTouchEnd={handleChangeComplete}
             disabled={disabled}
-            className={`absolute top-0 left-0 w-full ${getSizeClass()} opacity-0 cursor-pointer disabled:cursor-not-allowed`}
+            className="absolute top-1/2 left-0 w-full h-8 -translate-y-1/2 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+            style={{ minHeight: '44px' }}
             aria-label={label}
           />
         )}

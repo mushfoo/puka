@@ -67,7 +67,7 @@ const FilterTabs: React.FC<FilterTabsProps> = ({
   const getTabClasses = (tab: TabConfig) => {
     const isActive = activeFilter === tab.key;
     
-    const baseClasses = 'flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2';
+    const baseClasses = 'flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 min-h-[44px] min-w-[44px]';
     
     if (isActive) {
       return `${baseClasses} bg-primary text-white shadow-md transform scale-105`;
