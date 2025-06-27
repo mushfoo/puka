@@ -27,13 +27,13 @@ const BookCard: React.FC<BookCardProps> = ({
   const getStatusColor = (status: Book['status']) => {
     switch (status) {
       case 'want_to_read':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-status-want-to-read text-status-want-to-read-foreground';
       case 'currently_reading':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-status-currently-reading text-status-currently-reading-foreground';
       case 'finished':
-        return 'bg-green-100 text-green-800';
+        return 'bg-status-finished text-status-finished-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-neutral-100 text-neutral-800';
     }
   };
 

@@ -75,13 +75,13 @@ const BookGrid: React.FC<BookGridProps> = ({
           key={index}
           className="bg-surface rounded-xl p-4 border border-border animate-pulse"
         >
-          <div className="h-6 bg-gray-200 rounded mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
-          <div className="h-2 bg-gray-200 rounded mb-4"></div>
+          <div className="h-6 bg-neutral-200 rounded mb-2"></div>
+          <div className="h-4 bg-neutral-200 rounded mb-4 w-3/4"></div>
+          <div className="h-2 bg-neutral-200 rounded mb-4"></div>
           <div className="flex gap-2">
-            <div className="h-8 bg-gray-200 rounded flex-1"></div>
-            <div className="h-8 bg-gray-200 rounded flex-1"></div>
-            <div className="h-8 bg-gray-200 rounded flex-1"></div>
+            <div className="h-8 bg-neutral-200 rounded flex-1"></div>
+            <div className="h-8 bg-neutral-200 rounded flex-1"></div>
+            <div className="h-8 bg-neutral-200 rounded flex-1"></div>
           </div>
         </div>
       ))}
@@ -156,8 +156,13 @@ const BookGrid: React.FC<BookGridProps> = ({
   
   // Virtual grid rendering for large datasets
   const renderVirtualGrid = () => {
+    // Don't render virtual grid until dimensions are available
+    if (dimensions.width === 0) {
+      return <div className="min-h-64">Loading...</div>;
+    }
+    
     const rowCount = Math.ceil(books.length / columnCount);
-    const columnWidth = (dimensions.width - 16) / columnCount;
+    const columnWidth = Math.max(250, (dimensions.width - 16) / columnCount); // Minimum width
     const rowHeight = 320; // Approximate height of BookCard
     
     return (
@@ -179,9 +184,7 @@ const BookGrid: React.FC<BookGridProps> = ({
   return (
     <div className={`w-full ${className}`} ref={containerRef}>
       {/* Use virtual scrolling for large datasets */}
-      {dimensions.width > 0 && (
-        useVirtualScrolling ? renderVirtualGrid() : renderRegularGrid()
-      )}
+      {useVirtualScrolling ? renderVirtualGrid() : renderRegularGrid()}
       
       {/* Results Count */}
       {books.length > 0 && (

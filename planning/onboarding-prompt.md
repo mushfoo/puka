@@ -78,7 +78,7 @@ Current focus is **Epic 2: Core Dashboard Implementation**:
 2. Review acceptance criteria in task breakdown
 3. Implement with mobile-first approach (375px viewport)
 4. Write tests maintaining >90% coverage
-5. Test on multiple viewports and devices
+5. **Validate UI/UX with Playwright testing (Step 5 below)**
 6. Create PR with task validation
 
 ### Step 4: Integration Notes
@@ -86,6 +86,130 @@ Current focus is **Epic 2: Core Dashboard Implementation**:
 - **Types**: All interfaces in `/src/types/index.ts`
 - **Components**: Build on existing foundation in `/src/components/`
 - **Testing**: Use established patterns in `/src/__tests__/`
+
+### Step 5: UI/UX Validation with Playwright
+**Critical validation step using Task agents for systematic testing before PR creation.**
+
+#### 5.1 Setup and Environment
+1. **Start Development Server**: `npm run dev` (localhost:5173)
+2. **Verify Test Environment**: Ensure all implemented features are accessible
+
+#### 5.2 Core User Experience Validation
+Delegate comprehensive testing to Task agents for systematic coverage:
+
+```bash
+# Primary user flow testing
+claude "Create a Task agent to comprehensively test Puka Reading Tracker at localhost:5173:
+
+CORE WORKFLOWS TO TEST:
+1. New user onboarding experience (empty state → first book)
+2. Add book → set progress → update status workflow
+3. Filter switching across all status types (Want to Read, Currently Reading, Finished)
+4. Progress updates using inline sliders and quick action buttons
+5. Search/filter combinations with live results
+
+VALIDATION REQUIREMENTS:
+- Take screenshots at each major step
+- Test with realistic data (6+ books across different statuses)
+- Verify all interactive elements respond within 100ms
+- Document any broken workflows or UX friction points
+- Report completion rates for each workflow"
+```
+
+#### 5.3 Mobile-First Testing (375px Viewport)
+**Primary testing target - mobile experience is critical:**
+
+```bash
+# Mobile-first validation agent
+claude "Create a Task agent for mobile UX testing on Puka Reading Tracker:
+
+MOBILE TESTING PROTOCOL:
+1. Set viewport to 375px width (iPhone SE standard)
+2. Test one-handed operation patterns:
+   - Thumb reach zones for all interactive elements
+   - Filter tabs accessibility with single thumb
+   - Progress sliders touch targets (minimum 44x44px)
+   - Floating action button positioning and accessibility
+
+MOBILE-SPECIFIC VALIDATIONS:
+- Touch interactions feel responsive and natural
+- No accidental taps due to element proximity
+- Content remains readable without horizontal scrolling
+- Filter tabs work effectively in mobile layout
+- Progress indicators visible and functional
+- All animations smooth at 60fps on mobile
+
+DELIVERABLES:
+- Mobile screenshot documentation
+- Touch interaction performance report
+- Recommendations for mobile UX improvements"
+```
+
+#### 5.4 Performance and Responsiveness Validation
+**Validate against strict performance requirements:**
+
+```bash
+# Performance testing agent
+claude "Create a Task agent for performance validation on Puka Reading Tracker:
+
+PERFORMANCE TESTING SCOPE:
+1. Interaction Response Times:
+   - Button clicks, slider adjustments, filter switches
+   - All interactions must complete within 100ms
+   - Search/filter operations with immediate visual feedback
+
+2. Load Testing Scenarios:
+   - Test with 20+ books across all statuses
+   - Rapid filter switching stress test
+   - Multiple progress updates in sequence
+   - Search with various query lengths
+
+3. Performance Metrics to Measure:
+   - Time to first meaningful paint
+   - Interaction response times
+   - Animation frame rates during transitions
+   - Memory usage during extended use
+
+REPORTING REQUIREMENTS:
+- Performance metrics documentation
+- Specific slow interactions identified
+- Recommendations for optimization
+- Validation against <100ms interaction requirement"
+```
+
+#### 5.5 Quality Gates and Acceptance Criteria
+**All criteria must pass before PR creation:**
+
+✅ **Mobile Validation Gates:**
+- All workflows function correctly at 375px viewport
+- Touch targets meet 44x44px minimum size requirement  
+- One-handed operation confirmed for primary actions
+- No horizontal scrolling or layout breaks
+
+✅ **Performance Gates:**
+- All UI interactions respond within 100ms
+- Smooth animations at 60fps on standard devices
+- No performance degradation with 20+ books
+- Search/filter operations provide immediate feedback
+
+✅ **User Experience Gates:**
+- Core workflows complete without friction
+- Visual feedback confirms all user actions
+- Error states handled gracefully
+- Loading states appropriate for user context
+
+✅ **Cross-Browser Compatibility:**
+- Chrome/Edge (File System Access API primary)
+- Safari/Firefox (fallback functionality confirmed)
+- Mobile browsers tested on actual devices
+
+#### 5.6 Documentation and Next Steps
+After Task agent validation:
+1. **Review all agent reports** for critical issues
+2. **Address blocking issues** before PR creation
+3. **Document known limitations** in PR description
+4. **Include mobile screenshots** in PR for reviewer context
+5. **Confirm all quality gates passed** in PR checklist
 
 ## Project-Specific Context
 

@@ -13,14 +13,26 @@ export {
 } from './StorageService';
 
 export { MockStorageService } from './MockStorageService';
+export { FileSystemStorageService } from './FileSystemStorageService';
 
 // Import types for the factory function
 import { type StorageService } from './StorageService';
 import { MockStorageService } from './MockStorageService';
+import { FileSystemStorageService } from './FileSystemStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
-  // For now, return the mock service
-  // In the future, this will detect browser capabilities and return the appropriate service
+  // In development, use MockStorageService for easier testing
+  // In production, user would need to explicitly choose FileSystemStorageService
+  if (import.meta.env.DEV) {
+    return new MockStorageService();
+  }
+  
+  // Check if File System Access API is available
+  if (FileSystemStorageService.isSupported()) {
+    return new FileSystemStorageService();
+  }
+  
+  // Fall back to mock service for production if File System Access API is not available
   return new MockStorageService();
 }

@@ -3,6 +3,7 @@ import { Book, StatusFilter } from '@/types';
 import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
 import FloatingActionButton from './FloatingActionButton';
+import AddBookModal from './modals/AddBookModal';
 
 interface DashboardProps {
   books: Book[];
@@ -10,7 +11,7 @@ interface DashboardProps {
   onQuickUpdate?: (bookId: number, increment: number) => void;
   onMarkComplete?: (bookId: number) => void;
   onChangeStatus?: (bookId: number, status: Book['status']) => void;
-  onAddBook?: () => void;
+  onAddBook?: (book: Omit<Book, 'id' | 'dateAdded' | 'dateModified'>) => Promise<void>;
   loading?: boolean;
   className?: string;
 }
@@ -27,6 +28,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAddingBook, setIsAddingBook] = useState(false);
 
   // Filter books based on active filter and search query
   const filteredBooks = useMemo(() => {
@@ -56,6 +59,30 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const clearSearch = () => {
     setSearchQuery('');
+  };
+
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+    setIsAddingBook(false);
+  };
+
+  const handleAddBook = async (bookData: Omit<Book, 'id' | 'dateAdded' | 'dateModified'>) => {
+    if (!onAddBook) return;
+    
+    try {
+      setIsAddingBook(true);
+      await onAddBook(bookData);
+      handleCloseAddModal();
+    } catch (error) {
+      console.error('Failed to add book:', error);
+      // Keep modal open on error so user can retry
+    } finally {
+      setIsAddingBook(false);
+    }
   };
 
   return (
@@ -173,8 +200,16 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Floating Action Button */}
       <FloatingActionButton
-        onClick={onAddBook}
+        onClick={handleOpenAddModal}
         ariaLabel="Add new book"
+      />
+
+      {/* Add Book Modal */}
+      <AddBookModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onAddBook={handleAddBook}
+        loading={isAddingBook}
       />
     </div>
   );

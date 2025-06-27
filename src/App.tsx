@@ -1,5 +1,8 @@
 import Dashboard from './components/Dashboard';
+import ToastContainer from './components/ToastContainer';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useStorage } from './hooks/useStorage';
+import { useToast } from './hooks/useToast';
 import { Book } from './types';
 
 function App() {
@@ -13,44 +16,94 @@ function App() {
     addBook
   } = useStorage();
 
+  const { toasts, removeToast, success, error: showError, info } = useToast();
+
   const handleUpdateProgress = async (bookId: number, progress: number) => {
-    console.log(`Updating book ${bookId} progress to ${progress}%`);
-    await updateProgress(bookId, progress);
+    try {
+      console.log(`Updating book ${bookId} progress to ${progress}%`);
+      await updateProgress(bookId, progress);
+      
+      const book = books.find(b => b.id === bookId);
+      if (book && progress === 100) {
+        success(`Finished reading "${book.title}"! 🎉`, {
+          title: 'Book Completed',
+          duration: 6000
+        });
+      }
+    } catch (error) {
+      showError('Failed to update progress. Please try again.');
+    }
   };
 
   const handleQuickUpdate = async (bookId: number, increment: number) => {
-    console.log(`Quick update book ${bookId} by ${increment}%`);
-    
-    const book = books.find(b => b.id === bookId);
-    if (book) {
-      const newProgress = Math.min(100, Math.max(0, book.progress + increment));
-      await updateProgress(bookId, newProgress);
+    try {
+      console.log(`Quick update book ${bookId} by ${increment}%`);
+      
+      const book = books.find(b => b.id === bookId);
+      if (book) {
+        const newProgress = Math.min(100, Math.max(0, book.progress + increment));
+        await updateProgress(bookId, newProgress);
+        
+        if (newProgress === 100) {
+          success(`Finished reading "${book.title}"! 🎉`, {
+            title: 'Book Completed',
+            duration: 6000
+          });
+        } else {
+          info(`Progress updated to ${newProgress}%`);
+        }
+      }
+    } catch (error) {
+      showError('Failed to update progress. Please try again.');
     }
   };
 
   const handleMarkComplete = async (bookId: number) => {
-    console.log(`Marking book ${bookId} as complete`);
-    await markComplete(bookId);
+    try {
+      console.log(`Marking book ${bookId} as complete`);
+      const book = books.find(b => b.id === bookId);
+      await markComplete(bookId);
+      
+      if (book) {
+        success(`Finished reading "${book.title}"! 🎉`, {
+          title: 'Book Completed',
+          duration: 6000
+        });
+      }
+    } catch (error) {
+      showError('Failed to mark book as complete. Please try again.');
+    }
   };
 
   const handleChangeStatus = async (bookId: number, status: Book['status']) => {
-    console.log(`Changing book ${bookId} status to ${status}`);
-    await changeStatus(bookId, status);
+    try {
+      console.log(`Changing book ${bookId} status to ${status}`);
+      await changeStatus(bookId, status);
+      
+      const statusMessages = {
+        'want_to_read': 'Added to your reading list',
+        'currently_reading': 'Started reading',
+        'finished': 'Marked as finished'
+      };
+      
+      info(statusMessages[status]);
+    } catch (error) {
+      showError('Failed to change book status. Please try again.');
+    }
   };
 
-  const handleAddBook = async () => {
-    console.log('Add book clicked');
-    
-    // Demo: Add a sample book for testing
-    const sampleBook = {
-      title: "New Book " + Date.now(),
-      author: "Demo Author",
-      status: 'want_to_read' as const,
-      progress: 0,
-      notes: "Added via FAB button"
-    };
-    
-    await addBook(sampleBook);
+  const handleAddBook = async (bookData: Omit<Book, 'id' | 'dateAdded' | 'dateModified'>) => {
+    try {
+      console.log('Adding new book:', bookData.title);
+      await addBook(bookData);
+      success(`"${bookData.title}" added to your library!`, {
+        title: 'Book Added',
+        duration: 4000
+      });
+    } catch (error) {
+      showError('Failed to add book. Please try again.');
+      throw error; // Re-throw so the modal stays open
+    }
   };
 
   // Show error state if there's an error
@@ -77,15 +130,25 @@ function App() {
   }
 
   return (
-    <Dashboard
-      books={books}
-      onUpdateProgress={handleUpdateProgress}
-      onQuickUpdate={handleQuickUpdate}
-      onMarkComplete={handleMarkComplete}
-      onChangeStatus={handleChangeStatus}
-      onAddBook={handleAddBook}
-      loading={loading}
-    />
+    <ErrorBoundary>
+      <Dashboard
+        books={books}
+        onUpdateProgress={handleUpdateProgress}
+        onQuickUpdate={handleQuickUpdate}
+        onMarkComplete={handleMarkComplete}
+        onChangeStatus={handleChangeStatus}
+        onAddBook={handleAddBook}
+        loading={loading}
+      />
+      
+      {/* Toast Notifications */}
+      <ToastContainer
+        toasts={toasts}
+        onDismiss={removeToast}
+        position="top-right"
+        maxToasts={5}
+      />
+    </ErrorBoundary>
   );
 }
 

@@ -5,13 +5,19 @@ import { Book } from '@/types';
 
 // Mock react-window for testing
 vi.mock('react-window', () => ({
-  FixedSizeGrid: ({ children, rowCount, columnCount }: any) => {
+  FixedSizeGrid: ({ children, rowCount, columnCount, columnWidth, rowHeight }: any) => {
     const items = [];
     for (let row = 0; row < rowCount; row++) {
       for (let col = 0; col < columnCount; col++) {
+        const style = {
+          left: col * (columnWidth || 250),
+          top: row * (rowHeight || 320),
+          width: columnWidth || 250,
+          height: rowHeight || 320,
+        };
         items.push(
           <div key={`${row}-${col}`} data-testid="virtual-grid-item">
-            {children({ columnIndex: col, rowIndex: row, style: {} })}
+            {children({ columnIndex: col, rowIndex: row, style })}
           </div>
         );
       }
