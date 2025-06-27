@@ -13,7 +13,9 @@ function App() {
     updateProgress,
     markComplete,
     changeStatus,
-    addBook
+    addBook,
+    updateBook,
+    deleteBook
   } = useStorage();
 
   const { toasts, removeToast, success, error: showError, info } = useToast();
@@ -106,6 +108,41 @@ function App() {
     }
   };
 
+  const handleUpdateBook = async (bookId: number, updates: Partial<Book>) => {
+    try {
+      console.log(`Updating book ${bookId}:`, updates);
+      await updateBook(bookId, updates);
+      
+      const updatedBook = books.find(b => b.id === bookId);
+      if (updatedBook) {
+        success(`"${updates.title || updatedBook.title}" updated successfully!`, {
+          title: 'Book Updated',
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      showError('Failed to update book. Please try again.');
+      throw error; // Re-throw so the modal stays open
+    }
+  };
+
+  const handleDeleteBook = async (bookId: number) => {
+    try {
+      console.log(`Deleting book ${bookId}`);
+      const book = books.find(b => b.id === bookId);
+      await deleteBook(bookId);
+      
+      if (book) {
+        success(`"${book.title}" removed from your library`, {
+          title: 'Book Deleted',
+          duration: 3000
+        });
+      }
+    } catch (error) {
+      showError('Failed to delete book. Please try again.');
+    }
+  };
+
   // Show error state if there's an error
   if (error) {
     return (
@@ -138,6 +175,8 @@ function App() {
         onMarkComplete={handleMarkComplete}
         onChangeStatus={handleChangeStatus}
         onAddBook={handleAddBook}
+        onUpdateBook={handleUpdateBook}
+        onDeleteBook={handleDeleteBook}
         loading={loading}
       />
       

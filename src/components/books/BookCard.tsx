@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Book } from '@/types';
 import ProgressSlider from '@/components/ProgressSlider';
 
@@ -8,6 +8,8 @@ interface BookCardProps {
   onQuickUpdate?: (bookId: number, increment: number) => void;
   onMarkComplete?: (bookId: number) => void;
   onChangeStatus?: (bookId: number, status: Book['status']) => void;
+  onEdit?: (book: Book) => void;
+  onDelete?: (bookId: number) => void;
   showQuickActions?: boolean;
   interactive?: boolean;
   className?: string;
@@ -18,11 +20,32 @@ const BookCard: React.FC<BookCardProps> = ({
   onUpdateProgress,
   onQuickUpdate,
   onMarkComplete,
+  onEdit,
+  onDelete,
   showQuickActions = true,
   interactive = true,
   className = ''
 }) => {
   const [localProgress, setLocalProgress] = useState(book.progress);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close actions menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
+        setShowActionsMenu(false);
+      }
+    };
+
+    if (showActionsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showActionsMenu]);
 
   const getStatusColor = (status: Book['status']) => {
     switch (status) {
@@ -77,6 +100,20 @@ const BookCard: React.FC<BookCardProps> = ({
     }
   };
 
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(book);
+    }
+    setShowActionsMenu(false);
+  };
+
+  const handleDelete = () => {
+    if (onDelete && window.confirm(`Are you sure you want to delete "${book.title}"? This action cannot be undone.`)) {
+      onDelete(book.id);
+    }
+    setShowActionsMenu(false);
+  };
+
   const shouldShowProgressControls = book.status === 'currently_reading' && interactive;
   const progressPercentage = localProgress;
 
@@ -92,9 +129,44 @@ const BookCard: React.FC<BookCardProps> = ({
             {book.author}
           </p>
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ml-3 whitespace-nowrap ${getStatusColor(book.status)}`}>
-          {getStatusLabel(book.status)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(book.status)}`}>
+            {getStatusLabel(book.status)}
+          </span>
+          {interactive && (onEdit || onDelete) && (
+            <div className="relative" ref={actionsMenuRef}>
+              <button
+                onClick={() => setShowActionsMenu(!showActionsMenu)}
+                className="p-1 hover:bg-background rounded-full transition-colors"
+                aria-label="Book actions"
+              >
+                <svg className="w-4 h-4 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+              {showActionsMenu && (
+                <div className="absolute right-0 top-8 bg-surface border border-border rounded-lg shadow-lg py-1 z-10 min-w-[120px]">
+                  {onEdit && (
+                    <button
+                      onClick={handleEdit}
+                      className="w-full text-left px-3 py-2 text-sm text-text-primary hover:bg-background transition-colors"
+                    >
+                      Edit book
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={handleDelete}
+                      className="w-full text-left px-3 py-2 text-sm text-destructive hover:bg-background transition-colors"
+                    >
+                      Delete book
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Progress Section */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Book } from '@/types';
+import { calculateStreak } from '@/utils/streakCalculator';
 
 interface StreakDisplayProps {
   /** Books data to calculate streak from */
@@ -23,15 +24,13 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
 }) => {
   // Calculate streak data from books
   const streakData = React.useMemo(() => {
-    const currentStreak = 0; // Default to 0 for now
-    const longestStreak = 0;
-    const todayProgress = 0;
-    const dailyGoal = 50; // Default daily goal
-    
-    return { currentStreak, longestStreak, todayProgress, dailyGoal };
+    return calculateStreak(books, 30); // 30 pages as default daily goal
   }, [books]);
   
-  const { currentStreak, longestStreak, todayProgress, dailyGoal } = streakData;
+  const { currentStreak, longestStreak, todayProgress, dailyGoal, hasReadToday: calculatedHasReadToday } = streakData;
+  
+  // Use calculated value or fallback to prop
+  const actualHasReadToday = calculatedHasReadToday || hasReadToday;
 
   const getStreakMessage = () => {
     if (currentStreak === 0) {
@@ -73,7 +72,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
             {currentStreak} day{currentStreak !== 1 ? 's' : ''}
           </div>
           <div className="text-xs text-text-secondary">
-            {hasReadToday ? 'Active today' : 'No activity today'}
+            {actualHasReadToday ? 'Active today' : 'No activity today'}
           </div>
         </div>
       </div>
@@ -126,7 +125,7 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
             <span className="text-xs opacity-75">
               {getStreakMessage()}
             </span>
-            {hasReadToday && (
+            {actualHasReadToday && (
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                 <span className="text-xs opacity-75">Active</span>

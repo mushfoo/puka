@@ -64,7 +64,15 @@ export class FileSystemStorageService implements StorageService {
       // Load books from localStorage
       const booksData = localStorage.getItem('puka-books');
       if (booksData) {
-        this.books = JSON.parse(booksData);
+        const parsedBooks = JSON.parse(booksData);
+        // Convert date strings back to Date objects
+        this.books = parsedBooks.map((book: any) => ({
+          ...book,
+          dateAdded: new Date(book.dateAdded),
+          dateModified: book.dateModified ? new Date(book.dateModified) : undefined,
+          dateStarted: book.dateStarted ? new Date(book.dateStarted) : undefined,
+          dateFinished: book.dateFinished ? new Date(book.dateFinished) : undefined
+        }));
         this.nextId = this.books.length > 0 ? Math.max(...this.books.map(b => b.id || 0)) + 1 : 1;
       } else {
         this.books = [];

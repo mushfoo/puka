@@ -4,6 +4,7 @@ import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
 import FloatingActionButton from './FloatingActionButton';
 import AddBookModal from './modals/AddBookModal';
+import EditBookModal from './modals/EditBookModal';
 import StreakDisplay from './StreakDisplay';
 
 interface DashboardProps {
@@ -13,6 +14,8 @@ interface DashboardProps {
   onMarkComplete?: (bookId: number) => void;
   onChangeStatus?: (bookId: number, status: Book['status']) => void;
   onAddBook?: (book: Omit<Book, 'id' | 'dateAdded' | 'dateModified'>) => Promise<void>;
+  onUpdateBook?: (bookId: number, updates: Partial<Book>) => Promise<void>;
+  onDeleteBook?: (bookId: number) => Promise<void>;
   loading?: boolean;
   className?: string;
 }
@@ -24,6 +27,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onMarkComplete,
   onChangeStatus,
   onAddBook,
+  onUpdateBook,
+  onDeleteBook,
   loading = false,
   className = ''
 }) => {
@@ -32,6 +37,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAddingBook, setIsAddingBook] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
+  const [isUpdatingBook, setIsUpdatingBook] = useState(false);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -93,6 +101,42 @@ const Dashboard: React.FC<DashboardProps> = ({
       // Keep modal open on error so user can retry
     } finally {
       setIsAddingBook(false);
+    }
+  };
+
+  const handleEditBook = (book: Book) => {
+    setBookToEdit(book);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setBookToEdit(null);
+    setIsUpdatingBook(false);
+  };
+
+  const handleUpdateBook = async (bookId: number, updates: Partial<Book>) => {
+    if (!onUpdateBook) return;
+    
+    try {
+      setIsUpdatingBook(true);
+      await onUpdateBook(bookId, updates);
+      handleCloseEditModal();
+    } catch (error) {
+      console.error('Failed to update book:', error);
+      // Keep modal open on error so user can retry
+    } finally {
+      setIsUpdatingBook(false);
+    }
+  };
+
+  const handleDeleteBook = async (bookId: number) => {
+    if (!onDeleteBook) return;
+    
+    try {
+      await onDeleteBook(bookId);
+    } catch (error) {
+      console.error('Failed to delete book:', error);
     }
   };
 
@@ -211,6 +255,8 @@ const Dashboard: React.FC<DashboardProps> = ({
           onQuickUpdate={onQuickUpdate}
           onMarkComplete={onMarkComplete}
           onChangeStatus={onChangeStatus}
+          onEdit={handleEditBook}
+          onDelete={handleDeleteBook}
           loading={loading}
           showQuickActions={true}
         />
@@ -228,6 +274,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         onClose={handleCloseAddModal}
         onAddBook={handleAddBook}
         loading={isAddingBook}
+      />
+
+      {/* Edit Book Modal */}
+      <EditBookModal
+        isOpen={isEditModalOpen}
+        book={bookToEdit}
+        onClose={handleCloseEditModal}
+        onUpdateBook={handleUpdateBook}
+        loading={isUpdatingBook}
       />
     </div>
   );

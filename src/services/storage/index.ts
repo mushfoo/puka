@@ -17,22 +17,16 @@ export { FileSystemStorageService } from './FileSystemStorageService';
 
 // Import types for the factory function
 import { type StorageService } from './StorageService';
-import { MockStorageService } from './MockStorageService';
 import { FileSystemStorageService } from './FileSystemStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
-  // In development, use MockStorageService for easier testing
-  // In production, user would need to explicitly choose FileSystemStorageService
-  if (import.meta.env.DEV) {
-    return new MockStorageService();
-  }
-  
-  // Check if File System Access API is available
+  // Check if File System Access API is available - use it if supported
   if (FileSystemStorageService.isSupported()) {
     return new FileSystemStorageService();
   }
   
-  // Fall back to mock service for production if File System Access API is not available
-  return new MockStorageService();
+  // Fall back to mock service for browsers that don't support File System Access API
+  // This provides a functioning app with localStorage fallback
+  return new FileSystemStorageService();  // FileSystemStorageService handles localStorage fallback internally
 }

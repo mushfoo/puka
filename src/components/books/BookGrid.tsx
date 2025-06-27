@@ -9,6 +9,8 @@ interface BookGridProps {
   onQuickUpdate?: (bookId: number, increment: number) => void;
   onMarkComplete?: (bookId: number) => void;
   onChangeStatus?: (bookId: number, status: Book['status']) => void;
+  onEdit?: (book: Book) => void;
+  onDelete?: (bookId: number) => void;
   showQuickActions?: boolean;
   loading?: boolean;
   className?: string;
@@ -20,6 +22,8 @@ const BookGrid: React.FC<BookGridProps> = ({
   onQuickUpdate,
   onMarkComplete,
   onChangeStatus,
+  onEdit,
+  onDelete,
   showQuickActions = true,
   loading = false,
   className = ''
@@ -129,6 +133,8 @@ const BookGrid: React.FC<BookGridProps> = ({
           onQuickUpdate={onQuickUpdate}
           onMarkComplete={onMarkComplete}
           onChangeStatus={onChangeStatus}
+          onEdit={onEdit}
+          onDelete={onDelete}
           showQuickActions={showQuickActions}
           interactive={true}
         />
@@ -147,6 +153,8 @@ const BookGrid: React.FC<BookGridProps> = ({
           onQuickUpdate={onQuickUpdate}
           onMarkComplete={onMarkComplete}
           onChangeStatus={onChangeStatus}
+          onEdit={onEdit}
+          onDelete={onDelete}
           showQuickActions={showQuickActions}
           interactive={true}
         />
