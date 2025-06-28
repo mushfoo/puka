@@ -18,6 +18,7 @@ export { FileSystemStorageService } from './FileSystemStorageService';
 // Import types for the factory function
 import { type StorageService } from './StorageService';
 import { FileSystemStorageService } from './FileSystemStorageService';
+import { MockStorageService } from './MockStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
@@ -26,7 +27,7 @@ export function createStorageService(): StorageService {
     return new FileSystemStorageService();
   }
   
-  // Fall back to mock service for browsers that don't support File System Access API
+  // Fall back to FileSystemStorageService with localStorage fallback for browsers that don't support File System Access API
   // This provides a functioning app with localStorage fallback
   return new FileSystemStorageService();  // FileSystemStorageService handles localStorage fallback internally
 }

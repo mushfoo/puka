@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Book, StatusFilter } from '@/types';
-import { createStorageService, StorageService } from '@/services/storage';
+import { createStorageService, StorageService, ExportData } from '@/services/storage';
 
 interface UseStorageResult {
   books: Book[];
@@ -14,6 +14,7 @@ interface UseStorageResult {
   changeStatus: (bookId: number, status: Book['status']) => Promise<boolean>;
   searchBooks: (query: string) => Promise<Book[]>;
   getFilteredBooks: (filter: StatusFilter) => Book[];
+  getExportData: () => Promise<ExportData | null>;
   refresh: () => Promise<void>;
 }
 
@@ -155,6 +156,18 @@ export const useStorage = (): UseStorageResult => {
     return books.filter(book => book.status === filter);
   }, [books]);
 
+  // Get export data
+  const getExportData = useCallback(async (): Promise<ExportData | null> => {
+    try {
+      setError(null);
+      return await storageService.exportData();
+    } catch (err) {
+      console.error('Failed to get export data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get export data');
+      return null;
+    }
+  }, [storageService]);
+
   // Refresh data
   const refresh = useCallback(async (): Promise<void> => {
     await initializeStorage();
@@ -172,6 +185,7 @@ export const useStorage = (): UseStorageResult => {
     changeStatus,
     searchBooks,
     getFilteredBooks,
+    getExportData,
     refresh
   };
 };

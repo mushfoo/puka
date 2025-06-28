@@ -1,14 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Book, StatusFilter } from '@/types';
+import { ExportData } from '@/services/storage/StorageService';
 import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
 import FloatingActionButton from './FloatingActionButton';
 import AddBookModal from './modals/AddBookModal';
 import EditBookModal from './modals/EditBookModal';
+import ExportModal from './modals/ExportModal';
 import StreakDisplay from './StreakDisplay';
 
 interface DashboardProps {
   books: Book[];
+  exportData?: ExportData;
   onUpdateProgress?: (bookId: number, progress: number) => void;
   onQuickUpdate?: (bookId: number, increment: number) => void;
   onMarkComplete?: (bookId: number) => void;
@@ -22,6 +25,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({
   books,
+  exportData,
   onUpdateProgress,
   onQuickUpdate,
   onMarkComplete,
@@ -40,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
   const [isUpdatingBook, setIsUpdatingBook] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -140,6 +145,14 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const handleOpenExportModal = () => {
+    setIsExportModalOpen(true);
+  };
+
+  const handleCloseExportModal = () => {
+    setIsExportModalOpen(false);
+  };
+
   return (
     <div className={`min-h-screen bg-background ${className}`}>
       {/* Header */}
@@ -159,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
             
-            {/* Search and Streak - Desktop */}
+            {/* Search, Export, and Streak - Desktop */}
             <div className="hidden sm:flex items-center gap-4">
               <StreakDisplay books={books} />
               <div className="relative">
@@ -189,11 +202,22 @@ const Dashboard: React.FC<DashboardProps> = ({
                   </button>
                 )}
               </div>
+              <button
+                onClick={handleOpenExportModal}
+                disabled={books.length === 0}
+                className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Export your library"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden lg:inline">Export</span>
+              </button>
             </div>
           </div>
 
-          {/* Search - Mobile */}
-          <div className="sm:hidden pb-4">
+          {/* Search and Export - Mobile */}
+          <div className="sm:hidden pb-4 space-y-3">
             <div className="relative">
               <input
                 type="text"
@@ -221,6 +245,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               )}
             </div>
+            
+            {/* Export Button - Mobile */}
+            <button
+              onClick={handleOpenExportModal}
+              disabled={books.length === 0}
+              className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Export your library"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Export Library</span>
+            </button>
           </div>
         </div>
       </header>
@@ -284,6 +321,16 @@ const Dashboard: React.FC<DashboardProps> = ({
         onUpdateBook={handleUpdateBook}
         loading={isUpdatingBook}
       />
+
+      {/* Export Modal */}
+      {exportData && (
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={handleCloseExportModal}
+          books={books}
+          exportData={exportData}
+        />
+      )}
     </div>
   );
 };
