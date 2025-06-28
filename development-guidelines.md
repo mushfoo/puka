@@ -357,6 +357,39 @@ test('user can upload and process a configuration file', async () => {
 
 ---
 
+## Pull Request Guidelines
+
+### 📸 **Adding Screenshots to Pull Requests**
+
+When including screenshots in pull request descriptions, use the following format to ensure they render properly:
+
+**Correct Format:**
+```markdown
+![Description](https://raw.githubusercontent.com/mushfoo/puka/[branch_name]/[path/to/screenshot])
+```
+
+**Example:**
+```markdown
+![Main Dashboard](https://raw.githubusercontent.com/mushfoo/puka/feature/epic-2-validation/screenshots/01-main-dashboard.png)
+```
+
+**Important Notes:**
+- ✅ Use `raw.githubusercontent.com` URLs for proper rendering
+- ✅ Include your branch name in the URL
+- ✅ Use the full path from repository root
+- ❌ Do NOT use relative paths like `./screenshots/image.png`
+- ❌ Do NOT add a forward slash before the markdown image syntax
+
+### 📋 **Pull Request Best Practices**
+
+- **Clear Title**: Use format "Epic X: Brief description of changes"
+- **Comprehensive Description**: Include what, why, and how
+- **Visual Evidence**: Add screenshots for UI changes
+- **Testing Results**: Document test outcomes and performance metrics
+- **Checklist**: Use GitHub's PR template checkboxes for quality gates
+
+---
+
 ## General Development Principles
 
 ### 🚫 **Avoid These Patterns**

@@ -43,6 +43,7 @@
 - **Branch naming**: `feature/task-[ID]-[description]` format
 - **Commit conventions**: Clear, descriptive messages focusing on "why"
 - **PR process**: Include task ID and acceptance criteria validation
+- **Screenshots in PRs**: Use `https://raw.githubusercontent.com/mushfoo/puka/[branch_name]/[path]` format for proper rendering
 
 ### Testing and Quality Standards
 - **Test coverage**: Maintain >90% coverage across all features
