@@ -1,9 +1,11 @@
+import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ToastContainer from './components/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useStorage } from './hooks/useStorage';
 import { useToast } from './hooks/useToast';
 import { Book } from './types';
+import { ExportData } from './services/storage/StorageService';
 
 function App() {
   const {
@@ -15,10 +17,25 @@ function App() {
     changeStatus,
     addBook,
     updateBook,
-    deleteBook
+    deleteBook,
+    getExportData
   } = useStorage();
 
+  const [exportData, setExportData] = useState<ExportData | null>(null);
+
   const { toasts, removeToast, success, error: showError, info } = useToast();
+
+  // Fetch export data when books change
+  useEffect(() => {
+    const fetchExportData = async () => {
+      if (!loading && books.length > 0) {
+        const data = await getExportData();
+        setExportData(data);
+      }
+    };
+    
+    fetchExportData();
+  }, [books, loading, getExportData]);
 
   const handleUpdateProgress = async (bookId: number, progress: number) => {
     try {
@@ -170,6 +187,7 @@ function App() {
     <ErrorBoundary>
       <Dashboard
         books={books}
+        exportData={exportData || undefined}
         onUpdateProgress={handleUpdateProgress}
         onQuickUpdate={handleQuickUpdate}
         onMarkComplete={handleMarkComplete}

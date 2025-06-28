@@ -34,18 +34,27 @@ export class FileSystemStorageService implements StorageService {
 
   /**
    * Initialize the storage service
-   * Prompts user to select data directory on first run
+   * Tries File System Access API first, falls back to localStorage if it fails
    */
   async initialize(): Promise<void> {
     try {
-      this.useLocalStorage = !FileSystemStorageService.isSupported();
-      
-      if (this.useLocalStorage) {
-        await this.initializeLocalStorage();
-      } else {
-        await this.initializeFileSystem();
+      // First try File System Access API if supported
+      if (FileSystemStorageService.isSupported()) {
+        try {
+          await this.initializeFileSystem();
+          this.useLocalStorage = false;
+          this.initialized = true;
+          return;
+        } catch (error) {
+          // File System Access API failed (user denied, no interaction, etc.)
+          // Fall back to localStorage
+          console.warn('File System Access API initialization failed, falling back to localStorage:', error);
+        }
       }
       
+      // Fallback to localStorage (either FSAPI not supported or failed)
+      this.useLocalStorage = true;
+      await this.initializeLocalStorage();
       this.initialized = true;
     } catch (error) {
       throw new StorageError(
