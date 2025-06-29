@@ -458,9 +458,9 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
         {state.preview.sampleBooks.length > 0 && (
           <div>
-            <h4 className="font-medium text-text-primary mb-3">Sample Books</h4>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {state.preview.sampleBooks.slice(0, 3).map((book, index) => (
+            <h4 className="font-medium text-text-primary mb-3">Books to Import</h4>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {state.preview.sampleBooks.map((book, index) => (
                 <div key={index} className="bg-white border rounded-lg p-3">
                   <div className="font-medium text-text-primary">{book.title}</div>
                   <div className="text-sm text-text-secondary">

@@ -161,8 +161,8 @@ export class ImportService {
     // Detect format
     const suggestedFormat = this.detectFormat(columns);
     
-    // Process sample data (first 5 rows)
-    const sampleData = results.data.slice(0, 5);
+    // Process sample data (first 20 rows for preview, or all if fewer)
+    const sampleData = results.data.slice(0, Math.min(results.data.length, 20));
     const sampleBooks: Partial<Book>[] = [];
 
     if (suggestedFormat) {
