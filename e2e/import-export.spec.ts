@@ -40,10 +40,10 @@ test.describe('Import/Export Functionality', () => {
 
   test('should show export modal', async ({ page }) => {
     // First add a book so there's something to export
-    await page.click('button:has-text("Add Book")');
+    await page.click('[aria-label="Add new book"]');
     await page.fill('input[placeholder*="title"]', 'Export Test Book');
     await page.fill('input[placeholder*="author"]', 'Export Author');
-    await page.click('button:has-text("Add Book"):not(:has-text("Cancel"))');
+    await page.click('[aria-label="Add new book"]:not(:has-text("Cancel"))');
     
     await page.waitForTimeout(500);
     
@@ -67,10 +67,10 @@ test.describe('Import/Export Functionality', () => {
 
   test('should handle different export formats', async ({ page }) => {
     // Add a book first
-    await page.click('button:has-text("Add Book")');
+    await page.click('[aria-label="Add new book"]');
     await page.fill('input[placeholder*="title"]', 'Format Test Book');
     await page.fill('input[placeholder*="author"]', 'Format Author');
-    await page.click('button:has-text("Add Book"):not(:has-text("Cancel"))');
+    await page.click('[aria-label="Add new book"]:not(:has-text("Cancel"))');
     
     await page.waitForTimeout(500);
     
