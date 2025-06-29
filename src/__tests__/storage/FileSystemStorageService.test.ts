@@ -177,7 +177,9 @@ describe('FileSystemStorageService', () => {
       mockShowOpenFilePicker.mockRejectedValue(new DOMException('User cancelled', 'AbortError'));
       mockShowSaveFilePicker.mockRejectedValue(new DOMException('User cancelled', 'AbortError'));
 
-      await expect(service.initialize()).rejects.toThrow(StorageError);
+      // Should fallback to localStorage gracefully, not throw error
+      await expect(service.initialize()).resolves.toBeUndefined();
+      expect(service.books).toEqual([]);
     });
   });
 
@@ -442,7 +444,9 @@ describe('FileSystemStorageService', () => {
       mockShowOpenFilePicker.mockRejectedValue(new Error('File system error'));
       mockShowSaveFilePicker.mockRejectedValue(new Error('File system error'));
 
-      await expect(service.initialize()).rejects.toThrow(StorageError);
+      // Should fallback to localStorage gracefully, not throw error
+      await expect(service.initialize()).resolves.toBeUndefined();
+      expect(service.books).toEqual([]);
     });
   });
 });
