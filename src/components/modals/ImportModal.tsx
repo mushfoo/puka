@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+import Papa from 'papaparse';
 import { ImportService, ImportFormat, ImportPreview, ColumnMapping } from '@/services/importService';
 import { ImportOptions, ImportResult } from '@/services/storage/StorageService';
 import { createStorageService } from '@/services/storage';
@@ -89,9 +90,13 @@ const ImportModal: React.FC<ImportModalProps> = ({
     try {
       const preview = await ImportService.parseCSVFile(file);
       
+      // Also get the full CSV data for import
+      const fullCsvData = await getCsvDataFromFile(file);
+      
       setState(prev => ({
         ...prev,
         preview,
+        csvData: fullCsvData,
         selectedFormat: preview.suggestedFormat || ImportService.getSupportedFormats().find(f => f.id === 'generic')!,
         step: preview.success && preview.sampleBooks.length > 0 ? 'preview' : 'mapping',
         isProcessing: false
@@ -140,38 +145,61 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
   const handleImport = async () => {
     if (!state.preview || !state.selectedFormat || !storageService) {
+      console.error('Missing required data for import:', { 
+        preview: !!state.preview, 
+        selectedFormat: !!state.selectedFormat, 
+        storageService: !!storageService 
+      });
       return;
     }
 
     setState(prev => ({ ...prev, isProcessing: true, step: 'importing', error: null }));
 
     try {
+      console.log('Starting import process...');
+      
       // Use custom mapping if in mapping mode
       const format = state.step === 'mapping' 
         ? ImportService.createCustomFormat(state.customMapping)
         : state.selectedFormat;
 
+      console.log('Using format:', format);
+
+      // Use stored CSV data
+      const csvData = state.csvData || [];
+      console.log('Using stored CSV data, rows:', csvData.length);
+
       // Process the CSV data
       const parsedData = ImportService.processImportData(
-        state.preview.totalRows > 0 ? await getCsvData() : [],
+        csvData,
         format,
         state.importOptions
       );
 
+      console.log('Data processed:', { 
+        books: parsedData.books.length, 
+        errors: parsedData.errors.length 
+      });
+
       if (parsedData.errors.length > 0 && !state.importOptions.skipInvalid) {
+        console.error('Processing errors:', parsedData.errors);
         setState(prev => ({
           ...prev,
           error: `Import failed: ${parsedData.errors[0].message}`,
-          isProcessing: false
+          isProcessing: false,
+          step: 'preview'
         }));
         return;
       }
 
       // Convert to ImportData format
       const importData = ImportService.createImportData(parsedData.books);
+      console.log('Import data created:', importData);
 
       // Import to storage
+      console.log('Calling storage.importData...');
       const result = await storageService.importData(importData, state.importOptions);
+      console.log('Import result:', result);
 
       setState(prev => ({
         ...prev,
@@ -195,6 +223,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
         });
       }
     } catch (error) {
+      console.error('Import error:', error);
       setState(prev => ({
         ...prev,
         error: error instanceof Error ? error.message : 'Import failed',
@@ -204,23 +233,35 @@ const ImportModal: React.FC<ImportModalProps> = ({
     }
   };
 
-  const getCsvData = async (): Promise<any[]> => {
-    if (!state.file) return [];
+  const getCsvDataFromFile = async (file: File): Promise<any[]> => {
+    console.log('Reading CSV file:', file.name, file.size, 'bytes');
     
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
+        console.log('FileReader onload triggered');
         if (e.target?.result) {
-          // Get the full data, not just the sample
-          const Papa = require('papaparse');
-          const results = Papa.parse(e.target.result, { header: true, skipEmptyLines: true });
-          resolve(results.data);
+          try {
+            // Get the full data, not just the sample
+            console.log('Parsing CSV with Papa Parse...');
+            const results = Papa.parse(e.target.result as string, { header: true, skipEmptyLines: true });
+            console.log('Papa Parse results:', { data: results.data.length, errors: results.errors.length });
+            resolve(results.data);
+          } catch (parseError) {
+            console.error('Papa Parse error:', parseError);
+            reject(parseError);
+          }
         } else {
+          console.error('FileReader result is empty');
           reject(new Error('Failed to read file'));
         }
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsText(state.file!); // We already checked for null above
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        reject(new Error('Failed to read file'));
+      };
+      console.log('Starting to read file as text...');
+      reader.readAsText(file);
     });
   };
 
