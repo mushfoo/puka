@@ -55,6 +55,21 @@ describe('Dashboard', () => {
     expect(screen.getByLabelText('Books')).toBeInTheDocument(); // Book emoji
   });
 
+  it('renders prominent streak display card', () => {
+    render(<Dashboard {...defaultProps} />);
+    
+    // Check for streak display elements
+    expect(screen.getByText('Reading Streak')).toBeInTheDocument();
+    
+    // The streak display should show based on the books data
+    // We have books with progress, so it should calculate a streak
+    const streakElements = screen.getAllByText(/day/);
+    expect(streakElements.length).toBeGreaterThan(0);
+    
+    // Check for streak icon (fire emoji or book emoji)
+    expect(screen.getByLabelText('Streak icon')).toBeInTheDocument();
+  });
+
   it('renders search input', () => {
     render(<Dashboard {...defaultProps} />);
     
