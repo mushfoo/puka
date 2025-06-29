@@ -224,6 +224,36 @@ const ImportModal: React.FC<ImportModalProps> = ({
     });
   };
 
+  const downloadSampleCSV = () => {
+    const sampleData = `Title,Author,Status,Progress,Rating,Notes
+"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic American novel"
+"1984","George Orwell","currently_reading",65,,"Dystopian masterpiece"
+"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my reading list"
+"The Catcher in the Rye","J.D. Salinger","finished",100,4,"Coming-of-age story"
+"Brave New World","Aldous Huxley","want_to_read",0,,"Science fiction classic"`;
+
+    const blob = new Blob([sampleData], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'puka-sample-import.csv';
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Clean up the URL object
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+    
+    addToast({
+      type: 'success',
+      title: 'Sample Downloaded',
+      message: 'Sample CSV file downloaded successfully'
+    });
+  };
+
   const renderUploadStep = () => (
     <div className="space-y-6">
       <div className="text-center">
@@ -303,6 +333,26 @@ const ImportModal: React.FC<ImportModalProps> = ({
           <p className="font-medium text-text-primary">Custom</p>
           <p className="text-text-secondary">Any CSV with column mapping</p>
         </div>
+      </div>
+
+      {/* CSV Format Example */}
+      <div className="mt-6 bg-gray-50 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-text-primary mb-2">Expected CSV Format Example:</h4>
+        <div className="bg-white rounded border border-gray-200 p-3 font-mono text-xs overflow-x-auto">
+          <div className="text-gray-600">Title,Author,Status,Progress,Rating,Notes</div>
+          <div className="text-gray-800">"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic American novel"</div>
+          <div className="text-gray-800">"1984","George Orwell","currently_reading",65,,"Dystopian masterpiece"</div>
+          <div className="text-gray-800">"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my reading list"</div>
+        </div>
+        <p className="text-xs text-text-secondary mt-2">
+          Status values: "want_to_read", "currently_reading", or "finished" | Progress: 0-100 | Rating: 1-5
+        </p>
+        <button
+          onClick={downloadSampleCSV}
+          className="mt-3 px-3 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+        >
+          Download Sample CSV
+        </button>
       </div>
     </div>
   );

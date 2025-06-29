@@ -1,5 +1,4 @@
 import { test, expect } from '@playwright/test';
-import path from 'path';
 
 test.describe('Import/Export Functionality', () => {
   test.beforeEach(async ({ page }) => {
@@ -21,12 +20,6 @@ test.describe('Import/Export Functionality', () => {
   });
 
   test('should handle CSV file upload', async ({ page }) => {
-    // Create a test CSV content
-    const csvContent = `Title,Author,Status,Progress
-"Test Book 1","Test Author 1","currently_reading",50
-"Test Book 2","Test Author 2","finished",100
-"Test Book 3","Test Author 3","want_to_read",0`;
-
     // Look for import button
     const importButton = page.locator('button:has-text("Import")').first();
     
