@@ -291,4 +291,4 @@ git push -u origin feature/task-[ID]-[description]
 
 ---
 
-**Ready to continue development on Puka Reading Tracker!** Start with Task C001: Enhanced BookCard Component following the acceptance criteria in the task breakdown.
+**Ready to continue development on Puka Reading Tracker!** 
