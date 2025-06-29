@@ -76,6 +76,10 @@ jspm_packages/
 
 # Testing
 .nyc_output
+test-results/
+playwright-report/
+/test-results/
+/playwright-report/
 
 # Temporary folders
 tmp/
