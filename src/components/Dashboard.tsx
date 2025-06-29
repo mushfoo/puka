@@ -180,20 +180,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl" role="img" aria-label="Books">📚</span>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-primary">
-                  Puka Reading Tracker
-                </h1>
-                {/* Streak Display - Mobile */}
-                <div className="sm:hidden">
-                  <StreakDisplay books={books} className="text-sm" />
-                </div>
-              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-primary">
+                Puka Reading Tracker
+              </h1>
             </div>
             
-            {/* Search, Import, Export, and Streak - Desktop */}
+            {/* Search, Import, Export - Desktop (moved streak out) */}
             <div className="hidden sm:flex items-center gap-4">
-              <StreakDisplay books={books} />
               <div className="relative">
                 <input
                   type="text"
@@ -305,6 +298,16 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Prominent Streak Card */}
+        <div className="mb-6">
+          <StreakDisplay 
+            books={books} 
+            showDetails={true}
+            compact={false}
+            className="shadow-lg"
+          />
+        </div>
+
         {/* Filter Tabs */}
         <FilterTabs
           books={books}
