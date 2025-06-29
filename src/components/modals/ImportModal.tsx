@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { ImportService, ImportFormat, ImportPreview, ColumnMapping } from '@/services/importService';
 import { ImportOptions, ImportResult } from '@/services/storage/StorageService';
 import { createStorageService } from '@/services/storage';
@@ -32,7 +32,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
-  const storageService = createStorageService();
+  const storageService = useMemo(() => createStorageService(), []);
 
   const [state, setState] = useState<ImportState>({
     step: 'upload',
@@ -51,8 +51,6 @@ const ImportModal: React.FC<ImportModalProps> = ({
     isProcessing: false,
     error: null
   });
-
-  if (!isOpen) return null;
 
   const resetState = () => {
     setState({
@@ -533,6 +531,8 @@ const ImportModal: React.FC<ImportModalProps> = ({
         return renderUploadStep();
     }
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
