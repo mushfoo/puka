@@ -158,6 +158,11 @@ const ImportModal: React.FC<ImportModalProps> = ({
     try {
       console.log('Starting import process...');
       
+      // Ensure storage service is initialized
+      console.log('Initializing storage service...');
+      await storageService.initialize();
+      console.log('Storage service initialized successfully');
+      
       // Use custom mapping if in mapping mode
       const format = state.step === 'mapping' 
         ? ImportService.createCustomFormat(state.customMapping)
