@@ -22,7 +22,7 @@ global.URL = {
   revokeObjectURL: vi.fn()
 } as any;
 
-global.Blob = vi.fn((content, options) => ({
+global.Blob = vi.fn((_content, options) => ({
   type: options?.type || 'text/plain'
 })) as any;
 

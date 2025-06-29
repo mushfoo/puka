@@ -18,7 +18,6 @@ export { FileSystemStorageService } from './FileSystemStorageService';
 // Import types for the factory function
 import { type StorageService } from './StorageService';
 import { FileSystemStorageService } from './FileSystemStorageService';
-import { MockStorageService } from './MockStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {

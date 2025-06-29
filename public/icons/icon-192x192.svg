@@ -1,0 +1,17 @@
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#3b82f6" rx="24"/>
+  
+  <!-- Book icon -->
+  <g transform="translate(38.400000000000006, 48)">
+    <!-- Book cover -->
+    <rect x="0" y="0" width="67.19999999999999" height="96" fill="#ffffff" rx="2"/>
+    <rect x="9.600000000000001" y="9.600000000000001" width="48" height="76.80000000000001" fill="#3b82f6" rx="1"/>
+    
+    <!-- Book pages -->
+    <rect x="76.80000000000001" y="3.84" width="61.44" height="92.16" fill="#f8fafc" rx="2"/>
+    <line x1="86.4" y1="19.200000000000003" x2="128.64000000000001" y2="19.200000000000003" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="86.4" y1="28.799999999999997" x2="128.64000000000001" y2="28.799999999999997" stroke="#cbd5e1" stroke-width="1"/>
+    <line x1="86.4" y1="38.400000000000006" x2="128.64000000000001" y2="38.400000000000006" stroke="#cbd5e1" stroke-width="1"/>
+  </g>
+</svg>

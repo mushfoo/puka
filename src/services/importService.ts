@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { Book } from '@/types';
-import { ImportData, ImportResult, ImportError, ImportOptions } from './storage/StorageService';
+import { ImportData, ImportError, ImportOptions } from './storage/StorageService';
 
 export interface ColumnMapping {
   [key: string]: string; // CSV column name -> Book field name
@@ -164,14 +164,12 @@ export class ImportService {
     // Process sample data (first 5 rows)
     const sampleData = results.data.slice(0, 5);
     const sampleBooks: Partial<Book>[] = [];
-    let validSampleRows = 0;
 
     if (suggestedFormat) {
       sampleData.forEach((row, index) => {
         try {
-          const book = this.convertRowToBook(row, suggestedFormat, index);
+          const book = this.convertRowToBook(row, suggestedFormat);
           sampleBooks.push(book);
-          validSampleRows++;
         } catch (error) {
           errors.push({
             row: index,
@@ -203,9 +201,9 @@ export class ImportService {
   private static calculateValidRows(data: any[], format: ImportFormat): number {
     let validCount = 0;
     
-    data.forEach((row, index) => {
+    data.forEach((row) => {
       try {
-        this.convertRowToBook(row, format, index);
+        this.convertRowToBook(row, format);
         validCount++;
       } catch (error) {
         // Row is invalid, don't count it
@@ -267,7 +265,7 @@ export class ImportService {
   /**
    * Convert CSV row to Book object
    */
-  private static convertRowToBook(row: any, format: ImportFormat, rowIndex: number): Partial<Book> {
+  private static convertRowToBook(row: any, format: ImportFormat): Partial<Book> {
     const book: Partial<Book> = {};
     const errors: string[] = [];
 
@@ -292,7 +290,7 @@ export class ImportService {
             book[bookField] = String(value).trim();
             break;
 
-          case 'progress':
+          case 'progress': {
             const progressValue = Number(value);
             if (!isNaN(progressValue)) {
               if (progressValue < 0 || progressValue > 100) {
@@ -301,8 +299,9 @@ export class ImportService {
               book.progress = progressValue;
             }
             break;
+          }
 
-          case 'rating':
+          case 'rating': {
             const ratingValue = Number(value);
             if (!isNaN(ratingValue)) {
               if (ratingValue < 0 || ratingValue > 5) {
@@ -311,14 +310,16 @@ export class ImportService {
               book.rating = ratingValue;
             }
             break;
+          }
 
           case 'totalPages':
-          case 'currentPage':
+          case 'currentPage': {
             const numValue = Number(value);
             if (!isNaN(numValue) && numValue >= 0) {
               book[bookField] = numValue;
             }
             break;
+          }
 
           case 'status':
             book.status = this.mapStatus(value, format.statusMapping);
@@ -327,12 +328,13 @@ export class ImportService {
           case 'dateAdded':
           case 'dateModified':
           case 'dateStarted':
-          case 'dateFinished':
+          case 'dateFinished': {
             const date = this.parseDate(value);
             if (date) {
               book[bookField] = date;
             }
             break;
+          }
 
           default:
             // Handle custom fields or unknown mappings
@@ -371,7 +373,8 @@ export class ImportService {
     }
 
     // Auto-set status based on progress if not explicitly set
-    if (book.progress !== undefined && !row[this.getCSVColumnForField('status', format)]) {
+    const statusColumn = this.getCSVColumnForField('status', format);
+    if (book.progress !== undefined && statusColumn && !row[statusColumn]) {
       if (book.progress === 0) {
         book.status = 'want_to_read';
       } else if (book.progress === 100) {
@@ -585,10 +588,10 @@ export class ImportService {
     csvData.forEach((row, index) => {
       try {
         if (options.validateData) {
-          this.validateRow(row, format, index);
+          this.validateRow(row, format);
         }
 
-        const book = this.convertRowToBook(row, format, index);
+        const book = this.convertRowToBook(row, format);
         books.push(book);
         validRows++;
       } catch (error) {
@@ -616,7 +619,7 @@ export class ImportService {
   /**
    * Validate CSV row data
    */
-  private static validateRow(row: any, format: ImportFormat, rowIndex: number): void {
+  private static validateRow(row: any, format: ImportFormat): void {
     // Check for required fields
     const titleColumn = this.getCSVColumnForField('title', format);
     if (titleColumn && (!row[titleColumn] || row[titleColumn].trim() === '')) {
