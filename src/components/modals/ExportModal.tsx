@@ -52,7 +52,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const [includeSettings, setIncludeSettings] = useState(true);
   const [customFilename, setCustomFilename] = useState('');
   const [isExporting, setIsExporting] = useState(false);
-  const { showToast } = useToast();
+  const { addToast } = useToast();
 
   if (!isOpen) return null;
 
@@ -76,21 +76,21 @@ const ExportModal: React.FC<ExportModalProps> = ({
       }
       
       if (result.success) {
-        showToast({
+        addToast({
           type: 'success',
           title: 'Export Successful',
           message: `Your library has been exported to ${result.filename}`
         });
         onClose();
       } else {
-        showToast({
+        addToast({
           type: 'error',
           title: 'Export Failed',
           message: result.error || 'An unknown error occurred during export'
         });
       }
     } catch (error) {
-      showToast({
+      addToast({
         type: 'error',
         title: 'Export Failed',
         message: error instanceof Error ? error.message : 'An unknown error occurred'

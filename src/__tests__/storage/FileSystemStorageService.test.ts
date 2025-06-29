@@ -179,7 +179,8 @@ describe('FileSystemStorageService', () => {
 
       // Should fallback to localStorage gracefully, not throw error
       await expect(service.initialize()).resolves.toBeUndefined();
-      expect(service.books).toEqual([]);
+      const books = await service.getBooks();
+      expect(books).toEqual([]);
     });
   });
 
@@ -446,7 +447,8 @@ describe('FileSystemStorageService', () => {
 
       // Should fallback to localStorage gracefully, not throw error
       await expect(service.initialize()).resolves.toBeUndefined();
-      expect(service.books).toEqual([]);
+      const books = await service.getBooks();
+      expect(books).toEqual([]);
     });
   });
 });

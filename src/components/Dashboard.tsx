@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Book, StatusFilter } from '@/types';
-import { ExportData } from '@/services/storage/StorageService';
+import { ExportData, ImportResult } from '@/services/storage/StorageService';
 import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
 import FloatingActionButton from './FloatingActionButton';
 import AddBookModal from './modals/AddBookModal';
 import EditBookModal from './modals/EditBookModal';
 import ExportModal from './modals/ExportModal';
+import ImportModal from './modals/ImportModal';
 import StreakDisplay from './StreakDisplay';
 
 interface DashboardProps {
@@ -19,6 +20,7 @@ interface DashboardProps {
   onAddBook?: (book: Omit<Book, 'id' | 'dateAdded' | 'dateModified'>) => Promise<void>;
   onUpdateBook?: (bookId: number, updates: Partial<Book>) => Promise<void>;
   onDeleteBook?: (bookId: number) => Promise<void>;
+  onImportComplete?: (result: ImportResult) => void;
   loading?: boolean;
   className?: string;
 }
@@ -33,6 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onAddBook,
   onUpdateBook,
   onDeleteBook,
+  onImportComplete,
   loading = false,
   className = ''
 }) => {
@@ -45,6 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
   const [isUpdatingBook, setIsUpdatingBook] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -153,6 +157,21 @@ const Dashboard: React.FC<DashboardProps> = ({
     setIsExportModalOpen(false);
   };
 
+  const handleOpenImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleImportComplete = (result: ImportResult) => {
+    setIsImportModalOpen(false);
+    if (onImportComplete) {
+      onImportComplete(result);
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-background ${className}`}>
       {/* Header */}
@@ -172,7 +191,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             </div>
             
-            {/* Search, Export, and Streak - Desktop */}
+            {/* Search, Import, Export, and Streak - Desktop */}
             <div className="hidden sm:flex items-center gap-4">
               <StreakDisplay books={books} />
               <div className="relative">
@@ -203,6 +222,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                 )}
               </div>
               <button
+                onClick={handleOpenImportModal}
+                className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                title="Import books from CSV"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4" />
+                </svg>
+                <span className="hidden lg:inline">Import</span>
+              </button>
+              <button
                 onClick={handleOpenExportModal}
                 disabled={books.length === 0}
                 className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -216,7 +245,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Search and Export - Mobile */}
+          {/* Search, Import and Export - Mobile */}
           <div className="sm:hidden pb-4 space-y-3">
             <div className="relative">
               <input
@@ -246,18 +275,30 @@ const Dashboard: React.FC<DashboardProps> = ({
               )}
             </div>
             
-            {/* Export Button - Mobile */}
-            <button
-              onClick={handleOpenExportModal}
-              disabled={books.length === 0}
-              className="flex items-center justify-center gap-2 w-full px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Export your library"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Export Library</span>
-            </button>
+            {/* Import and Export Buttons - Mobile */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleOpenImportModal}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                title="Import books from CSV"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4" />
+                </svg>
+                <span>Import</span>
+              </button>
+              <button
+                onClick={handleOpenExportModal}
+                disabled={books.length === 0}
+                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Export your library"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -331,6 +372,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           exportData={exportData}
         />
       )}
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={handleCloseImportModal}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   );
 };

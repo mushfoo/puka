@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ToastContainer from './components/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useStorage } from './hooks/useStorage';
 import { useToast } from './hooks/useToast';
 import { Book } from './types';
-import { ExportData } from './services/storage/StorageService';
+import { ExportData, ImportResult } from './services/storage/StorageService';
 
 function App() {
   const {
@@ -18,7 +18,8 @@ function App() {
     addBook,
     updateBook,
     deleteBook,
-    getExportData
+    getExportData,
+    refresh
   } = useStorage();
 
   const [exportData, setExportData] = useState<ExportData | null>(null);
@@ -160,6 +161,23 @@ function App() {
     }
   };
 
+  const handleImportComplete = async (result: ImportResult) => {
+    try {
+      console.log('Import completed, refreshing data...', result);
+      // Refresh the books data from storage
+      await refresh();
+      
+      // Show success message (this is also shown in the ImportModal, but good to have here too)
+      success(`Successfully imported ${result.imported} books!`, {
+        title: 'Import Complete',
+        duration: 5000
+      });
+    } catch (error) {
+      console.error('Failed to refresh data after import:', error);
+      showError('Import completed but failed to refresh data. Please reload the page.');
+    }
+  };
+
   // Show error state if there's an error
   if (error) {
     return (
@@ -195,6 +213,7 @@ function App() {
         onAddBook={handleAddBook}
         onUpdateBook={handleUpdateBook}
         onDeleteBook={handleDeleteBook}
+        onImportComplete={handleImportComplete}
         loading={loading}
       />
       

@@ -175,7 +175,7 @@ export class ExportService {
   /**
    * Format date for CSV export
    */
-  private static formatDate(date: Date | string): string {
+  private static formatDate(date: Date | string | undefined): string {
     if (!date) return '';
     
     const dateObj = date instanceof Date ? date : new Date(date);

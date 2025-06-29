@@ -10,18 +10,25 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@types/react-window": "^1.8.8",
+    "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-window": "^1.8.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.1",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.6.1",
+    "@types/papaparse": "^5.3.16",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
