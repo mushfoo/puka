@@ -11,7 +11,10 @@ export default {
           DEFAULT: '#5B4636',
           dark: '#3D2F24',
         },
-        accent: '#FF6B6B',
+        accent: {
+          DEFAULT: '#FF6B6B',
+          light: '#FF8787',
+        },
         success: '#4CAF50',
         warning: '#FFA726',
         error: '#EF4444',

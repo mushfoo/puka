@@ -80,22 +80,22 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   }
 
   return (
-    <div className={`bg-gradient-to-r from-accent to-accent/80 text-white rounded-xl p-4 ${className}`}>
-      <div className="flex items-center justify-between mb-3">
+    <div className={`bg-gradient-to-r from-accent to-accent-light text-white rounded-xl p-4 sm:p-6 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium opacity-90">
+          <h3 className="text-sm sm:text-base font-medium opacity-90 mb-1">
             Reading Streak
           </h3>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold">
+            <span className="text-3xl sm:text-4xl font-bold">
               {currentStreak}
             </span>
-            <span className="text-sm opacity-75">
+            <span className="text-base sm:text-lg opacity-90">
               day{currentStreak !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
-        <div className="text-4xl" aria-label="Streak icon">
+        <div className="text-5xl sm:text-6xl" aria-label="Streak icon">
           {getStreakIcon()}
         </div>
       </div>
