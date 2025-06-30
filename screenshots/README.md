@@ -15,7 +15,7 @@ This directory contains screenshots of the Puka Reading Tracker application show
 - `03-prominent-streak-focused-2025-06-29T21-25-35.png` - Focused view highlighting positioning
 
 ### Key Features Visible
-- **Prominent Streak Card**: Large gradient card (accent to #FF8787) positioned prominently below header
+- **Prominent Streak Card**: Large gradient card (accent to accent-light) positioned prominently below header
 - **Enhanced Typography**: Large streak number display with clear day counter
 - **Responsive Design**: Streak card adapts well to mobile viewport
 - **Empty State**: Shows motivational message when no books are added yet

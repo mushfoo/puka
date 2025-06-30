@@ -80,8 +80,8 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   }
 
   return (
-    <div className={`bg-gradient-to-r from-accent to-[#FF8787] text-white rounded-xl p-4 sm:p-6 ${className}`}>
-      <div className="flex items-center justify-between">
+    <div className={`bg-gradient-to-r from-accent to-accent-light text-white rounded-xl p-4 sm:p-6 ${className}`}>
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-sm sm:text-base font-medium opacity-90 mb-1">
             Reading Streak

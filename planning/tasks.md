@@ -1197,7 +1197,7 @@ Implement a prominent streak display card positioned below the header to match t
 ### Acceptance Criteria
 
 - [x] Reposition StreakDisplay from header sidebar to prominent position below header
-- [x] Enhance visual styling with larger gradient background (from-accent to-[#FF8787])
+- [x] Enhance visual styling with larger gradient background (from-accent to-accent-light)
 - [x] Increase typography scale for better prominence (text-3xl sm:text-4xl)
 - [x] Maintain mobile responsiveness at 375px viewport
 - [x] Add shadow styling for visual depth and prominence
