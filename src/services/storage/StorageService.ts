@@ -1,4 +1,4 @@
-import { Book } from '@/types';
+import { Book, StreakHistory, StreakImportResult } from '@/types';
 
 export interface ExportData {
   books: Book[];
@@ -8,11 +8,13 @@ export interface ExportData {
     totalBooks: number;
   };
   settings?: UserSettings;
+  streakHistory?: StreakHistory;
 }
 
 export interface ImportData {
   books: (Omit<Book, 'id' | 'dateAdded'> | Book)[];
   settings?: Partial<UserSettings>;
+  streakHistory?: StreakHistory;
 }
 
 export interface UserSettings {
@@ -134,6 +136,36 @@ export interface StorageService {
    * @throws {StorageError} When restore fails
    */
   restoreBackup(backupData: string): Promise<void>;
+
+  /**
+   * Get streak history
+   * @returns Promise resolving to streak history
+   * @throws {StorageError} When streak history cannot be retrieved
+   */
+  getStreakHistory(): Promise<StreakHistory | null>;
+
+  /**
+   * Save streak history
+   * @param streakHistory - Streak history to save
+   * @returns Promise resolving to saved streak history
+   * @throws {StorageError} When streak history cannot be saved
+   */
+  saveStreakHistory(streakHistory: StreakHistory): Promise<StreakHistory>;
+
+  /**
+   * Update streak history
+   * @param updates - Partial streak history updates
+   * @returns Promise resolving to updated streak history
+   * @throws {StorageError} When streak history cannot be updated
+   */
+  updateStreakHistory(updates: Partial<StreakHistory>): Promise<StreakHistory>;
+
+  /**
+   * Clear streak history
+   * @returns Promise resolving to success
+   * @throws {StorageError} When streak history cannot be cleared
+   */
+  clearStreakHistory(): Promise<void>;
 }
 
 export interface ImportOptions {
@@ -149,6 +181,7 @@ export interface ImportResult {
   skipped: number;
   errors: ImportError[];
   duplicates: number;
+  streakResult?: StreakImportResult;
 }
 
 export interface ImportError {

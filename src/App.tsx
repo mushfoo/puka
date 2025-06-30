@@ -167,11 +167,29 @@ function App() {
       // Refresh the books data from storage
       await refresh();
       
-      // Show success message (this is also shown in the ImportModal, but good to have here too)
-      success(`Successfully imported ${result.imported} books!`, {
+      // Create success message with streak information
+      let message = `Successfully imported ${result.imported} books!`;
+      if (result.streakResult && result.streakResult.daysAdded > 0) {
+        message += ` Added ${result.streakResult.daysAdded} reading days to your streak history.`;
+      }
+      
+      success(message, {
         title: 'Import Complete',
-        duration: 5000
+        duration: result.streakResult ? 8000 : 5000 // Longer duration if streak info
       });
+
+      // Show additional streak notification if there were significant changes
+      if (result.streakResult && 
+          (result.streakResult.newCurrentStreak !== result.streakResult.oldCurrentStreak ||
+           result.streakResult.newLongestStreak !== result.streakResult.oldLongestStreak)) {
+        
+        setTimeout(() => {
+          info('📈 Your reading streaks have been updated! Check your dashboard for the new counts.', {
+            title: 'Streak Updated',
+            duration: 6000
+          });
+        }, 2000);
+      }
     } catch (error) {
       console.error('Failed to refresh data after import:', error);
       showError('Import completed but failed to refresh data. Please reload the page.');

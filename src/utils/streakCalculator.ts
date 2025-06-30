@@ -1,13 +1,10 @@
-import { Book } from '@/types';
-
-export interface StreakData {
-  currentStreak: number;
-  longestStreak: number;
-  lastReadDate: Date | null;
-  todayProgress: number;
-  dailyGoal: number;
-  hasReadToday: boolean;
-}
+import { Book, StreakData, StreakHistory, StreakImportResult } from '@/types';
+import { 
+  extractReadingPeriods, 
+  generateReadingDays, 
+  calculateStreaksFromDays,
+  formatDateToISO 
+} from './readingPeriodExtractor';
 
 export interface ProgressEntry {
   date: Date;
@@ -145,4 +142,204 @@ export function trackProgressUpdate(
     newProgress,
     pagesRead: Math.max(0, pagesRead)
   };
+}
+
+/**
+ * Calculate streaks from imported books with reading periods
+ */
+export function calculateStreakFromImport(books: Book[], dailyGoal: number = 30): StreakImportResult {
+  // Get current streak data before import
+  const currentStreakData = calculateStreak(books, dailyGoal);
+  const oldCurrentStreak = currentStreakData.currentStreak;
+  const oldLongestStreak = currentStreakData.longestStreak;
+  
+  // Extract reading periods from imported books
+  const readingPeriods = extractReadingPeriods(books);
+  const readingDays = generateReadingDays(readingPeriods);
+  
+  // Calculate new streaks from reading periods
+  const { currentStreak, longestStreak } = calculateStreaksFromDays(readingDays);
+  
+  return {
+    periodsProcessed: readingPeriods.length,
+    daysAdded: readingDays.size,
+    readingDaysGenerated: readingDays,
+    newCurrentStreak: currentStreak,
+    newLongestStreak: longestStreak,
+    oldCurrentStreak,
+    oldLongestStreak
+  };
+}
+
+/**
+ * Calculate streaks from both existing books and reading periods
+ */
+export function calculateStreakWithHistory(
+  books: Book[], 
+  streakHistory?: StreakHistory,
+  dailyGoal: number = 30
+): StreakData {
+  // Start with reading days from history if available
+  let allReadingDays = new Set<string>(streakHistory?.readingDays || []);
+  
+  // Add reading days from current books with dateStarted/dateFinished
+  const currentPeriods = extractReadingPeriods(books);
+  const currentReadingDays = generateReadingDays(currentPeriods);
+  
+  // Merge reading days
+  currentReadingDays.forEach(day => allReadingDays.add(day));
+  
+  // Add reading days from legacy streak calculation (books with progress updates)
+  calculateStreak(books, dailyGoal);
+  
+  // Combine with reading days inferred from book modifications
+  const progressEntries = getProgressEntriesFromBooks(books);
+  const dailyProgress = new Map<string, number>();
+  
+  for (const entry of progressEntries) {
+    const dateKey = formatDateToISO(entry.date);
+    const currentPages = dailyProgress.get(dateKey) || 0;
+    dailyProgress.set(dateKey, currentPages + entry.pagesRead);
+  }
+  
+  // Add days with progress to reading days
+  for (const [dateKey, pages] of dailyProgress.entries()) {
+    if (pages > 0) {
+      allReadingDays.add(dateKey);
+    }
+  }
+  
+  // Calculate final streaks
+  const { currentStreak, longestStreak, lastReadDate } = calculateStreaksFromDays(allReadingDays);
+  
+  // Calculate today's progress
+  const today = new Date();
+  const todayKey = formatDateToISO(today);
+  const todayProgress = dailyProgress.get(todayKey) || 0;
+  const hasReadToday = allReadingDays.has(todayKey);
+  
+  return {
+    currentStreak,
+    longestStreak,
+    lastReadDate,
+    todayProgress,
+    dailyGoal,
+    hasReadToday
+  };
+}
+
+/**
+ * Process imported books and merge with existing streak history
+ */
+export function processStreakImport(
+  importedBooks: Book[],
+  existingBooks: Book[],
+  existingHistory?: StreakHistory,
+  dailyGoal: number = 30
+): StreakImportResult {
+  // Calculate current state before import
+  const oldStreakData = calculateStreakWithHistory(existingBooks, existingHistory, dailyGoal);
+  
+  // Extract reading periods from imported books
+  const importedPeriods = extractReadingPeriods(importedBooks);
+  const importedReadingDays = generateReadingDays(importedPeriods);
+  
+  // Merge all books for new calculation
+  const allBooks = [...existingBooks, ...importedBooks];
+  
+  // Create updated history
+  const updatedHistory: StreakHistory = {
+    readingDays: new Set([
+      ...(existingHistory?.readingDays || []),
+      ...importedReadingDays
+    ]),
+    bookPeriods: [
+      ...(existingHistory?.bookPeriods || []),
+      ...importedPeriods
+    ],
+    lastCalculated: new Date()
+  };
+  
+  // Calculate new streak data
+  const newStreakData = calculateStreakWithHistory(allBooks, updatedHistory, dailyGoal);
+  
+  return {
+    periodsProcessed: importedPeriods.length,
+    daysAdded: importedReadingDays.size,
+    readingDaysGenerated: importedReadingDays,
+    newCurrentStreak: newStreakData.currentStreak,
+    newLongestStreak: newStreakData.longestStreak,
+    oldCurrentStreak: oldStreakData.currentStreak,
+    oldLongestStreak: oldStreakData.longestStreak
+  };
+}
+
+/**
+ * Create streak history from existing books
+ */
+export function createStreakHistoryFromBooks(books: Book[]): StreakHistory {
+  const periods = extractReadingPeriods(books);
+  const readingDays = generateReadingDays(periods);
+  
+  // Also add reading days from progress entries
+  const progressEntries = getProgressEntriesFromBooks(books);
+  const additionalDays = new Set<string>();
+  
+  for (const entry of progressEntries) {
+    additionalDays.add(formatDateToISO(entry.date));
+  }
+  
+  // Merge all reading days
+  additionalDays.forEach(day => readingDays.add(day));
+  
+  return {
+    readingDays,
+    bookPeriods: periods,
+    lastCalculated: new Date()
+  };
+}
+
+/**
+ * Extract progress entries from books (existing logic)
+ */
+function getProgressEntriesFromBooks(books: Book[]): ProgressEntry[] {
+  const progressEntries: ProgressEntry[] = [];
+  
+  for (const book of books) {
+    // Add date when book was started reading
+    if (book.dateStarted && book.progress > 0) {
+      progressEntries.push({
+        date: new Date(book.dateStarted),
+        oldProgress: 0,
+        newProgress: book.progress,
+        pagesRead: book.totalPages ? Math.round((book.progress / 100) * book.totalPages) : 0
+      });
+    }
+    
+    // Add date when book was finished
+    if (book.dateFinished && book.progress === 100) {
+      progressEntries.push({
+        date: new Date(book.dateFinished),
+        oldProgress: 99,
+        newProgress: 100,
+        pagesRead: book.totalPages ? Math.round(book.totalPages * 0.01) : 1
+      });
+    }
+    
+    // For books modified today, add an entry
+    if (book.dateModified) {
+      const modifiedDate = new Date(book.dateModified);
+      const today = new Date();
+      if (isSameDay(modifiedDate, today) && book.progress > 0) {
+        progressEntries.push({
+          date: modifiedDate,
+          oldProgress: Math.max(0, book.progress - 10),
+          newProgress: book.progress,
+          pagesRead: book.totalPages ? Math.round(((book.progress - Math.max(0, book.progress - 10)) / 100) * book.totalPages) : 1
+        });
+      }
+    }
+  }
+  
+  return progressEntries;
 }
