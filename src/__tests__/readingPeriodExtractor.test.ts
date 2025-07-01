@@ -5,6 +5,7 @@ import {
   calculateStreaksFromDays,
   calculateDaysBetween,
   formatDateToISO,
+  formatDateToLocalISO,
   validateReadingPeriods,
   getReadingPeriodStats
 } from '@/utils/readingPeriodExtractor';
@@ -209,9 +210,9 @@ describe('readingPeriodExtractor', () => {
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
       const readingDays = new Set([
-        formatDateToISO(twoDaysAgo),
-        formatDateToISO(yesterday),
-        formatDateToISO(today)
+        formatDateToLocalISO(twoDaysAgo),
+        formatDateToLocalISO(yesterday),
+        formatDateToLocalISO(today)
       ]);
 
       const result = calculateStreaksFromDays(readingDays);

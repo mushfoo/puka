@@ -113,8 +113,10 @@ export function calculateStreaksFromDays(readingDays: Set<string>): {
   longestStreak = Math.max(longestStreak, tempStreak);
   
   // Calculate current streak (from today backwards)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); 
+  // Use local date to avoid timezone issues
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+ 
   
   // Check if we read today or yesterday (allow 1-day gap for current streak)
   let checkDate = new Date(today);
@@ -122,7 +124,7 @@ export function calculateStreaksFromDays(readingDays: Set<string>): {
   
   // Check today and yesterday
   for (let i = 0; i < 2; i++) {
-    if (readingDays.has(formatDateToISO(checkDate))) {
+    if (readingDays.has(formatDateToLocalISO(checkDate))) {
       foundRecent = true;
       break;
     }
@@ -136,7 +138,9 @@ export function calculateStreaksFromDays(readingDays: Set<string>): {
     
     // Go back day by day and count consecutive reading days
     for (let i = 0; i < 365; i++) { // Check up to a year
-      if (readingDays.has(formatDateToISO(checkDate))) {
+      const dateStr = formatDateToLocalISO(checkDate);
+      
+      if (readingDays.has(dateStr)) {
         currentStreak++;
       } else if (currentStreak > 0) {
         // Found a gap after starting the count
@@ -174,6 +178,17 @@ export function calculateDaysBetween(startDate: Date, endDate: Date): number {
  */
 export function formatDateToISO(date: Date): string {
   return date.toISOString().split('T')[0];
+}
+
+/**
+ * Format date to ISO string using local timezone (YYYY-MM-DD)
+ * This avoids timezone issues when working with dates that should be interpreted locally
+ */
+export function formatDateToLocalISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

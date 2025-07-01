@@ -31,7 +31,7 @@ describe('ImportService Streak Features', () => {
       const preview = ImportService.analyzeStreakData(books);
 
       expect(preview.periodsFound).toBe(2);
-      expect(preview.totalDaysToAdd).toBe(12); // 5 + 6 days (inclusive)
+      expect(preview.totalDaysToAdd).toBe(11); // 5 + 6 days (inclusive)
       expect(preview.dateRange.earliest).toEqual(new Date('2024-01-01'));
       expect(preview.dateRange.latest).toEqual(new Date('2024-01-15'));
       expect(preview.stats.booksWithDates).toBe(2);
@@ -166,7 +166,7 @@ describe('ImportService Streak Features', () => {
       expect(result.importData.validRows).toBe(2);
       expect(result.streakResult).toBeDefined();
       expect(result.streakResult!.periodsProcessed).toBe(2);
-      expect(result.streakResult!.daysAdded).toBe(12); // 5 + 6 days
+      expect(result.streakResult!.daysAdded).toBe(11); // 5 + 6 days
     });
 
     it('should handle books without date information', () => {
@@ -295,7 +295,7 @@ Book 2,Author 2,finished,100,2024-01-10,2024-01-15`;
       // Analyze streak data for the sample
       const streakPreview = ImportService.analyzeStreakData(preview.sampleBooks);
       expect(streakPreview.periodsFound).toBe(2);
-      expect(streakPreview.totalDaysToAdd).toBe(12);
+      expect(streakPreview.totalDaysToAdd).toBe(11);
     });
 
     it('should handle CSV with missing date columns', async () => {
