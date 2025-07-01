@@ -1,4 +1,4 @@
-import { Book } from '@/types';
+import { Book, StreakHistory } from '@/types';
 import {
   StorageService,
   ExportData,
@@ -23,6 +23,7 @@ export class MockStorageService implements StorageService {
     autoBackup: false,
     backupFrequency: 'weekly'
   };
+  private streakHistory: StreakHistory | null = null;
   private nextId = 1;
   private initialized = false;
 
@@ -380,5 +381,53 @@ export class MockStorageService implements StorageService {
 
   getBookCount(): number {
     return this.books.length;
+  }
+
+  // Streak History methods
+  async getStreakHistory(): Promise<StreakHistory | null> {
+    this.ensureInitialized();
+    return this.streakHistory ? {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    } : null;
+  }
+
+  async saveStreakHistory(streakHistory: StreakHistory): Promise<StreakHistory> {
+    this.ensureInitialized();
+    this.streakHistory = {
+      ...streakHistory,
+      readingDays: new Set(streakHistory.readingDays),
+      lastCalculated: new Date()
+    };
+    return {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    };
+  }
+
+  async updateStreakHistory(updates: Partial<StreakHistory>): Promise<StreakHistory> {
+    this.ensureInitialized();
+    if (!this.streakHistory) {
+      this.streakHistory = {
+        readingDays: new Set(),
+        bookPeriods: [],
+        lastCalculated: new Date()
+      };
+    }
+    this.streakHistory = {
+      ...this.streakHistory,
+      ...updates,
+      readingDays: updates.readingDays ? new Set(updates.readingDays) : this.streakHistory.readingDays,
+      lastCalculated: new Date()
+    };
+    return {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    };
+  }
+
+  async clearStreakHistory(): Promise<void> {
+    this.ensureInitialized();
+    this.streakHistory = null;
   }
 }

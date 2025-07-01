@@ -1,0 +1,43 @@
+services:
+  puka-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    container_name: puka-reading-tracker
+    restart: unless-stopped
+    volumes:
+      # Optional: Mount for nginx logs
+      - ./logs:/var/log/nginx
+    networks:
+      - puka-network
+
+  # Optional: Development service for hot reloading
+  puka-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    container_name: puka-dev
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - puka-network
+    profiles:
+      - dev
+
+networks:
+  puka-network:
+    driver: bridge
+
+volumes:
+  logs:
+

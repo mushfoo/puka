@@ -34,6 +34,32 @@ export interface StreakData {
   lastReadDate: Date | null;
   dailyGoal: number;
   todayProgress: number;
+  hasReadToday: boolean;
+}
+
+export interface ReadingPeriod {
+  bookId: number;
+  title: string;
+  author: string;
+  startDate: Date;
+  endDate: Date;
+  totalDays: number;
+}
+
+export interface StreakImportResult {
+  periodsProcessed: number;
+  daysAdded: number;
+  readingDaysGenerated: Set<string>; // ISO date strings
+  newCurrentStreak: number;
+  newLongestStreak: number;
+  oldCurrentStreak: number;
+  oldLongestStreak: number;
+}
+
+export interface StreakHistory {
+  readingDays: Set<string>; // ISO date strings (YYYY-MM-DD format)
+  bookPeriods: ReadingPeriod[];
+  lastCalculated: Date;
 }
 
 export type StatusFilter = 'all' | 'want_to_read' | 'currently_reading' | 'finished';

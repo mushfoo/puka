@@ -3,23 +3,25 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportModal from '@/components/modals/ImportModal';
 import { ImportService } from '@/services/importService';
 import { useToast } from '@/hooks/useToast';
-import { useStorage } from '@/hooks/useStorage';
+import { createStorageService } from '@/services/storage';
 
 // Mock dependencies
 vi.mock('@/services/importService');
 vi.mock('@/hooks/useToast');
-vi.mock('@/hooks/useStorage');
+vi.mock('@/services/storage');
 
 const mockImportService = ImportService as any;
 const mockUseToast = useToast as Mock;
-const mockUseStorage = useStorage as Mock;
+const mockCreateStorageService = createStorageService as Mock;
 
 describe('ImportModal', () => {
   const mockOnClose = vi.fn();
   const mockOnImportComplete = vi.fn();
-  const mockShowToast = vi.fn();
+  const mockAddToast = vi.fn();
   const mockStorageService = {
-    importData: vi.fn()
+    importData: vi.fn(),
+    initialize: vi.fn().mockResolvedValue(undefined),
+    getBooks: vi.fn().mockResolvedValue([])
   };
 
   const defaultProps = {
@@ -32,12 +34,10 @@ describe('ImportModal', () => {
     vi.clearAllMocks();
     
     mockUseToast.mockReturnValue({
-      showToast: mockShowToast
+      addToast: mockAddToast
     });
 
-    mockUseStorage.mockReturnValue({
-      storageService: mockStorageService
-    });
+    mockCreateStorageService.mockReturnValue(mockStorageService);
 
     // Mock File constructor
     global.File = class MockFile {
@@ -237,7 +237,7 @@ describe('ImportModal', () => {
     });
 
     expect(mockOnImportComplete).toHaveBeenCalledWith(mockImportResult);
-    expect(mockShowToast).toHaveBeenCalledWith({
+    expect(mockAddToast).toHaveBeenCalledWith({
       type: 'success',
       title: 'Import Successful',
       message: 'Successfully imported 2 books'

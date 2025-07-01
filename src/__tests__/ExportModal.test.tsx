@@ -13,7 +13,7 @@ const mockExportService = vi.mocked(ExportService.ExportService);
 // Mock the toast hook
 vi.mock('@/hooks/useToast', () => ({
   useToast: () => ({
-    showToast: vi.fn()
+    addToast: vi.fn()
   })
 }));
 

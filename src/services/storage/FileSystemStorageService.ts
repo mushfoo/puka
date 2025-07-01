@@ -1,4 +1,4 @@
-import { Book } from '@/types';
+import { Book, StreakHistory } from '@/types';
 import {
   type StorageService,
   type ExportData,
@@ -19,10 +19,12 @@ import {
 export class FileSystemStorageService implements StorageService {
   private fileHandle: any | null = null;
   private settingsFileHandle: any | null = null;
+  private streakFileHandle: any | null = null;
   private initialized = false;
   private useLocalStorage = false;
   private books: Book[] = [];
   private settings: UserSettings = this.getDefaultSettings();
+  private streakHistory: StreakHistory | null = null;
   private nextId = 1;
 
   /**
@@ -94,6 +96,22 @@ export class FileSystemStorageService implements StorageService {
         this.settings = { ...this.getDefaultSettings(), ...JSON.parse(settingsData) };
       } else {
         this.settings = this.getDefaultSettings();
+      }
+
+      // Load streak history from localStorage
+      const streakData = localStorage.getItem('puka-streak-history');
+      if (streakData) {
+        const parsedStreak = JSON.parse(streakData);
+        this.streakHistory = {
+          ...parsedStreak,
+          readingDays: new Set(parsedStreak.readingDays || []),
+          lastCalculated: new Date(parsedStreak.lastCalculated),
+          bookPeriods: (parsedStreak.bookPeriods || []).map((period: any) => ({
+            ...period,
+            startDate: new Date(period.startDate),
+            endDate: new Date(period.endDate)
+          }))
+        };
       }
     } catch (error) {
       console.warn('Failed to load data from localStorage, starting fresh', error);
@@ -182,6 +200,22 @@ export class FileSystemStorageService implements StorageService {
           await this.createSettingsFile();
         }
 
+        // Look for streak history file
+        try {
+          const [streakHandle] = await (window as any).showOpenFilePicker({
+            types: fileTypes,
+            excludeAcceptAllOption: true,
+            multiple: false,
+            suggestedName: 'puka-streak-history.json'
+          });
+          
+          this.streakFileHandle = streakHandle;
+          await this.loadStreakHistoryFromFile();
+        } catch {
+          // Streak history file doesn't exist, initialize empty
+          this.streakHistory = null;
+        }
+
       } catch (openError) {
         // No existing file, create new ones
         await this.createNewDataFiles();
@@ -224,6 +258,7 @@ export class FileSystemStorageService implements StorageService {
     // Initialize with empty data
     this.books = [];
     this.settings = this.getDefaultSettings();
+    this.streakHistory = null;
     
     await this.saveBooksToFile();
     await this.saveSettingsToFile();
@@ -252,7 +287,8 @@ export class FileSystemStorageService implements StorageService {
     if (this.fileHandle && this.settingsFileHandle) {
       localStorage.setItem('puka-file-handles', JSON.stringify({
         dataFile: this.fileHandle,
-        settingsFile: this.settingsFileHandle
+        settingsFile: this.settingsFileHandle,
+        streakFile: this.streakFileHandle
       }));
     }
   }
@@ -375,6 +411,78 @@ export class FileSystemStorageService implements StorageService {
   }
 
   /**
+   * Load streak history from file
+   */
+  private async loadStreakHistoryFromFile(): Promise<void> {
+    if (!this.streakFileHandle) {
+      this.streakHistory = null;
+      return;
+    }
+
+    try {
+      const file = await this.streakFileHandle.getFile();
+      const content = await file.text();
+      
+      if (content.trim()) {
+        const data = JSON.parse(content);
+        this.streakHistory = {
+          ...data,
+          readingDays: new Set(data.readingDays || []),
+          lastCalculated: new Date(data.lastCalculated),
+          bookPeriods: (data.bookPeriods || []).map((period: any) => ({
+            ...period,
+            startDate: new Date(period.startDate),
+            endDate: new Date(period.endDate)
+          }))
+        };
+      } else {
+        this.streakHistory = null;
+      }
+    } catch (error) {
+      console.warn('Failed to load streak history, initializing empty');
+      this.streakHistory = null;
+    }
+  }
+
+  /**
+   * Save streak history to file
+   */
+  private async saveStreakHistoryToFile(): Promise<void> {
+    if (this.useLocalStorage) {
+      if (this.streakHistory) {
+        const serializable = {
+          ...this.streakHistory,
+          readingDays: Array.from(this.streakHistory.readingDays)
+        };
+        localStorage.setItem('puka-streak-history', JSON.stringify(serializable));
+      } else {
+        localStorage.removeItem('puka-streak-history');
+      }
+      return;
+    }
+
+    if (!this.streakFileHandle) {
+      return; // No streak file handle, skip saving
+    }
+
+    try {
+      const writable = await this.streakFileHandle.createWritable();
+      if (this.streakHistory) {
+        const serializable = {
+          ...this.streakHistory,
+          readingDays: Array.from(this.streakHistory.readingDays)
+        };
+        await writable.write(JSON.stringify(serializable, null, 2));
+      } else {
+        await writable.write('{}');
+      }
+      await writable.close();
+    } catch (error) {
+      console.warn('Failed to save streak history:', error);
+    }
+  }
+
+  /**
    * Get default settings
    */
   private getDefaultSettings(): UserSettings {
@@ -492,7 +600,11 @@ export class FileSystemStorageService implements StorageService {
         version: '1.0.0',
         totalBooks: this.books.length
       },
-      settings: { ...this.settings }
+      settings: { ...this.settings },
+      streakHistory: this.streakHistory ? {
+        ...this.streakHistory,
+        readingDays: new Set(this.streakHistory.readingDays)
+      } : undefined
     };
   }
 
@@ -568,6 +680,14 @@ export class FileSystemStorageService implements StorageService {
 
     if (data.settings) {
       await this.updateSettings(data.settings);
+    }
+
+    if (data.streakHistory) {
+      await this.saveStreakHistory({
+        ...data.streakHistory,
+        readingDays: new Set(Array.from(data.streakHistory.readingDays || [])),
+        lastCalculated: new Date()
+      });
     }
 
     await this.saveBooksToFile();
@@ -704,5 +824,65 @@ export class FileSystemStorageService implements StorageService {
         error as Error
       );
     }
+  }
+
+  // Streak History methods
+
+  async getStreakHistory(): Promise<StreakHistory | null> {
+    this.ensureInitialized();
+    return this.streakHistory ? {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    } : null;
+  }
+
+  async saveStreakHistory(streakHistory: StreakHistory): Promise<StreakHistory> {
+    this.ensureInitialized();
+    
+    this.streakHistory = {
+      ...streakHistory,
+      readingDays: new Set(streakHistory.readingDays),
+      lastCalculated: new Date()
+    };
+    
+    await this.saveStreakHistoryToFile();
+    
+    return {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    };
+  }
+
+  async updateStreakHistory(updates: Partial<StreakHistory>): Promise<StreakHistory> {
+    this.ensureInitialized();
+    
+    if (!this.streakHistory) {
+      this.streakHistory = {
+        readingDays: new Set(),
+        bookPeriods: [],
+        lastCalculated: new Date()
+      };
+    }
+    
+    this.streakHistory = {
+      ...this.streakHistory,
+      ...updates,
+      readingDays: updates.readingDays ? new Set(updates.readingDays) : this.streakHistory.readingDays,
+      lastCalculated: new Date()
+    };
+    
+    await this.saveStreakHistoryToFile();
+    
+    return {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    };
+  }
+
+  async clearStreakHistory(): Promise<void> {
+    this.ensureInitialized();
+    
+    this.streakHistory = null;
+    await this.saveStreakHistoryToFile();
   }
 }

@@ -1,9 +1,10 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import Papa from 'papaparse';
-import { ImportService, ImportFormat, ImportPreview, ColumnMapping } from '@/services/importService';
+import { ImportService, ImportFormat, ImportPreview, ColumnMapping, StreakPreview } from '@/services/importService';
 import { ImportOptions, ImportResult } from '@/services/storage/StorageService';
 import { createStorageService } from '@/services/storage';
 import { useToast } from '@/hooks/useToast';
+import { logImportPhase } from '@/utils/importDebugger';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -80,7 +81,10 @@ const ImportModal: React.FC<ImportModalProps> = ({
   };
 
   const handleFileSelect = useCallback(async (file: File) => {
+    logImportPhase('file-selection', file, `Selected file: ${file.name}`);
+    
     if (!file.name.toLowerCase().endsWith('.csv')) {
+      logImportPhase('file-validation', null, 'File validation failed: not a CSV file');
       setState(prev => ({ ...prev, error: 'Please select a CSV file' }));
       return;
     }
@@ -88,10 +92,27 @@ const ImportModal: React.FC<ImportModalProps> = ({
     setState(prev => ({ ...prev, isProcessing: true, error: null, file }));
 
     try {
+      logImportPhase('csv-parsing', null, 'Starting CSV file parsing');
       const preview = await ImportService.parseCSVFile(file);
+      logImportPhase('csv-parsed', { totalRows: preview.totalRows, validRows: preview.validRows }, 'CSV parsing completed');
       
       // Also get the full CSV data for import
       const fullCsvData = await getCsvDataFromFile(file);
+      logImportPhase('csv-data-loaded', { rowCount: fullCsvData.length }, 'Full CSV data loaded');
+      
+      // Analyze streak data if we have sample books
+      let streakPreview: StreakPreview | undefined;
+      if (preview.sampleBooks && preview.sampleBooks.length > 0) {
+        try {
+          logImportPhase('streak-analysis', null, 'Starting streak data analysis');
+          streakPreview = ImportService.analyzeStreakData(preview.sampleBooks);
+          preview.streakPreview = streakPreview;
+          logImportPhase('streak-analyzed', streakPreview, 'Streak analysis completed');
+        } catch (error) {
+          logImportPhase('streak-analysis-error', error, 'Failed to analyze streak data');
+          console.warn('Failed to analyze streak data:', error);
+        }
+      }
       
       setState(prev => ({
         ...prev,
@@ -145,6 +166,11 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
   const handleImport = async () => {
     if (!state.preview || !state.selectedFormat || !storageService) {
+      logImportPhase('import-validation-failed', { 
+        preview: !!state.preview, 
+        selectedFormat: !!state.selectedFormat, 
+        storageService: !!storageService 
+      }, 'Missing required data for import');
       console.error('Missing required data for import:', { 
         preview: !!state.preview, 
         selectedFormat: !!state.selectedFormat, 
@@ -156,6 +182,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
     setState(prev => ({ ...prev, isProcessing: true, step: 'importing', error: null }));
 
     try {
+      logImportPhase('import-start', null, 'Starting import process');
       console.log('Starting import process...');
       
       // Ensure storage service is initialized
@@ -199,11 +226,31 @@ const ImportModal: React.FC<ImportModalProps> = ({
 
       // Convert to ImportData format
       const importData = ImportService.createImportData(parsedData.books);
-      console.log('Import data created:', importData);
+      console.log('Import data created:', {
+        booksCount: importData.books.length,
+        firstBook: importData.books[0],
+        importData
+      });
 
       // Import to storage
       console.log('Calling storage.importData...');
       const result = await storageService.importData(importData, state.importOptions);
+      
+      // Calculate streak impact after successful import
+      try {
+        const booksWithDates = parsedData.books.filter(book => book.dateStarted && book.dateFinished);
+        if (booksWithDates.length > 0) {
+          const existingBooks = await storageService.getBooks();
+          const streakResult = ImportService.processImportWithStreaks(
+            booksWithDates,
+            existingBooks
+          );
+          result.streakResult = streakResult.streakResult;
+        }
+      } catch (error) {
+        console.warn('Failed to calculate streak impact:', error);
+      }
+      
       console.log('Import result:', result);
 
       setState(prev => ({
@@ -271,12 +318,14 @@ const ImportModal: React.FC<ImportModalProps> = ({
   };
 
   const downloadSampleCSV = () => {
-    const sampleData = `Title,Author,Status,Progress,Rating,Notes
-"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic American novel"
-"1984","George Orwell","currently_reading",65,,"Dystopian masterpiece"
-"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my reading list"
-"The Catcher in the Rye","J.D. Salinger","finished",100,4,"Coming-of-age story"
-"Brave New World","Aldous Huxley","want_to_read",0,,"Science fiction classic"`;
+    const sampleData = `Title,Author,Status,Progress,Rating,Notes,Date Started,Date Finished
+"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic American novel","2024-01-01","2024-01-15"
+"1984","George Orwell","currently_reading",65,,"Dystopian masterpiece","2024-01-16",
+"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my reading list",,
+"The Catcher in the Rye","J.D. Salinger","finished",100,4,"Coming-of-age story","2024-02-01","2024-02-10"
+"Brave New World","Aldous Huxley","want_to_read",0,,"Science fiction classic",,
+"Dune","Frank Herbert","finished",100,5,"Epic sci-fi saga","2024-02-15","2024-03-01"
+"Pride and Prejudice","Jane Austen","finished",100,4,"Romance classic","2024-03-05","2024-03-12"`;
 
     const blob = new Blob([sampleData], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -358,6 +407,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
             <div>
               <p className="text-text-primary font-medium">Drop CSV file here or click to upload</p>
               <p className="text-text-secondary text-sm mt-1">Supports Goodreads exports and other CSV formats</p>
+              <p className="text-blue-600 text-xs mt-1">💡 Include "Date Started" and "Date Finished" columns to enhance your reading streaks!</p>
             </div>
           </div>
         )}
@@ -385,19 +435,29 @@ const ImportModal: React.FC<ImportModalProps> = ({
       <div className="mt-6 bg-gray-50 rounded-lg p-4">
         <h4 className="text-sm font-medium text-text-primary mb-2">Expected CSV Format Example:</h4>
         <div className="bg-white rounded border border-gray-200 p-3 font-mono text-xs overflow-x-auto">
-          <div className="text-gray-600">Title,Author,Status,Progress,Rating,Notes</div>
-          <div className="text-gray-800">"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic American novel"</div>
-          <div className="text-gray-800">"1984","George Orwell","currently_reading",65,,"Dystopian masterpiece"</div>
-          <div className="text-gray-800">"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my reading list"</div>
+          <div className="text-gray-600">Title,Author,Status,Progress,Rating,Notes,Date Started,Date Finished</div>
+          <div className="text-gray-800">"The Great Gatsby","F. Scott Fitzgerald","finished",100,5,"Classic","2024-01-01","2024-01-15"</div>
+          <div className="text-gray-800">"1984","George Orwell","currently_reading",65,,"Dystopian","2024-01-16",</div>
+          <div className="text-gray-800">"To Kill a Mockingbird","Harper Lee","want_to_read",0,,"On my list",,</div>
         </div>
-        <p className="text-xs text-text-secondary mt-2">
-          Status values: "want_to_read", "currently_reading", or "finished" | Progress: 0-100 | Rating: 1-5
-        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-xs text-text-secondary">
+          <div>
+            <p><strong>Required:</strong> Title, Author</p>
+            <p><strong>Status:</strong> "want_to_read", "currently_reading", "finished"</p>
+            <p><strong>Progress:</strong> 0-100 | <strong>Rating:</strong> 1-5</p>
+          </div>
+          <div className="text-blue-600">
+            <p><strong>📈 For Reading Streaks:</strong></p>
+            <p><strong>Date Started:</strong> YYYY-MM-DD format</p>
+            <p><strong>Date Finished:</strong> YYYY-MM-DD format</p>
+            <p className="mt-1">Dates will add reading days to your streak history!</p>
+          </div>
+        </div>
         <button
           onClick={downloadSampleCSV}
           className="mt-3 px-3 py-2 text-xs bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
         >
-          Download Sample CSV
+          📥 Download Sample CSV (with streak dates)
         </button>
       </div>
     </div>
@@ -456,6 +516,65 @@ const ImportModal: React.FC<ImportModalProps> = ({
           </div>
         )}
 
+        {state.preview.streakPreview && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-medium text-blue-800 mb-3">📈 Reading Streak Preview</h4>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="text-blue-700">Books with dates:</span>
+                <span className="ml-2 font-medium text-blue-900">
+                  {state.preview.streakPreview.stats.booksWithDates}
+                </span>
+              </div>
+              <div>
+                <span className="text-blue-700">Total reading days:</span>
+                <span className="ml-2 font-medium text-blue-900">
+                  {state.preview.streakPreview.totalDaysToAdd}
+                </span>
+              </div>
+              {state.preview.streakPreview.dateRange.earliest && (
+                <div className="col-span-2">
+                  <span className="text-blue-700">Date range:</span>
+                  <span className="ml-2 font-medium text-blue-900">
+                    {state.preview.streakPreview.dateRange.earliest.toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })} - {' '}
+                    {state.preview.streakPreview.dateRange.latest?.toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </span>
+                </div>
+              )}
+              {state.preview.streakPreview.stats.overlappingPeriods > 0 && (
+                <div className="col-span-2">
+                  <span className="text-blue-700">Overlapping periods:</span>
+                  <span className="ml-2 font-medium text-blue-900">
+                    {state.preview.streakPreview.stats.overlappingPeriods} (reading multiple books simultaneously)
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            {state.preview.streakPreview.warnings.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-blue-200">
+                <h5 className="font-medium text-blue-800 mb-2">⚠️ Streak Warnings</h5>
+                <div className="space-y-1 text-sm text-blue-700">
+                  {state.preview.streakPreview.warnings.slice(0, 3).map((warning, index) => (
+                    <p key={index}>• {warning.message}</p>
+                  ))}
+                  {state.preview.streakPreview.warnings.length > 3 && (
+                    <p>... and {state.preview.streakPreview.warnings.length - 3} more warnings</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {state.preview.sampleBooks.length > 0 && (
           <div>
             <h4 className="font-medium text-text-primary mb-3">Books to Import</h4>
@@ -465,6 +584,19 @@ const ImportModal: React.FC<ImportModalProps> = ({
                   <div className="font-medium text-text-primary">{book.title}</div>
                   <div className="text-sm text-text-secondary">
                     by {book.author} • {book.status?.replace('_', ' ')} • {book.progress}%
+                    {book.dateStarted && book.dateFinished && (
+                      <span className="ml-2 text-blue-600">
+                        📚 {new Date(book.dateStarted).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })} - {new Date(book.dateFinished).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -479,6 +611,11 @@ const ImportModal: React.FC<ImportModalProps> = ({
             className="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Import {state.preview.validRows} Books
+            {state.preview.streakPreview && state.preview.streakPreview.totalDaysToAdd > 0 && (
+              <span className="text-xs opacity-90 block">
+                + {state.preview.streakPreview.totalDaysToAdd} reading days
+              </span>
+            )}
           </button>
           {state.preview.suggestedFormat?.id === 'generic' && (
             <button
@@ -597,6 +734,20 @@ const ImportModal: React.FC<ImportModalProps> = ({
             )}
             {state.importResult.errors.length > 0 && (
               <p>⚠️ {state.importResult.errors.length} errors occurred</p>
+            )}
+            {state.importResult.streakResult && state.importResult.streakResult.daysAdded > 0 && (
+              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 font-medium">📈 Reading Streak Enhanced!</p>
+                <div className="text-xs text-blue-700 mt-1 space-y-1">
+                  <p>📅 {state.importResult.streakResult.daysAdded} reading days added to your history</p>
+                  {state.importResult.streakResult.newCurrentStreak !== state.importResult.streakResult.oldCurrentStreak && (
+                    <p>🔥 Current streak: {state.importResult.streakResult.oldCurrentStreak} → {state.importResult.streakResult.newCurrentStreak} days</p>
+                  )}
+                  {state.importResult.streakResult.newLongestStreak !== state.importResult.streakResult.oldLongestStreak && (
+                    <p>🏆 Longest streak: {state.importResult.streakResult.oldLongestStreak} → {state.importResult.streakResult.newLongestStreak} days</p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
