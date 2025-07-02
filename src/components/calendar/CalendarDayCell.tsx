@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { ReadingDayEntry } from '@/types';
+import { EnhancedReadingDayEntry } from '@/types';
 
 interface CalendarDayCellProps {
   date: string; // YYYY-MM-DD format
-  readingData?: ReadingDayEntry;
+  readingData?: EnhancedReadingDayEntry;
   bookCount?: number;
   isSelected?: boolean;
   isToday?: boolean;
@@ -101,21 +101,16 @@ const CalendarDayCell: React.FC<CalendarDayCellProps> = ({
     
     const indicators: Array<'manual' | 'book_completion' | 'progress_update' | 'notes'> = [];
     
-    // Check sources for different types of reading activity
-    const sources = readingData.sources || [];
-    
-    // Determine source types
-    const hasManual = sources.some(source => source.type === 'manual');
-    const hasBookCompletion = sources.some(source => source.type === 'book_completion');
-    const hasProgressUpdate = sources.some(source => source.type === 'progress_update');
+    // Check source type for reading activity
+    const source = readingData.source;
     const hasNotes = Boolean(readingData.notes?.trim());
     
-    // Add indicators based on priority (manual reading takes precedence)
-    if (hasManual) {
+    // Add indicators based on source type
+    if (source === 'manual') {
       indicators.push('manual');
-    } else if (hasBookCompletion) {
+    } else if (source === 'book') {
       indicators.push('book_completion');
-    } else if (hasProgressUpdate) {
+    } else if (source === 'progress') {
       indicators.push('progress_update');
     }
     

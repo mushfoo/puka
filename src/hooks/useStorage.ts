@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Book, StatusFilter } from '@/types';
+import { Book, StatusFilter, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 import { createStorageService, StorageService, ExportData } from '@/services/storage';
 
 interface UseStorageResult {
@@ -16,6 +16,12 @@ interface UseStorageResult {
   getFilteredBooks: (filter: StatusFilter) => Book[];
   getExportData: () => Promise<ExportData | null>;
   refresh: () => Promise<void>;
+  // Enhanced streak history methods
+  getEnhancedStreakHistory: () => Promise<EnhancedStreakHistory>;
+  updateEnhancedStreakHistory: (updates: Partial<EnhancedStreakHistory>) => Promise<void>;
+  addReadingDayEntry: (entry: EnhancedReadingDayEntry) => Promise<void>;
+  updateReadingDayEntry: (date: string, updates: Partial<EnhancedReadingDayEntry>) => Promise<void>;
+  removeReadingDayEntry: (date: string) => Promise<void>;
 }
 
 export const useStorage = (): UseStorageResult => {
@@ -173,6 +179,62 @@ export const useStorage = (): UseStorageResult => {
     await initializeStorage();
   }, [initializeStorage]);
 
+  // Enhanced streak history methods
+  const getEnhancedStreakHistory = useCallback(async (): Promise<EnhancedStreakHistory> => {
+    try {
+      setError(null);
+      return await storageService.getEnhancedStreakHistory();
+    } catch (err) {
+      console.error('Failed to get enhanced streak history:', err);
+      setError(err instanceof Error ? err.message : 'Failed to get streak history');
+      throw err;
+    }
+  }, [storageService]);
+
+  const updateEnhancedStreakHistory = useCallback(async (updates: Partial<EnhancedStreakHistory>): Promise<void> => {
+    try {
+      setError(null);
+      await storageService.updateEnhancedStreakHistory(updates);
+    } catch (err) {
+      console.error('Failed to update enhanced streak history:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update streak history');
+      throw err;
+    }
+  }, [storageService]);
+
+  const addReadingDayEntry = useCallback(async (entry: EnhancedReadingDayEntry): Promise<void> => {
+    try {
+      setError(null);
+      await storageService.addReadingDayEntry(entry);
+    } catch (err) {
+      console.error('Failed to add reading day entry:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add reading day');
+      throw err;
+    }
+  }, [storageService]);
+
+  const updateReadingDayEntry = useCallback(async (date: string, updates: Partial<EnhancedReadingDayEntry>): Promise<void> => {
+    try {
+      setError(null);
+      await storageService.updateReadingDayEntry(date, updates);
+    } catch (err) {
+      console.error('Failed to update reading day entry:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update reading day');
+      throw err;
+    }
+  }, [storageService]);
+
+  const removeReadingDayEntry = useCallback(async (date: string): Promise<void> => {
+    try {
+      setError(null);
+      await storageService.removeReadingDayEntry(date);
+    } catch (err) {
+      console.error('Failed to remove reading day entry:', err);
+      setError(err instanceof Error ? err.message : 'Failed to remove reading day');
+      throw err;
+    }
+  }, [storageService]);
+
   return {
     books,
     loading,
@@ -186,6 +248,11 @@ export const useStorage = (): UseStorageResult => {
     searchBooks,
     getFilteredBooks,
     getExportData,
-    refresh
+    refresh,
+    getEnhancedStreakHistory,
+    updateEnhancedStreakHistory,
+    addReadingDayEntry,
+    updateReadingDayEntry,
+    removeReadingDayEntry
   };
 };

@@ -1,8 +1,7 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ReadingCalendar from '../components/calendar/ReadingCalendar';
-import { ReadingDayEntry } from '../types';
+import { EnhancedReadingDayEntry } from '../types';
 
 // Mock the CalendarDayCell component
 vi.mock('../components/calendar/CalendarDayCell', () => ({
@@ -91,15 +90,10 @@ describe('ReadingCalendar', () => {
 
   describe('Reading Data Integration', () => {
     it('passes reading data to calendar day cells', () => {
-      const readingData = new Map<string, ReadingDayEntry>();
+      const readingData = new Map<string, EnhancedReadingDayEntry>();
       readingData.set('2024-01-15', {
         date: '2024-01-15',
-        sources: [{
-          type: 'manual',
-          timestamp: new Date(),
-          bookId: undefined,
-          metadata: {}
-        }],
+        source: 'manual',
         notes: 'Test note',
         bookIds: [1],
         createdAt: new Date(),
@@ -120,7 +114,7 @@ describe('ReadingCalendar', () => {
     });
 
     it('handles empty reading data map', () => {
-      const emptyReadingData = new Map<string, ReadingDayEntry>();
+      const emptyReadingData = new Map<string, EnhancedReadingDayEntry>();
       
       render(
         <ReadingCalendar 
@@ -169,15 +163,10 @@ describe('ReadingCalendar', () => {
     });
 
     it('shows reading activity info for selected date with data', () => {
-      const readingData = new Map<string, ReadingDayEntry>();
+      const readingData = new Map<string, EnhancedReadingDayEntry>();
       readingData.set('2024-01-15', {
         date: '2024-01-15',
-        sources: [{
-          type: 'manual',
-          timestamp: new Date(),
-          bookId: undefined,
-          metadata: {}
-        }],
+        source: 'manual',
         notes: '',
         bookIds: [],
         createdAt: new Date(),
@@ -273,7 +262,7 @@ describe('ReadingCalendar', () => {
       // Find the first day of the calendar (might be from previous month)
       const calendarDays = screen.getAllByTestId(/^calendar-day-/);
       const firstDay = calendarDays[0];
-      const firstDate = firstDay.getAttribute('data-date');
+      // const firstDate = firstDay.getAttribute('data-date');
       
       fireEvent.click(firstDay);
       fireEvent.keyDown(firstDay, { key: 'ArrowLeft' });

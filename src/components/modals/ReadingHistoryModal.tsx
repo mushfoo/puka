@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReadingCalendar from '../calendar/ReadingCalendar';
 import DayDetailPanel from '../calendar/DayDetailPanel';
-import { ReadingDayEntry, Book, ReadingDayMap } from '@/types';
+import { EnhancedReadingDayEntry, Book, ReadingDayMap, ReadingDayEntry } from '@/types';
 import { ReadingDataService } from '@/services/ReadingDataService';
 import { useStorage } from '@/hooks/useStorage';
 
@@ -26,6 +26,29 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   const [readingData, setReadingData] = useState<ReadingDayMap>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Convert legacy ReadingDayEntry to EnhancedReadingDayEntry for calendar compatibility
+  const convertToEnhancedEntry = useCallback((entry: ReadingDayEntry): EnhancedReadingDayEntry => {
+    // Get the primary source type (prioritize manual > book_completion > progress_update)
+    const primarySource = entry.sources.find(s => s.type === 'manual') ||
+                          entry.sources.find(s => s.type === 'book_completion') ||
+                          entry.sources[0];
+    
+    const sourceMapping = {
+      'manual': 'manual' as const,
+      'book_completion': 'book' as const,
+      'progress_update': 'progress' as const
+    };
+
+    return {
+      date: entry.date,
+      source: sourceMapping[primarySource?.type] || 'manual',
+      bookIds: entry.bookIds,
+      notes: entry.notes || '',
+      createdAt: primarySource?.timestamp || new Date(),
+      modifiedAt: primarySource?.timestamp || new Date()
+    };
+  }, []);
 
   // Load reading data when modal opens
   const loadReadingData = useCallback(async () => {
@@ -79,14 +102,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
 
       if (isReading) {
         // Add reading day entry
-        const newEntry: ReadingDayEntry = {
+        const newEntry: EnhancedReadingDayEntry = {
           date,
-          sources: [{
-            type: 'manual',
-            timestamp: new Date(),
-            bookId: undefined,
-            metadata: { addedViaHistoryModal: true }
-          }],
+          source: 'manual',
           notes: '',
           bookIds: [],
           createdAt: new Date(),
@@ -129,14 +147,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
         });
       } else if (notes.trim()) {
         // Create new entry with just notes
-        const newEntry: ReadingDayEntry = {
+        const newEntry: EnhancedReadingDayEntry = {
           date,
-          sources: [{
-            type: 'manual',
-            timestamp: new Date(),
-            bookId: undefined,
-            metadata: { notesOnly: true }
-          }],
+          source: 'manual',
           notes: notes.trim(),
           bookIds: [],
           createdAt: new Date(),
@@ -169,10 +182,21 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
     }
   }, [handleClose]);
 
+  // Convert reading data for calendar display
+  const enhancedReadingData = useMemo(() => {
+    const enhancedMap = new Map<string, EnhancedReadingDayEntry>();
+    for (const [date, entry] of readingData) {
+      enhancedMap.set(date, convertToEnhancedEntry(entry));
+    }
+    return enhancedMap;
+  }, [readingData, convertToEnhancedEntry]);
+
   // Get data for selected date
   const selectedDateData = useMemo(() => {
-    return selectedDate ? readingData.get(selectedDate) : undefined;
-  }, [selectedDate, readingData]);
+    if (!selectedDate) return undefined;
+    const legacyEntry = readingData.get(selectedDate);
+    return legacyEntry ? convertToEnhancedEntry(legacyEntry) : undefined;
+  }, [selectedDate, readingData, convertToEnhancedEntry]);
 
   // Month navigation handlers
   const handlePreviousMonth = () => {
@@ -297,7 +321,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
               {!loading && (
                 <ReadingCalendar
                   currentDate={currentMonth}
-                  readingData={readingData}
+                  readingData={enhancedReadingData}
                   onDateSelect={handleDateSelect}
                   onDateKeyDown={handleCalendarKeyDown}
                   className="mx-auto"
@@ -309,7 +333,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
             <div className="w-full lg:w-96 lg:flex-shrink-0">
               <div className="h-full max-h-[60vh] lg:max-h-none overflow-y-auto">
                 <DayDetailPanel
-                  selectedDate={selectedDate}
+                  selectedDate={selectedDate || undefined}
                   readingData={selectedDateData}
                   books={books}
                   onToggleReading={handleToggleReading}

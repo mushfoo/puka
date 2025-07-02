@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { ReadingDayEntry, Book } from '@/types';
+import { EnhancedReadingDayEntry, Book } from '@/types';
 
 interface DayDetailPanelProps {
   selectedDate?: string;
-  readingData?: ReadingDayEntry;
+  readingData?: EnhancedReadingDayEntry;
   books: Book[];
   onToggleReading: (date: string, isReading: boolean) => void;
   onUpdateNotes: (date: string, notes: string) => void;
@@ -118,7 +118,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 
   // Determine if this is a reading day
   const isReadingDay = useMemo(() => {
-    return Boolean(readingData?.sources?.length);
+    return Boolean(readingData?.source);
   }, [readingData]);
 
   // Get associated books based on date
@@ -236,21 +236,18 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
               </span>
             </div>
             
-            {/* Reading Sources */}
-            {readingData?.sources && readingData.sources.length > 0 && (
+            {/* Reading Source */}
+            {readingData?.source && (
               <div className="mt-3">
                 <p className="text-sm text-text-secondary mb-2">Reading activity from:</p>
                 <div className="flex flex-wrap gap-2">
-                  {readingData.sources.map((source, index) => (
-                    <span
-                      key={index}
-                      className="inline-block px-2 py-1 text-xs bg-surface border border-border rounded"
-                    >
-                      {source.type === 'manual' && '👤 Manual entry'}
-                      {source.type === 'book_completion' && '📚 Book completion'}
-                      {source.type === 'progress_update' && '📈 Progress update'}
-                    </span>
-                  ))}
+                  <span
+                    className="inline-block px-2 py-1 text-xs bg-surface border border-border rounded"
+                  >
+                    {readingData.source === 'manual' && '👤 Manual entry'}
+                    {readingData.source === 'book' && '📚 Book activity'}
+                    {readingData.source === 'progress' && '📈 Progress update'}
+                  </span>
                 </div>
               </div>
             )}

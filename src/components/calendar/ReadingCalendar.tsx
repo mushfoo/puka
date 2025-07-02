@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import CalendarDayCell from './CalendarDayCell';
-import { ReadingDayEntry } from '@/types';
+import { EnhancedReadingDayEntry } from '@/types';
 
 interface ReadingCalendarProps {
   currentDate?: Date;
-  readingData?: Map<string, ReadingDayEntry>; // Map of date strings to reading data
+  readingData?: Map<string, EnhancedReadingDayEntry>; // Map of date strings to reading data
   onDateSelect?: (date: string) => void;
   onDateKeyDown?: (event: React.KeyboardEvent, date: string) => void;
   className?: string;
