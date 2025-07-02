@@ -1,4 +1,4 @@
-import { Book, StreakHistory } from '@/types';
+import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry, MigrationResult } from '@/types';
 import {
   StorageService,
   ExportData,
@@ -8,8 +8,19 @@ import {
   ImportResult,
   BookFilter,
   StorageError,
-  StorageErrorCode
+  StorageErrorCode,
+  BulkReadingDayOperation
 } from './StorageService';
+import {
+  migrateStreakHistory,
+  isEnhancedStreakHistory,
+  ensureEnhancedStreakHistory,
+  createEmptyEnhancedStreakHistory,
+  addReadingDayEntry,
+  removeReadingDayEntry,
+  synchronizeReadingDays,
+  validateEnhancedStreakHistory
+} from '@/utils/streakMigration';
 
 export class MockStorageService implements StorageService {
   private books: Book[] = [];
@@ -24,8 +35,10 @@ export class MockStorageService implements StorageService {
     backupFrequency: 'weekly'
   };
   private streakHistory: StreakHistory | null = null;
+  private enhancedStreakHistory: EnhancedStreakHistory | null = null;
   private nextId = 1;
   private initialized = false;
+  private transactionInProgress = false;
 
   async initialize(): Promise<void> {
     // Simulate initialization delay
@@ -367,6 +380,9 @@ export class MockStorageService implements StorageService {
     this.books = [];
     this.nextId = 1;
     this.initialized = false;
+    this.streakHistory = null;
+    this.enhancedStreakHistory = null;
+    this.transactionInProgress = false;
     this.settings = {
       theme: 'system',
       dailyReadingGoal: 30,
@@ -396,8 +412,7 @@ export class MockStorageService implements StorageService {
     this.ensureInitialized();
     this.streakHistory = {
       ...streakHistory,
-      readingDays: new Set(streakHistory.readingDays),
-      lastCalculated: new Date()
+      readingDays: new Set(streakHistory.readingDays)
     };
     return {
       ...this.streakHistory,
@@ -429,5 +444,297 @@ export class MockStorageService implements StorageService {
   async clearStreakHistory(): Promise<void> {
     this.ensureInitialized();
     this.streakHistory = null;
+  }
+
+  // Enhanced streak history methods - Phase 1.3 implementation
+  
+  async getEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null> {
+    this.ensureInitialized();
+    
+    if (this.enhancedStreakHistory) {
+      return { ...this.enhancedStreakHistory };
+    }
+    
+    // Try migration from legacy data if available
+    if (this.streakHistory) {
+      return await this.migrateToEnhancedStreakHistory();
+    }
+    
+    return null;
+  }
+
+  async saveEnhancedStreakHistory(enhancedHistory: EnhancedStreakHistory): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Validate data integrity
+    const validation = validateEnhancedStreakHistory(enhancedHistory);
+    if (!validation.isValid) {
+      throw new StorageError(
+        `Invalid enhanced streak history: ${validation.issues.join(', ')}`,
+        StorageErrorCode.VALIDATION_ERROR
+      );
+    }
+    
+    const now = new Date();
+    this.enhancedStreakHistory = {
+      ...enhancedHistory,
+      lastSyncDate: now
+    };
+    
+    return { ...this.enhancedStreakHistory };
+  }
+
+  async updateEnhancedStreakHistory(updates: Partial<EnhancedStreakHistory>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Get current history or create empty if none exists
+    let currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      currentHistory = createEmptyEnhancedStreakHistory();
+    }
+    
+    // Merge updates
+    const updatedHistory: EnhancedStreakHistory = {
+      ...currentHistory,
+      ...updates,
+      lastSyncDate: new Date()
+    };
+    
+    // Synchronize reading days if readingDayEntries were updated
+    const finalHistory = synchronizeReadingDays(updatedHistory);
+    
+    return await this.saveEnhancedStreakHistory(finalHistory);
+  }
+
+  async addReadingDayEntry(entry: Omit<EnhancedReadingDayEntry, 'createdAt' | 'modifiedAt'>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(entry.date)) {
+      throw new StorageError(
+        'Invalid date format. Expected YYYY-MM-DD format.',
+        StorageErrorCode.VALIDATION_ERROR
+      );
+    }
+    
+    // Get current history or create empty if none exists
+    let currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      currentHistory = createEmptyEnhancedStreakHistory();
+    }
+    
+    // Add the entry using migration utility
+    const updatedHistory = addReadingDayEntry(currentHistory, entry);
+    
+    return await this.saveEnhancedStreakHistory(updatedHistory);
+  }
+
+  async updateReadingDayEntry(date: string, updates: Partial<Omit<EnhancedReadingDayEntry, 'date' | 'createdAt'>>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      throw new StorageError(
+        'No enhanced streak history found',
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Find existing entry
+    const existingIndex = currentHistory.readingDayEntries.findIndex(entry => entry.date === date);
+    if (existingIndex === -1) {
+      throw new StorageError(
+        `Reading day entry for ${date} not found`,
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Update the entry
+    const updatedEntries = [...currentHistory.readingDayEntries];
+    updatedEntries[existingIndex] = {
+      ...updatedEntries[existingIndex],
+      ...updates,
+      modifiedAt: new Date()
+    };
+    
+    const updatedHistory: EnhancedStreakHistory = {
+      ...currentHistory,
+      readingDayEntries: updatedEntries,
+      lastSyncDate: new Date()
+    };
+    
+    // Synchronize reading days
+    const finalHistory = synchronizeReadingDays(updatedHistory);
+    
+    return await this.saveEnhancedStreakHistory(finalHistory);
+  }
+
+  async removeReadingDayEntry(date: string): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      throw new StorageError(
+        'No enhanced streak history found',
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Remove the entry using migration utility
+    const updatedHistory = removeReadingDayEntry(currentHistory, date);
+    
+    return await this.saveEnhancedStreakHistory(updatedHistory);
+  }
+
+  async getReadingDayEntriesInRange(startDate: string, endDate: string): Promise<EnhancedReadingDayEntry[]> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      return [];
+    }
+    
+    return currentHistory.readingDayEntries.filter(entry => {
+      return entry.date >= startDate && entry.date <= endDate;
+    }).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async migrateToEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null> {
+    this.ensureInitialized();
+    
+    // Check if we already have enhanced history
+    if (this.enhancedStreakHistory) {
+      return { ...this.enhancedStreakHistory };
+    }
+    
+    // Check if we have legacy history to migrate
+    if (!this.streakHistory) {
+      return null;
+    }
+    
+    try {
+      // Perform migration
+      const migratedHistory = migrateStreakHistory(this.streakHistory);
+      
+      // Save the migrated data
+      await this.saveEnhancedStreakHistory(migratedHistory);
+      
+      return { ...migratedHistory };
+    } catch (error) {
+      throw new StorageError(
+        'Failed to migrate streak history to enhanced format',
+        StorageErrorCode.VALIDATION_ERROR,
+        error as Error
+      );
+    }
+  }
+
+  async bulkUpdateReadingDayEntries(operations: BulkReadingDayOperation[]): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Begin transaction-like operation
+    if (this.transactionInProgress) {
+      throw new StorageError(
+        'Another transaction is already in progress',
+        StorageErrorCode.UNKNOWN_ERROR
+      );
+    }
+    
+    this.transactionInProgress = true;
+    
+    try {
+      // Get current history or create empty if none exists
+      let currentHistory = await this.getEnhancedStreakHistory();
+      if (!currentHistory) {
+        currentHistory = createEmptyEnhancedStreakHistory();
+      }
+      
+      // Create a working copy for transaction
+      let workingHistory = { ...currentHistory };
+      
+      // Process all operations
+      for (const operation of operations) {
+        switch (operation.type) {
+          case 'add':
+            if (!operation.entry) {
+              throw new StorageError(
+                `Add operation for ${operation.date} missing entry data`,
+                StorageErrorCode.VALIDATION_ERROR
+              );
+            }
+            workingHistory = addReadingDayEntry(workingHistory, {
+              date: operation.date,
+              ...operation.entry
+            });
+            break;
+            
+          case 'update':
+            if (!operation.updates) {
+              throw new StorageError(
+                `Update operation for ${operation.date} missing update data`,
+                StorageErrorCode.VALIDATION_ERROR
+              );
+            }
+            
+            // Find existing entry
+            const existingIndex = workingHistory.readingDayEntries.findIndex(
+              entry => entry.date === operation.date
+            );
+            if (existingIndex === -1) {
+              throw new StorageError(
+                `Reading day entry for ${operation.date} not found`,
+                StorageErrorCode.FILE_NOT_FOUND
+              );
+            }
+            
+            // Update the entry
+            const updatedEntries = [...workingHistory.readingDayEntries];
+            updatedEntries[existingIndex] = {
+              ...updatedEntries[existingIndex],
+              ...operation.updates,
+              modifiedAt: new Date()
+            };
+            
+            workingHistory = {
+              ...workingHistory,
+              readingDayEntries: updatedEntries,
+              lastSyncDate: new Date()
+            };
+            break;
+            
+          case 'remove':
+            workingHistory = removeReadingDayEntry(workingHistory, operation.date);
+            break;
+            
+          default:
+            throw new StorageError(
+              `Unknown bulk operation type: ${(operation as any).type}`,
+              StorageErrorCode.VALIDATION_ERROR
+            );
+        }
+      }
+      
+      // Synchronize and validate final result
+      workingHistory = synchronizeReadingDays(workingHistory);
+      const validation = validateEnhancedStreakHistory(workingHistory);
+      if (!validation.isValid) {
+        throw new StorageError(
+          `Bulk operation resulted in invalid data: ${validation.issues.join(', ')}`,
+          StorageErrorCode.VALIDATION_ERROR
+        );
+      }
+      
+      // Commit the transaction
+      const finalHistory = await this.saveEnhancedStreakHistory(workingHistory);
+      return finalHistory;
+      
+    } catch (error) {
+      // Rollback - in this case, we don't need to do anything since we
+      // never saved the intermediate state
+      throw error;
+    } finally {
+      this.transactionInProgress = false;
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { Book, StreakHistory, StreakImportResult } from '@/types';
+import { Book, StreakHistory, StreakImportResult, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 
 export interface ExportData {
   books: Book[];
@@ -9,12 +9,14 @@ export interface ExportData {
   };
   settings?: UserSettings;
   streakHistory?: StreakHistory;
+  enhancedStreakHistory?: EnhancedStreakHistory;
 }
 
 export interface ImportData {
   books: (Omit<Book, 'id' | 'dateAdded'> | Book)[];
   settings?: Partial<UserSettings>;
   streakHistory?: StreakHistory;
+  enhancedStreakHistory?: EnhancedStreakHistory;
 }
 
 export interface UserSettings {
@@ -166,6 +168,81 @@ export interface StorageService {
    * @throws {StorageError} When streak history cannot be cleared
    */
   clearStreakHistory(): Promise<void>;
+
+  /**
+   * Get enhanced streak history with detailed reading day entries
+   * Automatically migrates from legacy format if needed
+   * @returns Promise resolving to enhanced streak history or null if none exists
+   * @throws {StorageError} When enhanced streak history cannot be retrieved
+   */
+  getEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null>;
+
+  /**
+   * Save enhanced streak history
+   * @param enhancedHistory - Enhanced streak history to save
+   * @returns Promise resolving to saved enhanced streak history
+   * @throws {StorageError} When enhanced streak history cannot be saved
+   */
+  saveEnhancedStreakHistory(enhancedHistory: EnhancedStreakHistory): Promise<EnhancedStreakHistory>;
+
+  /**
+   * Update enhanced streak history
+   * @param updates - Partial enhanced streak history updates
+   * @returns Promise resolving to updated enhanced streak history
+   * @throws {StorageError} When enhanced streak history cannot be updated
+   */
+  updateEnhancedStreakHistory(updates: Partial<EnhancedStreakHistory>): Promise<EnhancedStreakHistory>;
+
+  /**
+   * Add a reading day entry to the enhanced streak history
+   * @param entry - Reading day entry to add (without timestamps)
+   * @returns Promise resolving to updated enhanced streak history
+   * @throws {StorageError} When reading day entry cannot be added
+   */
+  addReadingDayEntry(entry: Omit<EnhancedReadingDayEntry, 'createdAt' | 'modifiedAt'>): Promise<EnhancedStreakHistory>;
+
+  /**
+   * Update a reading day entry in the enhanced streak history
+   * @param date - Date of the entry to update (YYYY-MM-DD format)
+   * @param updates - Partial reading day entry updates
+   * @returns Promise resolving to updated enhanced streak history
+   * @throws {StorageError} When reading day entry cannot be updated
+   */
+  updateReadingDayEntry(date: string, updates: Partial<Omit<EnhancedReadingDayEntry, 'date' | 'createdAt'>>): Promise<EnhancedStreakHistory>;
+
+  /**
+   * Remove a reading day entry from the enhanced streak history
+   * @param date - Date of the entry to remove (YYYY-MM-DD format)
+   * @returns Promise resolving to updated enhanced streak history
+   * @throws {StorageError} When reading day entry cannot be removed
+   */
+  removeReadingDayEntry(date: string): Promise<EnhancedStreakHistory>;
+
+  /**
+   * Get reading day entries within a date range
+   * @param startDate - Start date (YYYY-MM-DD format)
+   * @param endDate - End date (YYYY-MM-DD format)
+   * @returns Promise resolving to reading day entries in the specified range
+   * @throws {StorageError} When reading day entries cannot be retrieved
+   */
+  getReadingDayEntriesInRange(startDate: string, endDate: string): Promise<EnhancedReadingDayEntry[]>;
+
+  /**
+   * Migrate legacy streak history to enhanced format
+   * This method handles the transition from old to new data models
+   * @returns Promise resolving to migrated enhanced streak history or null if no legacy data exists
+   * @throws {StorageError} When migration fails
+   */
+  migrateToEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null>;
+
+  /**
+   * Perform bulk operations on reading day entries
+   * All operations are performed atomically - either all succeed or all fail
+   * @param operations - Array of bulk operations to perform
+   * @returns Promise resolving to updated enhanced streak history
+   * @throws {StorageError} When any operation fails
+   */
+  bulkUpdateReadingDayEntries(operations: BulkReadingDayOperation[]): Promise<EnhancedStreakHistory>;
 }
 
 export interface ImportOptions {
@@ -240,4 +317,11 @@ export interface StorageAdapter {
   delete(key: string): Promise<boolean>;
   clear(): Promise<void>;
   getSize(): Promise<number>;
+}
+
+export interface BulkReadingDayOperation {
+  type: 'add' | 'update' | 'remove';
+  date: string;
+  entry?: Omit<EnhancedReadingDayEntry, 'date' | 'createdAt' | 'modifiedAt'>;
+  updates?: Partial<Omit<EnhancedReadingDayEntry, 'date' | 'createdAt'>>;
 }

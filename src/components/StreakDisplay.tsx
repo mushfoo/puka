@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Book } from '@/types';
 import { calculateStreak } from '@/utils/streakCalculator';
+import ReadingHistoryModal from './modals/ReadingHistoryModal';
 
 interface StreakDisplayProps {
   /** Books data to calculate streak from */
@@ -13,6 +14,8 @@ interface StreakDisplayProps {
   className?: string;
   /** Show streak details */
   showDetails?: boolean;
+  /** Callback when streak data is updated */
+  onStreakUpdate?: () => void;
 }
 
 const StreakDisplay: React.FC<StreakDisplayProps> = ({
@@ -20,8 +23,11 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   hasReadToday = false,
   compact = false,
   className = '',
-  showDetails = true
+  showDetails = true,
+  onStreakUpdate
 }) => {
+  // State for reading history modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   // Calculate streak data from books
   const streakData = React.useMemo(() => {
     return calculateStreak(books, 30); // 30 pages as default daily goal
@@ -60,6 +66,23 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   };
 
   const progressPercentage = dailyGoal > 0 ? Math.min(100, (todayProgress / dailyGoal) * 100) : 0;
+
+  // Handle opening reading history modal
+  const handleOpenHistory = () => {
+    setIsHistoryModalOpen(true);
+  };
+
+  // Handle closing reading history modal
+  const handleCloseHistory = () => {
+    setIsHistoryModalOpen(false);
+  };
+
+  // Handle streak update from modal
+  const handleStreakUpdate = () => {
+    if (onStreakUpdate) {
+      onStreakUpdate();
+    }
+  };
 
   if (compact) {
     return (
@@ -120,17 +143,27 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
             </div>
           )}
 
-          {/* Status Message */}
+          {/* Status Message and Edit Button */}
           <div className="flex items-center justify-between">
             <span className="text-xs opacity-75">
               {getStreakMessage()}
             </span>
-            {actualHasReadToday && (
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                <span className="text-xs opacity-75">Active</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {actualHasReadToday && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-xs opacity-75">Active</span>
+                </div>
+              )}
+              <button
+                onClick={handleOpenHistory}
+                className="text-xs opacity-75 hover:opacity-100 transition-opacity underline"
+                type="button"
+                aria-label="Edit reading history"
+              >
+                📝 Edit history
+              </button>
+            </div>
           </div>
 
           {/* Longest Streak */}
@@ -143,6 +176,14 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
           )}
         </>
       )}
+
+      {/* Reading History Modal */}
+      <ReadingHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={handleCloseHistory}
+        books={books}
+        onUpdateStreak={handleStreakUpdate}
+      />
     </div>
   );
 };
