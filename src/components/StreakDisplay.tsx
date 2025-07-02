@@ -55,6 +55,19 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   
   // Use calculated value or fallback to prop
   const actualHasReadToday = calculatedHasReadToday || hasReadToday;
+  
+  // Debug logging for troubleshooting
+  React.useEffect(() => {
+    console.log('StreakDisplay Debug Info:', {
+      calculatedHasReadToday,
+      hasReadTodayProp: hasReadToday,
+      actualHasReadToday,
+      currentStreak,
+      todayProgress,
+      onMarkReadingDayAvailable: !!onMarkReadingDay,
+      today: new Date().toISOString().split('T')[0]
+    });
+  }, [calculatedHasReadToday, hasReadToday, actualHasReadToday, currentStreak, todayProgress, onMarkReadingDay]);
 
   const getStreakMessage = () => {
     if (currentStreak === 0) {
@@ -150,23 +163,30 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
               {getStreakMessage()}
             </span>
             <div className="flex items-center gap-2">
-              {/* I Read Today Button */}
-              {!actualHasReadToday && onMarkReadingDay && (
+              {/* I Read Today Button - Always show when onMarkReadingDay is available */}
+              {onMarkReadingDay && (
                 <button
                   onClick={handleMarkReadingDay}
-                  disabled={isMarkingReadingDay}
-                  className="text-xs bg-white/20 hover:bg-white/30 disabled:bg-white/10 
-                           px-3 py-1 rounded-full transition-all duration-200 
-                           disabled:opacity-50 disabled:cursor-not-allowed
-                           focus:outline-none focus:ring-2 focus:ring-white/50"
-                  aria-label="Mark today as a reading day"
+                  disabled={isMarkingReadingDay || actualHasReadToday}
+                  className={`text-xs px-3 py-1 rounded-full transition-all duration-200 
+                           focus:outline-none focus:ring-2 focus:ring-white/50
+                           ${actualHasReadToday 
+                             ? 'bg-green-500/30 text-white cursor-default' 
+                             : 'bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed'
+                           }`}
+                  aria-label={actualHasReadToday ? "Already marked as read today" : "Mark today as a reading day"}
                 >
-                  {isMarkingReadingDay ? '...' : '📚 I read today'}
+                  {isMarkingReadingDay 
+                    ? '...' 
+                    : actualHasReadToday 
+                      ? '✅ Read today' 
+                      : '📚 I read today'
+                  }
                 </button>
               )}
               
-              {/* Active Indicator */}
-              {actualHasReadToday && (
+              {/* Active Indicator - Only show when read today and no button */}
+              {actualHasReadToday && !onMarkReadingDay && (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-xs opacity-75">Active</span>

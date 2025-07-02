@@ -218,6 +218,17 @@ export function calculateStreakWithHistory(
   const todayProgress = dailyProgress.get(todayKey) || 0;
   const hasReadToday = allReadingDays.has(todayKey);
   
+  // Debug logging
+  console.log('calculateStreakWithHistory Debug:', {
+    todayKey,
+    todayProgress,
+    hasReadToday,
+    allReadingDaysCount: allReadingDays.size,
+    allReadingDaysArray: Array.from(allReadingDays).slice(-10), // Last 10 days
+    currentStreak,
+    longestStreak
+  });
+  
   return {
     currentStreak,
     longestStreak,
