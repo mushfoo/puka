@@ -892,4 +892,40 @@ export class FileSystemStorageService implements StorageService {
     this.streakHistory = null;
     await this.saveStreakHistoryToFile();
   }
+
+  async markReadingDay(): Promise<StreakHistory> {
+    this.ensureInitialized();
+    
+    // Get or create streak history
+    let currentHistory = this.streakHistory;
+    if (!currentHistory) {
+      // Auto-create from existing books if no history exists
+      const booksWithReadingPeriods = this.books.filter(book => 
+        book.dateStarted && book.dateFinished
+      );
+      
+      if (booksWithReadingPeriods.length > 0) {
+        const { createStreakHistoryFromBooks } = await import('../../utils/streakCalculator');
+        currentHistory = createStreakHistoryFromBooks(this.books);
+      } else {
+        currentHistory = {
+          readingDays: new Set<string>(),
+          bookPeriods: [],
+          lastCalculated: new Date()
+        };
+      }
+    }
+    
+    // Add today to reading days
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    currentHistory.readingDays.add(todayISO);
+    currentHistory.lastCalculated = new Date();
+    
+    // Save updated history
+    this.streakHistory = currentHistory;
+    await this.saveStreakHistoryToFile();
+    
+    return { ...currentHistory };
+  }
 }

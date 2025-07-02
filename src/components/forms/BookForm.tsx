@@ -142,19 +142,26 @@ const BookForm: React.FC<BookFormProps> = ({
     }
 
     // Date validation
-    if (formData.dateStarted && formData.dateFinished) {
+    if (formData.dateStarted) {
       const startDate = new Date(formData.dateStarted);
-      const endDate = new Date(formData.dateFinished);
-      
       if (isNaN(startDate.getTime())) {
         newErrors.dateStarted = 'Invalid start date';
       }
+    }
+    
+    if (formData.status === 'finished' && formData.dateFinished) {
+      const endDate = new Date(formData.dateFinished);
       if (isNaN(endDate.getTime())) {
         newErrors.dateFinished = 'Invalid finish date';
       }
       
-      if (!newErrors.dateStarted && !newErrors.dateFinished && startDate > endDate) {
-        newErrors.dateFinished = 'Finish date must be after start date';
+      // Only validate date order for finished books with both dates
+      if (formData.dateStarted && !newErrors.dateStarted && !newErrors.dateFinished) {
+        const startDate = new Date(formData.dateStarted);
+        const endDate = new Date(formData.dateFinished);
+        if (startDate > endDate) {
+          newErrors.dateFinished = 'Finish date must be after start date';
+        }
       }
     }
 
@@ -185,7 +192,7 @@ const BookForm: React.FC<BookFormProps> = ({
         currentPage: true,
         rating: true,
         dateStarted: true,
-        dateFinished: true
+        ...(formData.status === 'finished' && { dateFinished: true })
       });
       return;
     }
@@ -306,8 +313,8 @@ const BookForm: React.FC<BookFormProps> = ({
 
       {/* Reading Dates */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {renderInput('dateStarted', 'Date Started', 'date', undefined, false)}
-        {renderInput('dateFinished', 'Date Finished', 'date', undefined, false)}
+        {formData.status !== 'want_to_read' && renderInput('dateStarted', 'Date Started', 'date', undefined, false)}
+        {formData.status === 'finished' && renderInput('dateFinished', 'Date Finished', 'date', undefined, false)}
       </div>
 
       {/* Optional Fields */}

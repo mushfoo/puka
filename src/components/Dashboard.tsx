@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Book, StatusFilter } from '@/types';
+import { Book, StatusFilter, StreakHistory } from '@/types';
 import { ExportData, ImportResult } from '@/services/storage/StorageService';
 import BookGrid from './books/BookGrid';
 import FilterTabs from './FilterTabs';
@@ -12,6 +12,7 @@ import StreakDisplay from './StreakDisplay';
 
 interface DashboardProps {
   books: Book[];
+  streakHistory?: StreakHistory;
   exportData?: ExportData;
   onUpdateProgress?: (bookId: number, progress: number) => void;
   onQuickUpdate?: (bookId: number, increment: number) => void;
@@ -21,12 +22,14 @@ interface DashboardProps {
   onUpdateBook?: (bookId: number, updates: Partial<Book>) => Promise<void>;
   onDeleteBook?: (bookId: number) => Promise<void>;
   onImportComplete?: (result: ImportResult) => void;
+  onMarkReadingDay?: () => Promise<boolean>;
   loading?: boolean;
   className?: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
   books,
+  streakHistory,
   exportData,
   onUpdateProgress,
   onQuickUpdate,
@@ -36,6 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onUpdateBook,
   onDeleteBook,
   onImportComplete,
+  onMarkReadingDay,
   loading = false,
   className = ''
 }) => {
@@ -302,6 +306,8 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="mb-6">
           <StreakDisplay 
             books={books} 
+            streakHistory={streakHistory}
+            onMarkReadingDay={onMarkReadingDay}
             showDetails={true}
             compact={false}
             className="shadow-lg"
