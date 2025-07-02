@@ -55,6 +55,17 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   
   // Use calculated value or fallback to prop
   const actualHasReadToday = calculatedHasReadToday || hasReadToday;
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('StreakDisplay Debug:', {
+      hasOnMarkReadingDay: !!onMarkReadingDay,
+      actualHasReadToday,
+      calculatedHasReadToday,
+      currentStreak,
+      longestStreak
+    });
+  }, [onMarkReadingDay, actualHasReadToday, calculatedHasReadToday, currentStreak, longestStreak]);
   
   // Debug logging for troubleshooting
   React.useEffect(() => {
