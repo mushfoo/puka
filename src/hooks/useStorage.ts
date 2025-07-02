@@ -183,7 +183,13 @@ export const useStorage = (): UseStorageResult => {
   const getEnhancedStreakHistory = useCallback(async (): Promise<EnhancedStreakHistory> => {
     try {
       setError(null);
-      return await storageService.getEnhancedStreakHistory();
+      const result = await storageService.getEnhancedStreakHistory();
+      if (!result) {
+        // Create empty history if none exists
+        const { createEmptyEnhancedStreakHistory } = await import('../utils/streakMigration');
+        return createEmptyEnhancedStreakHistory();
+      }
+      return result;
     } catch (err) {
       console.error('Failed to get enhanced streak history:', err);
       setError(err instanceof Error ? err.message : 'Failed to get streak history');

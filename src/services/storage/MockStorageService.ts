@@ -1,4 +1,4 @@
-import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry, MigrationResult } from '@/types';
+import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 import {
   StorageService,
   ExportData,
@@ -13,8 +13,6 @@ import {
 } from './StorageService';
 import {
   migrateStreakHistory,
-  isEnhancedStreakHistory,
-  ensureEnhancedStreakHistory,
   createEmptyEnhancedStreakHistory,
   addReadingDayEntry,
   removeReadingDayEntry,

@@ -18,7 +18,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   books,
   onUpdateStreak
 }) => {
-  const { getEnhancedStreakHistory, updateEnhancedStreakHistory, addReadingDayEntry, updateReadingDayEntry, removeReadingDayEntry } = useStorage();
+  const { getEnhancedStreakHistory, addReadingDayEntry, updateReadingDayEntry, removeReadingDayEntry } = useStorage();
   
   // State management
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -81,10 +81,6 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
     setSelectedDate(date);
   }, []);
 
-  // Handle month navigation
-  const handleMonthChange = useCallback((newMonth: Date) => {
-    setCurrentMonth(newMonth);
-  }, []);
 
   // Handle keyboard navigation in calendar
   const handleCalendarKeyDown = useCallback((event: React.KeyboardEvent, date: string) => {

@@ -1,4 +1,4 @@
-import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry, MigrationResult } from '@/types';
+import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 import {
   type StorageService,
   type ExportData,
@@ -13,8 +13,6 @@ import {
 } from './StorageService';
 import {
   migrateStreakHistory,
-  isEnhancedStreakHistory,
-  ensureEnhancedStreakHistory,
   createEmptyEnhancedStreakHistory,
   addReadingDayEntry,
   removeReadingDayEntry,
@@ -1033,7 +1031,7 @@ export class FileSystemStorageService implements StorageService {
     this.ensureInitialized();
     
     if (this.enhancedStreakHistory) {
-      return { ...this.enhancedStreakHistory };
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
     }
     
     // Try to load from file/storage
@@ -1044,7 +1042,10 @@ export class FileSystemStorageService implements StorageService {
       return await this.migrateToEnhancedStreakHistory();
     }
     
-    return this.enhancedStreakHistory ? { ...this.enhancedStreakHistory } : null;
+    if (this.enhancedStreakHistory && typeof this.enhancedStreakHistory === 'object') {
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
+    }
+    return null;
   }
 
   async saveEnhancedStreakHistory(enhancedHistory: EnhancedStreakHistory): Promise<EnhancedStreakHistory> {
@@ -1067,7 +1068,7 @@ export class FileSystemStorageService implements StorageService {
     
     await this.saveEnhancedStreakHistoryToFile();
     
-    return { ...this.enhancedStreakHistory };
+    return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
   }
 
   async updateEnhancedStreakHistory(updates: Partial<EnhancedStreakHistory>): Promise<EnhancedStreakHistory> {
@@ -1191,7 +1192,7 @@ export class FileSystemStorageService implements StorageService {
     
     // Check if we already have enhanced history
     if (this.enhancedStreakHistory) {
-      return { ...this.enhancedStreakHistory };
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
     }
     
     // Check if we have legacy history to migrate
@@ -1206,7 +1207,7 @@ export class FileSystemStorageService implements StorageService {
       // Save the migrated data
       await this.saveEnhancedStreakHistory(migratedHistory);
       
-      return { ...migratedHistory };
+      return JSON.parse(JSON.stringify(migratedHistory));
     } catch (error) {
       throw new StorageError(
         'Failed to migrate streak history to enhanced format',

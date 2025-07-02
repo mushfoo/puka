@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MockStorageService } from '@/services/storage/MockStorageService';
 import { FileSystemStorageService } from '@/services/storage/FileSystemStorageService';
-import { StorageService, StorageError, StorageErrorCode, BulkReadingDayOperation } from '@/services/storage/StorageService';
-import { EnhancedStreakHistory, EnhancedReadingDayEntry, StreakHistory, MigrationResult } from '@/types';
+import { StorageError, BulkReadingDayOperation } from '@/services/storage/StorageService';
+import { StreakHistory } from '@/types';
 import { createEmptyEnhancedStreakHistory, CURRENT_STREAK_HISTORY_VERSION } from '@/utils/streakMigration';
 
 describe('Enhanced Storage Integration Tests', () => {
@@ -343,9 +343,10 @@ describe('Enhanced Storage Integration Tests', () => {
         const entries = Array.from({ length: 1000 }, (_, i) => {
           const date = new Date('2024-01-01');
           date.setDate(date.getDate() + i);
+          const sources = ['manual', 'book', 'progress'] as const;
           return {
             date: date.toISOString().split('T')[0],
-            source: ['manual', 'book', 'progress'][i % 3] as const,
+            source: sources[i % 3],
             bookIds: [i % 10 + 1]
           };
         });
@@ -666,7 +667,6 @@ describe('Enhanced Storage Integration Tests', () => {
     it('should have the same interface as MockStorageService', () => {
       // This test ensures the FileSystemStorageService implements
       // all the same methods as MockStorageService
-      const mockService = new MockStorageService();
       const fsService = new FileSystemStorageService();
 
       // Check that all enhanced methods exist

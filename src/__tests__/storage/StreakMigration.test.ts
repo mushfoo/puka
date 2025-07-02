@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MockStorageService } from '@/services/storage/MockStorageService';
-import { FileSystemStorageService } from '@/services/storage/FileSystemStorageService';
-import { StorageError } from '@/services/storage/StorageService';
-import { StreakHistory, EnhancedStreakHistory, MigrationResult } from '@/types';
+import { StreakHistory, EnhancedStreakHistory } from '@/types';
 import { 
   migrateStreakHistory, 
   isEnhancedStreakHistory,
