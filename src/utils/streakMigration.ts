@@ -23,7 +23,25 @@ export function migrateStreakHistory(legacyHistory: StreakHistory): EnhancedStre
   const now = new Date();
   
   // Convert legacy reading days to EnhancedReadingDayEntry objects
-  const readingDayEntries: EnhancedReadingDayEntry[] = Array.from(legacyHistory.readingDays).map(dateStr => ({
+  let readingDaysArray: string[] = [];
+  try {
+    if (Array.isArray(legacyHistory.readingDays)) {
+      readingDaysArray = legacyHistory.readingDays;
+    } else if (legacyHistory.readingDays instanceof Set) {
+      readingDaysArray = Array.from(legacyHistory.readingDays);
+    } else if (typeof legacyHistory.readingDays === 'object' && legacyHistory.readingDays !== null) {
+      console.warn('StreakMigration: readingDays appears to be serialized, attempting to extract values');
+      readingDaysArray = Object.values(legacyHistory.readingDays as any).filter(v => typeof v === 'string');
+    } else {
+      console.warn('StreakMigration: Unexpected readingDays type:', typeof legacyHistory.readingDays);
+      readingDaysArray = [];
+    }
+  } catch (error) {
+    console.error('StreakMigration: Error processing readingDays:', error);
+    readingDaysArray = [];
+  }
+  
+  const readingDayEntries: EnhancedReadingDayEntry[] = readingDaysArray.map(dateStr => ({
     date: dateStr,
     source: 'book' as const, // Assume legacy days came from book completion
     bookIds: findBookIdsForDate(dateStr, legacyHistory.bookPeriods),
@@ -33,8 +51,8 @@ export function migrateStreakHistory(legacyHistory: StreakHistory): EnhancedStre
   }));
 
   return {
-    // Preserve all legacy fields
-    readingDays: legacyHistory.readingDays,
+    // Preserve all legacy fields (ensure readingDays is a proper Set)
+    readingDays: new Set(readingDaysArray),
     bookPeriods: legacyHistory.bookPeriods,
     lastCalculated: legacyHistory.lastCalculated,
     
@@ -123,7 +141,22 @@ export function synchronizeReadingDays(history: EnhancedStreakHistory): Enhanced
   const datesFromEntries = new Set(history.readingDayEntries.map(entry => entry.date));
   
   // Merge with existing readingDays for backward compatibility
-  const allReadingDays = new Set([...history.readingDays, ...datesFromEntries]);
+  let existingReadingDays: string[] = [];
+  try {
+    if (Array.isArray(history.readingDays)) {
+      existingReadingDays = history.readingDays;
+    } else if (history.readingDays instanceof Set) {
+      existingReadingDays = Array.from(history.readingDays);
+    } else if (typeof history.readingDays === 'object' && history.readingDays !== null) {
+      console.warn('SynchronizeReadingDays: readingDays appears to be serialized, attempting to extract values');
+      existingReadingDays = Object.values(history.readingDays as any).filter(v => typeof v === 'string');
+    }
+  } catch (error) {
+    console.error('SynchronizeReadingDays: Error processing readingDays:', error);
+    existingReadingDays = [];
+  }
+  
+  const allReadingDays = new Set([...existingReadingDays, ...datesFromEntries]);
   
   return {
     ...history,
@@ -174,7 +207,7 @@ export function addReadingDayEntry(
   const updatedHistory: EnhancedStreakHistory = {
     ...history,
     readingDayEntries: updatedEntries,
-    readingDays: new Set([...history.readingDays, entry.date]),
+    readingDays: new Set([...Array.from(history.readingDays instanceof Set ? history.readingDays : []), entry.date]),
     lastSyncDate: now
   };
   
@@ -227,8 +260,23 @@ export function validateEnhancedStreakHistory(history: EnhancedStreakHistory): {
   
   // Check synchronization between readingDays and readingDayEntries
   const datesFromEntries = new Set(history.readingDayEntries.map(entry => entry.date));
-  const missingInEntries = Array.from(history.readingDays).filter(date => !datesFromEntries.has(date));
-  const missingInDays = Array.from(datesFromEntries).filter(date => !history.readingDays.has(date));
+  
+  let readingDaysArray: string[] = [];
+  try {
+    if (Array.isArray(history.readingDays)) {
+      readingDaysArray = history.readingDays;
+    } else if (history.readingDays instanceof Set) {
+      readingDaysArray = Array.from(history.readingDays);
+    } else if (typeof history.readingDays === 'object' && history.readingDays !== null) {
+      readingDaysArray = Object.values(history.readingDays as any).filter(v => typeof v === 'string');
+    }
+  } catch (error) {
+    issues.push('Failed to process readingDays for validation');
+  }
+  
+  const readingDaysSet = new Set(readingDaysArray);
+  const missingInEntries = readingDaysArray.filter(date => !datesFromEntries.has(date));
+  const missingInDays = Array.from(datesFromEntries).filter(date => !readingDaysSet.has(date));
   
   if (missingInEntries.length > 0) {
     warnings.push(`${missingInEntries.length} reading days missing from detailed entries`);

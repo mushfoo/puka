@@ -180,7 +180,28 @@ export function calculateStreakWithHistory(
   dailyGoal: number = 30
 ): StreakData {
   // Start with reading days from history if available
-  let allReadingDays = new Set<string>(streakHistory?.readingDays || []);
+  let allReadingDays = new Set<string>();
+  
+  if (streakHistory?.readingDays) {
+    try {
+      if (Array.isArray(streakHistory.readingDays)) {
+        allReadingDays = new Set<string>(streakHistory.readingDays);
+      } else if (streakHistory.readingDays instanceof Set) {
+        allReadingDays = new Set<string>(streakHistory.readingDays);
+      } else if (typeof streakHistory.readingDays === 'object') {
+        // Handle serialized Set as object
+        console.warn('StreakCalculator: readingDays appears to be serialized, attempting to extract values');
+        const values = Object.values(streakHistory.readingDays as any).filter(v => typeof v === 'string');
+        allReadingDays = new Set<string>(values);
+      } else {
+        console.warn('StreakCalculator: Unexpected readingDays type:', typeof streakHistory.readingDays);
+        allReadingDays = new Set<string>();
+      }
+    } catch (error) {
+      console.error('StreakCalculator: Error processing readingDays:', error);
+      allReadingDays = new Set<string>();
+    }
+  }
   
   // Add reading days from current books with dateStarted/dateFinished
   const currentPeriods = extractReadingPeriods(books);
@@ -259,9 +280,26 @@ export function processStreakImport(
   const allBooks = [...existingBooks, ...importedBooks];
   
   // Create updated history
+  let existingReadingDays: string[] = [];
+  if (existingHistory?.readingDays) {
+    try {
+      if (Array.isArray(existingHistory.readingDays)) {
+        existingReadingDays = existingHistory.readingDays;
+      } else if (existingHistory.readingDays instanceof Set) {
+        existingReadingDays = Array.from(existingHistory.readingDays);
+      } else if (typeof existingHistory.readingDays === 'object') {
+        console.warn('ProcessStreakImport: readingDays appears to be serialized, attempting to extract values');
+        existingReadingDays = Object.values(existingHistory.readingDays as any).filter(v => typeof v === 'string');
+      }
+    } catch (error) {
+      console.error('ProcessStreakImport: Error processing existingHistory.readingDays:', error);
+      existingReadingDays = [];
+    }
+  }
+
   const updatedHistory: StreakHistory = {
     readingDays: new Set([
-      ...(existingHistory?.readingDays || []),
+      ...existingReadingDays,
       ...importedReadingDays
     ]),
     bookPeriods: [
