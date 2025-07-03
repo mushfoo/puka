@@ -164,11 +164,25 @@ export class ReadingDataService {
       } else if (typeof streakHistory.readingDays === 'object' && streakHistory.readingDays !== null) {
         // Handle case where readingDays might be a serialized Set (converted to an object)
         console.warn('readingDays appears to be a serialized Set object, attempting to extract values');
+        console.log('Serialized readingDays structure:', streakHistory.readingDays);
+        
+        // Try different methods to extract values from serialized Set
         if ('values' in streakHistory.readingDays && typeof (streakHistory.readingDays as any).values === 'function') {
           readingDays = (streakHistory.readingDays as any).values();
         } else {
-          // Try to extract values from the object structure
-          readingDays = Object.values(streakHistory.readingDays as any).filter(v => typeof v === 'string');
+          // Extract values from object (serialized Set often has numeric keys)
+          const obj = streakHistory.readingDays as any;
+          const values = Object.values(obj).filter(v => typeof v === 'string');
+          
+          // If Object.values didn't work, try Object.keys (sometimes Set values become keys)
+          if (values.length === 0) {
+            const keys = Object.keys(obj).filter(k => k !== 'constructor' && k !== 'prototype');
+            readingDays = keys.filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)); // Only date-like strings
+          } else {
+            readingDays = values;
+          }
+          
+          console.log('Extracted values from serialized Set:', Array.from(readingDays));
         }
       } else {
         // Handle case where readingDays might be serialized differently

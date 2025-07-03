@@ -109,20 +109,27 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
           modifiedAt: new Date()
         };
         
+        console.log('Adding reading day entry:', newEntry);
         await addReadingDayEntry(newEntry);
+        console.log('Reading day entry added successfully');
       } else {
         // Remove reading day entry
+        console.log('Removing reading day entry for date:', date);
         await removeReadingDayEntry(date);
+        console.log('Reading day entry removed successfully');
       }
 
+      console.log('Reloading reading data...');
       // Reload data to reflect changes
       await loadReadingData();
+      console.log('Reading data reloaded successfully');
       
       // Notify parent to update streak display
       if (onUpdateStreak) {
         onUpdateStreak();
       }
     } catch (err) {
+      console.error('Error in handleToggleReading:', err);
       setError(err instanceof Error ? err.message : 'Failed to update reading day');
     } finally {
       setLoading(false);
