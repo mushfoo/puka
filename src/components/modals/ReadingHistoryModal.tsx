@@ -293,7 +293,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
             
             <button
               onClick={handleClose}
-              className="p-2 hover:bg-surface rounded-lg transition-colors"
+              className="p-2 hover:bg-surface rounded-lg transition-colors text-text-secondary hover:text-text-primary"
               aria-label="Close reading history"
               type="button"
             >
