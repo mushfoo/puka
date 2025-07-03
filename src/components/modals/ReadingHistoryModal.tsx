@@ -293,12 +293,12 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
             
             <button
               onClick={handleClose}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-800 hover:text-black border border-gray-300"
+              className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary"
               aria-label="Close reading history"
               type="button"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
