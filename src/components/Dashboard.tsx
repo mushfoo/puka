@@ -23,6 +23,7 @@ interface DashboardProps {
   onDeleteBook?: (bookId: number) => Promise<void>;
   onImportComplete?: (result: ImportResult) => void;
   onMarkReadingDay?: () => Promise<boolean>;
+  onStreakUpdate?: () => void;
   loading?: boolean;
   className?: string;
 }
@@ -40,6 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onDeleteBook,
   onImportComplete,
   onMarkReadingDay,
+  onStreakUpdate,
   loading = false,
   className = ''
 }) => {
@@ -308,6 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             books={books} 
             streakHistory={streakHistory}
             onMarkReadingDay={onMarkReadingDay}
+            onStreakUpdate={onStreakUpdate}
             showDetails={true}
             compact={false}
             className="shadow-lg"

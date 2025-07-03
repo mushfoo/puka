@@ -301,6 +301,7 @@ function App() {
         onDeleteBook={handleDeleteBook}
         onImportComplete={handleImportComplete}
         onMarkReadingDay={markReadingDay}
+        onStreakUpdate={refresh}
         loading={loading}
       />
       

@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import ReadingCalendar from '../calendar/ReadingCalendar';
-import DayDetailPanel from '../calendar/DayDetailPanel';
-import { EnhancedReadingDayEntry, Book, ReadingDayMap, ReadingDayEntry } from '@/types';
-import { ReadingDataService } from '@/services/ReadingDataService';
-import { useStorage } from '@/hooks/useStorage';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import ReadingCalendar from "../calendar/ReadingCalendar";
+import DayDetailPanel from "../calendar/DayDetailPanel";
+import {
+  EnhancedReadingDayEntry,
+  Book,
+  ReadingDayMap,
+  ReadingDayEntry,
+} from "@/types";
+import { ReadingDataService } from "@/services/ReadingDataService";
+import { useStorage } from "@/hooks/useStorage";
 
 interface ReadingHistoryModalProps {
   isOpen: boolean;
@@ -16,10 +21,15 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   isOpen,
   onClose,
   books,
-  onUpdateStreak
+  onUpdateStreak,
 }) => {
-  const { getEnhancedStreakHistory, addReadingDayEntry, updateReadingDayEntry, removeReadingDayEntry } = useStorage();
-  
+  const {
+    getEnhancedStreakHistory,
+    addReadingDayEntry,
+    updateReadingDayEntry,
+    removeReadingDayEntry,
+  } = useStorage();
+
   // State management
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -28,41 +38,48 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Convert legacy ReadingDayEntry to EnhancedReadingDayEntry for calendar compatibility
-  const convertToEnhancedEntry = useCallback((entry: ReadingDayEntry): EnhancedReadingDayEntry => {
-    // Get the primary source type (prioritize manual > book_completion > progress_update)
-    const primarySource = entry.sources.find(s => s.type === 'manual') ||
-                          entry.sources.find(s => s.type === 'book_completion') ||
-                          entry.sources[0];
-    
-    const sourceMapping = {
-      'manual': 'manual' as const,
-      'book_completion': 'book' as const,
-      'progress_update': 'progress' as const
-    };
+  const convertToEnhancedEntry = useCallback(
+    (entry: ReadingDayEntry): EnhancedReadingDayEntry => {
+      // Get the primary source type (prioritize manual > book_completion > progress_update)
+      const primarySource =
+        entry.sources.find((s) => s.type === "manual") ||
+        entry.sources.find((s) => s.type === "book_completion") ||
+        entry.sources[0];
 
-    return {
-      date: entry.date,
-      source: sourceMapping[primarySource?.type] || 'manual',
-      bookIds: entry.bookIds,
-      notes: entry.notes || '',
-      createdAt: primarySource?.timestamp || new Date(),
-      modifiedAt: primarySource?.timestamp || new Date()
-    };
-  }, []);
+      const sourceMapping = {
+        manual: "manual" as const,
+        book_completion: "book" as const,
+        progress_update: "progress" as const,
+      };
+
+      return {
+        date: entry.date,
+        source: sourceMapping[primarySource?.type] || "manual",
+        bookIds: entry.bookIds,
+        notes: entry.notes || "",
+        createdAt: primarySource?.timestamp || new Date(),
+        modifiedAt: primarySource?.timestamp || new Date(),
+      };
+    },
+    [],
+  );
 
   // Load reading data when modal opens
   const loadReadingData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const streakHistory = await getEnhancedStreakHistory();
-      
-      const mergedData = ReadingDataService.mergeReadingData(streakHistory, books);
-      console.log('ReadingHistoryModal: Merged reading data:', mergedData);
+      const mergedData = ReadingDataService.mergeReadingData(
+        streakHistory,
+        books,
+      );
       setReadingData(mergedData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load reading data');
+      setError(
+        err instanceof Error ? err.message : "Failed to load reading data",
+      );
     } finally {
       setLoading(false);
     }
@@ -83,138 +100,176 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
     setSelectedDate(date);
   }, []);
 
-
   // Handle keyboard navigation in calendar
-  const handleCalendarKeyDown = useCallback((event: React.KeyboardEvent, date: string) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      setSelectedDate(date);
-    }
-  }, []);
+  const handleCalendarKeyDown = useCallback(
+    (event: React.KeyboardEvent, date: string) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setSelectedDate(date);
+      }
+    },
+    [],
+  );
 
   // Handle reading day toggle
-  const handleToggleReading = useCallback(async (date: string, isReading: boolean) => {
-    console.log('ReadingHistoryModal: handleToggleReading called', { date, isReading });
-    try {
-      setLoading(true);
-      setError(null);
+  const handleToggleReading = useCallback(
+    async (date: string, isReading: boolean) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      if (isReading) {
-        // Add reading day entry
-        const newEntry: EnhancedReadingDayEntry = {
-          date,
-          source: 'manual',
-          notes: '',
-          bookIds: [],
-          createdAt: new Date(),
-          modifiedAt: new Date()
-        };
-        
-        console.log('Adding reading day entry:', newEntry);
-        await addReadingDayEntry(newEntry);
-        console.log('Reading day entry added successfully');
-      } else {
-        // Remove reading day entry
-        console.log('Removing reading day entry for date:', date);
-        await removeReadingDayEntry(date);
-        console.log('Reading day entry removed successfully');
-      }
+        if (isReading) {
+          // Add reading day entry
+          const newEntry: EnhancedReadingDayEntry = {
+            date,
+            source: "manual",
+            notes: "",
+            bookIds: [],
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+          };
 
-      console.log('Reloading reading data...');
-      // Reload data to reflect changes
-      await loadReadingData();
-      console.log('Reading data reloaded successfully');
-      
-      // Notify parent to update streak display
-      if (onUpdateStreak) {
-        onUpdateStreak();
+          await addReadingDayEntry(newEntry);
+        } else {
+          // Remove reading day entry
+          await removeReadingDayEntry(date);
+        }
+
+        // Reload data to reflect changes
+        await loadReadingData();
+
+        // Notify parent to update streak display
+        if (onUpdateStreak) {
+          onUpdateStreak();
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to update reading day",
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error in handleToggleReading:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update reading day');
-    } finally {
-      setLoading(false);
-    }
-  }, [addReadingDayEntry, removeReadingDayEntry, loadReadingData, onUpdateStreak]);
+    },
+    [
+      addReadingDayEntry,
+      removeReadingDayEntry,
+      loadReadingData,
+      onUpdateStreak,
+    ],
+  );
 
   // Handle notes update
-  const handleUpdateNotes = useCallback(async (date: string, notes: string) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const handleUpdateNotes = useCallback(
+    async (date: string, notes: string) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const existingEntry = readingData.get(date);
-      
-      if (existingEntry) {
-        // Update existing entry
-        await updateReadingDayEntry(date, { 
-          notes,
-          modifiedAt: new Date()
-        });
-      } else if (notes.trim()) {
-        // Create new entry with just notes
-        const newEntry: EnhancedReadingDayEntry = {
-          date,
-          source: 'manual',
-          notes: notes.trim(),
-          bookIds: [],
-          createdAt: new Date(),
-          modifiedAt: new Date()
-        };
-        
-        await addReadingDayEntry(newEntry);
+        const existingEntry = readingData.get(date);
+
+        if (existingEntry) {
+          // Update existing entry
+          await updateReadingDayEntry(date, {
+            notes,
+            modifiedAt: new Date(),
+          });
+        } else if (notes.trim()) {
+          // Create new entry with just notes
+          const newEntry: EnhancedReadingDayEntry = {
+            date,
+            source: "manual",
+            notes: notes.trim(),
+            bookIds: [],
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+          };
+
+          await addReadingDayEntry(newEntry);
+        }
+
+        // Reload data to reflect changes
+        await loadReadingData();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to update notes");
+      } finally {
+        setLoading(false);
       }
-
-      // Reload data to reflect changes
-      await loadReadingData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update notes');
-    } finally {
-      setLoading(false);
-    }
-  }, [readingData, addReadingDayEntry, updateReadingDayEntry, loadReadingData]);
+    },
+    [readingData, addReadingDayEntry, updateReadingDayEntry, loadReadingData],
+  );
 
   // Handle book updates
-  const handleUpdateBooks = useCallback(async (date: string, bookIds: number[]) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const handleUpdateBooks = useCallback(
+    async (date: string, bookIds: number[]) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const existingEntry = readingData.get(date);
-      
-      if (existingEntry) {
-        // Update existing entry
-        await updateReadingDayEntry(date, { 
-          bookIds,
-          modifiedAt: new Date()
-        });
-      } else if (bookIds.length > 0) {
-        // Create new entry with selected books
-        const newEntry: EnhancedReadingDayEntry = {
-          date,
-          source: 'manual',
-          notes: '',
-          bookIds,
-          createdAt: new Date(),
-          modifiedAt: new Date()
-        };
-        
-        await addReadingDayEntry(newEntry);
-      }
+        const existingEntry = readingData.get(date);
 
-      // Reload data to reflect changes
-      await loadReadingData();
-      
-      // Notify parent to update streak display
-      if (onUpdateStreak) {
-        onUpdateStreak();
+        if (existingEntry) {
+          // Update existing entry
+          try {
+            await updateReadingDayEntry(date, {
+              bookIds,
+              modifiedAt: new Date(),
+            });
+          } catch (updateError) {
+            // If update fails and we have books to add, create new entry
+            if (bookIds.length > 0) {
+              const newEntry: EnhancedReadingDayEntry = {
+                date,
+                source: "manual",
+                notes: existingEntry.notes || "",
+                bookIds,
+                createdAt: new Date(),
+                modifiedAt: new Date(),
+              };
+              await addReadingDayEntry(newEntry);
+            }
+            // If no books selected, we don't need to create an entry
+          }
+        } else if (bookIds.length > 0) {
+          // Create new entry with selected books
+          const newEntry: EnhancedReadingDayEntry = {
+            date,
+            source: "manual",
+            notes: "",
+            bookIds,
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+          };
+
+          await addReadingDayEntry(newEntry);
+        }
+        // If there's no existing entry and no books selected, there's nothing to do
+
+        // Reload data to reflect changes
+        await loadReadingData();
+
+        // Notify parent to update streak display
+        if (onUpdateStreak) {
+          onUpdateStreak();
+        }
+      } catch (err) {
+        console.error('handleUpdateBooks error:', err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to update book associations",
+        );
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update book associations');
-    } finally {
-      setLoading(false);
-    }
-  }, [readingData, addReadingDayEntry, updateReadingDayEntry, loadReadingData, onUpdateStreak]);
+    },
+    [
+      readingData,
+      addReadingDayEntry,
+      updateReadingDayEntry,
+      loadReadingData,
+      onUpdateStreak,
+    ],
+  );
 
   // Handle modal close
   const handleClose = useCallback(() => {
@@ -224,11 +279,14 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   }, [onClose]);
 
   // Handle keyboard events for modal
-  const handleModalKeyDown = useCallback((event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      handleClose();
-    }
-  }, [handleClose]);
+  const handleModalKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        handleClose();
+      }
+    },
+    [handleClose],
+  );
 
   // Convert reading data for calendar display
   const enhancedReadingData = useMemo(() => {
@@ -243,10 +301,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   const selectedDateData = useMemo(() => {
     if (!selectedDate) return undefined;
     const legacyEntry = readingData.get(selectedDate);
-    console.log('ReadingHistoryModal: selectedDateData for', selectedDate, '- legacyEntry:', legacyEntry);
-    const result = legacyEntry ? convertToEnhancedEntry(legacyEntry) : undefined;
-    console.log('ReadingHistoryModal: selectedDateData result:', result);
-    return result;
+    return legacyEntry ? convertToEnhancedEntry(legacyEntry) : undefined;
   }, [selectedDate, readingData, convertToEnhancedEntry]);
 
   // Month navigation handlers
@@ -264,9 +319,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
 
   // Format month header
   const monthHeader = useMemo(() => {
-    return currentMonth.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long' 
+    return currentMonth.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
     });
   }, [currentMonth]);
 
@@ -275,15 +330,15 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal */}
       <div className="relative flex items-center justify-center min-h-full p-4">
-        <div 
+        <div
           className="relative w-full max-w-5xl bg-background rounded-2xl shadow-2xl border border-border overflow-hidden"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={handleModalKeyDown}
@@ -295,22 +350,35 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div>
-              <h2 id="reading-history-title" className="text-2xl font-semibold text-text-primary">
+              <h2
+                id="reading-history-title"
+                className="text-2xl font-semibold text-text-primary"
+              >
                 Reading History
               </h2>
               <p className="text-text-secondary mt-1">
                 View and manage your reading activity
               </p>
             </div>
-            
+
             <button
               onClick={handleClose}
               className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary"
               aria-label="Close reading history"
               type="button"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -319,7 +387,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
           {error && (
             <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center gap-2">
-                <span className="text-red-500" role="img" aria-label="Error">⚠️</span>
+                <span className="text-red-500" role="img" aria-label="Error">
+                  ⚠️
+                </span>
                 <span className="text-red-700 text-sm">{error}</span>
               </div>
             </div>
@@ -337,23 +407,43 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   aria-label="Previous month"
                   type="button"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
                   </svg>
                 </button>
-                
+
                 <h3 className="text-xl font-semibold text-text-primary">
                   {monthHeader}
                 </h3>
-                
+
                 <button
                   onClick={handleNextMonth}
                   className="p-2 hover:bg-surface rounded-lg transition-colors"
                   aria-label="Next month"
                   type="button"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                 </button>
               </div>
@@ -363,7 +453,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
-                    <p className="text-text-secondary">Loading reading data...</p>
+                    <p className="text-text-secondary">
+                      Loading reading data...
+                    </p>
                   </div>
                 </div>
               )}
@@ -402,16 +494,19 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
           <div className="flex items-center justify-between p-6 border-t border-border bg-surface/50">
             <div className="text-sm text-text-secondary">
               {selectedDate ? (
-                <>Selected: {new Date(selectedDate + 'T00:00:00').toLocaleDateString()}</>
+                <>
+                  Selected:{" "}
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString()}
+                </>
               ) : (
-                'Select a date to view details'
+                "Select a date to view details"
               )}
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
-                className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors"
+                className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary"
                 type="button"
               >
                 Close
@@ -425,3 +520,4 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
 };
 
 export default ReadingHistoryModal;
+

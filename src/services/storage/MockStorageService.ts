@@ -691,7 +691,7 @@ export class MockStorageService implements StorageService {
             });
             break;
             
-          case 'update':
+          case 'update': {
             if (!operation.updates) {
               throw new StorageError(
                 `Update operation for ${operation.date} missing update data`,
@@ -724,6 +724,7 @@ export class MockStorageService implements StorageService {
               lastSyncDate: new Date()
             };
             break;
+          }
             
           case 'remove':
             workingHistory = removeReadingDayEntry(workingHistory, operation.date);
@@ -751,10 +752,6 @@ export class MockStorageService implements StorageService {
       const finalHistory = await this.saveEnhancedStreakHistory(workingHistory);
       return finalHistory;
       
-    } catch (error) {
-      // Rollback - in this case, we don't need to do anything since we
-      // never saved the intermediate state
-      throw error;
     } finally {
       this.transactionInProgress = false;
     }

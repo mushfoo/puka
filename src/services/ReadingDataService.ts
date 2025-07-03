@@ -2,6 +2,7 @@ import {
   Book, 
   StreakHistory, 
   EnhancedStreakHistory,
+  EnhancedReadingDayEntry,
   ReadingDayMap, 
   ReadingDayEntry, 
   ReadingDataSource 
@@ -33,10 +34,15 @@ export class ReadingDataService {
     // Process manual entries from streak history
     if (streakHistory) {
       this.processManualEntries(readingDayMap, streakHistory);
+      
+      // Also process enhanced reading day entries if available
+      if ('readingDayEntries' in streakHistory && streakHistory.readingDayEntries) {
+        this.processEnhancedEntries(readingDayMap, streakHistory.readingDayEntries);
+      }
     }
 
-    // Process book completion dates
-    this.processBookCompletions(readingDayMap, books);
+    // Process book reading periods
+    this.processBookReadingPeriods(readingDayMap, books);
 
     // Process progress update timestamps
     this.processProgressUpdates(readingDayMap, books);
@@ -164,7 +170,6 @@ export class ReadingDataService {
       } else if (typeof streakHistory.readingDays === 'object' && streakHistory.readingDays !== null) {
         // Handle case where readingDays might be a serialized Set (converted to an object)
         console.warn('readingDays appears to be a serialized Set object, attempting to extract values');
-        console.log('Serialized readingDays structure:', streakHistory.readingDays);
         
         // Try different methods to extract values from serialized Set
         if ('values' in streakHistory.readingDays && typeof (streakHistory.readingDays as any).values === 'function') {
@@ -182,7 +187,6 @@ export class ReadingDataService {
             readingDays = values;
           }
           
-          console.log('Extracted values from serialized Set:', Array.from(readingDays));
         }
       } else {
         // Handle case where readingDays might be serialized differently
@@ -218,23 +222,58 @@ export class ReadingDataService {
   }
 
   /**
-   * Process book completion dates (dateStarted to dateFinished)
+   * Process enhanced reading day entries from enhanced streak history
    */
-  private static processBookCompletions(
+  private static processEnhancedEntries(
+    readingDayMap: ReadingDayMap,
+    readingDayEntries: EnhancedReadingDayEntry[]
+  ): void {
+    
+    for (const enhancedEntry of readingDayEntries) {
+      const sourceType = enhancedEntry.source === 'manual' ? 'manual' : 
+                        enhancedEntry.source === 'book' ? 'book_completion' : 'progress_update';
+      
+      const source: ReadingDataSource = {
+        type: sourceType,
+        timestamp: enhancedEntry.createdAt,
+        metadata: {}
+      };
+
+      const entry: ReadingDayEntry = {
+        date: enhancedEntry.date,
+        sources: [source],
+        bookIds: enhancedEntry.bookIds || [],
+        notes: enhancedEntry.notes || undefined
+      };
+
+      this.addOrMergeEntry(readingDayMap, enhancedEntry.date, entry);
+    }
+  }
+
+  /**
+   * Process book reading periods (dateStarted to dateFinished or current date)
+   * Handles both completed books and currently reading books
+   */
+  private static processBookReadingPeriods(
     readingDayMap: ReadingDayMap,
     books: Book[]
   ): void {
     for (const book of books) {
-      if (!book.dateStarted || !book.dateFinished) {
+      if (!book.dateStarted) {
         continue;
       }
 
       const startDate = new Date(book.dateStarted);
-      const endDate = new Date(book.dateFinished);
+      // For currently reading books, use dateModified or today as end date
+      const endDate = book.dateFinished 
+        ? new Date(book.dateFinished)
+        : book.dateModified 
+        ? new Date(book.dateModified)
+        : new Date(); // Today if no other date available
 
       // Validate dates
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        console.warn(`Invalid dates for book "${book.title}": start=${book.dateStarted}, end=${book.dateFinished}`);
+        console.warn(`Invalid dates for book "${book.title}": start=${book.dateStarted}, end=${book.dateFinished || book.dateModified}`);
         continue;
       }
 
@@ -248,12 +287,15 @@ export class ReadingDataService {
       while (currentDate <= endDate) {
         const dateStr = formatDateToLocalISO(currentDate);
         
+        const isCompleted = !!book.dateFinished;
+        const isLastDay = currentDate.getTime() === endDate.getTime();
+        
         const source: ReadingDataSource = {
-          type: 'book_completion',
-          timestamp: book.dateFinished,
+          type: isCompleted ? 'book_completion' : 'progress_update',
+          timestamp: book.dateFinished || book.dateModified || new Date(),
           bookId: book.id,
           metadata: {
-            progress: currentDate.getTime() === endDate.getTime() ? 100 : undefined,
+            progress: isCompleted && isLastDay ? 100 : book.progress,
             pages: book.totalPages
           }
         };
@@ -262,7 +304,9 @@ export class ReadingDataService {
           date: dateStr,
           sources: [source],
           bookIds: [book.id],
-          notes: `Reading "${book.title}"`
+          notes: isCompleted 
+            ? `Reading "${book.title}"` 
+            : `Currently reading "${book.title}" (${book.progress}%)`
         };
 
         this.addOrMergeEntry(readingDayMap, dateStr, entry);
@@ -283,9 +327,18 @@ export class ReadingDataService {
 
     for (const book of books) {
       // Check for books modified recently that might indicate reading activity
-      if (book.dateModified && book.progress > 0) {
+      // IMPORTANT: Only create reading day entries for books that were genuinely updated,
+      // not for books that were just imported. Skip books that were created today.
+      if (book.dateModified && book.progress > 0 && book.dateAdded) {
         const modifiedDate = new Date(book.dateModified);
+        const addedDate = new Date(book.dateAdded);
         const modifiedDateStr = formatDateToLocalISO(modifiedDate);
+
+        // Skip if book was just imported (dateAdded and dateModified are the same day)
+        const isSameDay = formatDateToLocalISO(modifiedDate) === formatDateToLocalISO(addedDate);
+        if (isSameDay) {
+          continue; // Don't create reading day entries for newly imported books
+        }
 
         // Only count as reading activity if modified within the last 7 days
         // and has made progress

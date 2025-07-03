@@ -5,6 +5,7 @@ import {
   calculateStreaksFromDays,
   formatDateToISO 
 } from './readingPeriodExtractor';
+import { ReadingDataService } from '@/services/ReadingDataService';
 
 export interface ProgressEntry {
   date: Date;
@@ -179,76 +180,23 @@ export function calculateStreakWithHistory(
   streakHistory?: StreakHistory,
   dailyGoal: number = 30
 ): StreakData {
-  // Start with reading days from history if available
-  let allReadingDays = new Set<string>();
+  // Use ReadingDataService to get the same merged data that the calendar uses
+  const mergedReadingData = ReadingDataService.mergeReadingData(streakHistory || null, books);
   
-  if (streakHistory?.readingDays) {
-    try {
-      if (Array.isArray(streakHistory.readingDays)) {
-        allReadingDays = new Set<string>(streakHistory.readingDays);
-      } else if (streakHistory.readingDays instanceof Set) {
-        allReadingDays = new Set<string>(streakHistory.readingDays);
-      } else if (typeof streakHistory.readingDays === 'object') {
-        // Handle serialized Set as object
-        console.warn('StreakCalculator: readingDays appears to be serialized, attempting to extract values');
-        const values = Object.values(streakHistory.readingDays as any).filter(v => typeof v === 'string');
-        allReadingDays = new Set<string>(values);
-      } else {
-        console.warn('StreakCalculator: Unexpected readingDays type:', typeof streakHistory.readingDays);
-        allReadingDays = new Set<string>();
-      }
-    } catch (error) {
-      console.error('StreakCalculator: Error processing readingDays:', error);
-      allReadingDays = new Set<string>();
-    }
-  }
+  // Extract all reading days from the merged data
+  const allReadingDays = new Set<string>(mergedReadingData.keys());
   
-  // Add reading days from current books with dateStarted/dateFinished
-  const currentPeriods = extractReadingPeriods(books);
-  const currentReadingDays = generateReadingDays(currentPeriods);
-  
-  // Merge reading days
-  currentReadingDays.forEach(day => allReadingDays.add(day));
-  
-  // Add reading days from legacy streak calculation (books with progress updates)
-  calculateStreak(books, dailyGoal);
-  
-  // Combine with reading days inferred from book modifications
-  const progressEntries = getProgressEntriesFromBooks(books);
-  const dailyProgress = new Map<string, number>();
-  
-  for (const entry of progressEntries) {
-    const dateKey = formatDateToISO(entry.date);
-    const currentPages = dailyProgress.get(dateKey) || 0;
-    dailyProgress.set(dateKey, currentPages + entry.pagesRead);
-  }
-  
-  // Add days with progress to reading days
-  for (const [dateKey, pages] of dailyProgress.entries()) {
-    if (pages > 0) {
-      allReadingDays.add(dateKey);
-    }
-  }
-  
-  // Calculate final streaks
+  // Calculate final streaks from merged data
   const { currentStreak, longestStreak, lastReadDate } = calculateStreaksFromDays(allReadingDays);
   
-  // Calculate today's progress
+  // Calculate today's progress from merged data
   const today = new Date();
   const todayKey = formatDateToISO(today);
-  const todayProgress = dailyProgress.get(todayKey) || 0;
+  const todayEntry = mergedReadingData.get(todayKey);
+  const todayProgress = todayEntry?.sources.reduce((total, source) => {
+    return total + (source.metadata?.progress || 0);
+  }, 0) || 0;
   const hasReadToday = allReadingDays.has(todayKey);
-  
-  // Debug logging
-  console.log('calculateStreakWithHistory Debug:', {
-    todayKey,
-    todayProgress,
-    hasReadToday,
-    allReadingDaysCount: allReadingDays.size,
-    allReadingDaysArray: Array.from(allReadingDays).slice(-10), // Last 10 days
-    currentStreak,
-    longestStreak
-  });
   
   return {
     currentStreak,

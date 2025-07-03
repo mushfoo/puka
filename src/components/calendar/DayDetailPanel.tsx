@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { EnhancedReadingDayEntry, Book } from '@/types';
+import React, { useState, useMemo, useEffect } from "react";
+import { EnhancedReadingDayEntry, Book } from "@/types";
 
 interface DayDetailPanelProps {
   selectedDate?: string;
@@ -14,39 +14,42 @@ interface DayDetailPanelProps {
 
 interface BookAssociationProps {
   book: Book;
-  associationType: 'started' | 'finished' | 'progress';
+  associationType: "started" | "finished" | "progress";
 }
 
-const BookAssociation: React.FC<BookAssociationProps> = ({ book, associationType }) => {
+const BookAssociation: React.FC<BookAssociationProps> = ({
+  book,
+  associationType,
+}) => {
   const getTypeInfo = () => {
     switch (associationType) {
-      case 'started':
+      case "started":
         return {
-          icon: '📖',
-          label: 'Started',
-          color: 'text-blue-600',
-          bgColor: 'bg-blue-50'
+          icon: "📖",
+          label: "Started",
+          color: "text-blue-600",
+          bgColor: "bg-blue-50",
         };
-      case 'finished':
+      case "finished":
         return {
-          icon: '✅',
-          label: 'Finished',
-          color: 'text-success',
-          bgColor: 'bg-success-light/20'
+          icon: "✅",
+          label: "Finished",
+          color: "text-success",
+          bgColor: "bg-success-light/20",
         };
-      case 'progress':
+      case "progress":
         return {
-          icon: '📈',
-          label: 'Progress',
-          color: 'text-warning',
-          bgColor: 'bg-warning-light/20'
+          icon: "📈",
+          label: "Progress",
+          color: "text-warning",
+          bgColor: "bg-warning-light/20",
         };
       default:
         return {
-          icon: '📚',
-          label: 'Reading',
-          color: 'text-text-secondary',
-          bgColor: 'bg-surface'
+          icon: "📚",
+          label: "Reading",
+          color: "text-text-secondary",
+          bgColor: "bg-surface",
         };
     }
   };
@@ -54,12 +57,17 @@ const BookAssociation: React.FC<BookAssociationProps> = ({ book, associationType
   const typeInfo = getTypeInfo();
 
   return (
-    <div className={`flex items-center gap-3 p-3 rounded-lg border border-border ${typeInfo.bgColor}`}>
+    <div
+      className={`flex items-center gap-3 p-3 rounded-lg border border-border ${typeInfo.bgColor}`}
+    >
       <div className="text-xl" role="img" aria-label={typeInfo.label}>
         {typeInfo.icon}
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-text-primary truncate" title={book.title}>
+        <h4
+          className="font-medium text-text-primary truncate"
+          title={book.title}
+        >
           {book.title}
         </h4>
         <p className="text-sm text-text-secondary truncate" title={book.author}>
@@ -88,12 +96,14 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
   onUpdateNotes,
   onUpdateBooks,
   loading = false,
-  className = ''
+  className = "",
 }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [notesValue, setNotesValue] = useState(readingData?.notes || '');
+  const [notesValue, setNotesValue] = useState(readingData?.notes || "");
   const [isEditingBooks, setIsEditingBooks] = useState(false);
-  const [selectedBookIds, setSelectedBookIds] = useState<number[]>(readingData?.bookIds || []);
+  const [selectedBookIds, setSelectedBookIds] = useState<number[]>(
+    readingData?.bookIds || [],
+  );
 
   // Update selected book IDs when reading data changes
   useEffect(() => {
@@ -102,87 +112,92 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 
   // Update notes value when reading data changes
   useEffect(() => {
-    setNotesValue(readingData?.notes || '');
+    setNotesValue(readingData?.notes || "");
   }, [readingData?.notes]);
 
   // Parse the selected date for display
   const formattedDate = useMemo(() => {
-    if (!selectedDate) return '';
-    
-    const dateObj = new Date(selectedDate + 'T00:00:00');
-    return dateObj.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    if (!selectedDate) return "";
+
+    const dateObj = new Date(selectedDate + "T00:00:00");
+    return dateObj.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   }, [selectedDate]);
 
   // Check if the selected date is today
   const isToday = useMemo(() => {
     if (!selectedDate) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     return selectedDate === today;
   }, [selectedDate]);
 
   // Check if it's a future date
   const isFuture = useMemo(() => {
     if (!selectedDate) return false;
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split("T")[0];
     return selectedDate > today;
   }, [selectedDate]);
 
   // Determine if this is a reading day
   const isReadingDay = useMemo(() => {
-    console.log('DayDetailPanel: Checking isReadingDay for', selectedDate, 'readingData:', readingData);
     return Boolean(readingData?.source);
   }, [readingData, selectedDate]);
 
   // Get associated books based on date
   const associatedBooks = useMemo(() => {
     if (!selectedDate || !readingData?.bookIds?.length) return [];
-    
-    return readingData.bookIds.map(bookId => {
-      const book = books.find(b => b.id === bookId);
-      if (!book) return null;
-      
-      // Determine association type based on dates
-      const dateObj = new Date(selectedDate + 'T00:00:00');
-      const bookStartDate = book.dateStarted ? new Date(book.dateStarted) : null;
-      const bookFinishDate = book.dateFinished ? new Date(book.dateFinished) : null;
-      
-      let associationType: 'started' | 'finished' | 'progress' = 'progress';
-      
-      if (bookStartDate && dateObj.toDateString() === bookStartDate.toDateString()) {
-        associationType = 'started';
-      } else if (bookFinishDate && dateObj.toDateString() === bookFinishDate.toDateString()) {
-        associationType = 'finished';
-      }
-      
-      return {
-        book,
-        associationType
-      };
-    }).filter(Boolean) as Array<{ book: Book; associationType: 'started' | 'finished' | 'progress' }>;
+
+    return readingData.bookIds
+      .map((bookId) => {
+        const book = books.find((b) => b.id === bookId);
+        if (!book) return null;
+
+        // Determine association type based on dates
+        const dateObj = new Date(selectedDate + "T00:00:00");
+        const bookStartDate = book.dateStarted
+          ? new Date(book.dateStarted)
+          : null;
+        const bookFinishDate = book.dateFinished
+          ? new Date(book.dateFinished)
+          : null;
+
+        let associationType: "started" | "finished" | "progress" = "progress";
+
+        if (
+          bookStartDate &&
+          dateObj.toDateString() === bookStartDate.toDateString()
+        ) {
+          associationType = "started";
+        } else if (
+          bookFinishDate &&
+          dateObj.toDateString() === bookFinishDate.toDateString()
+        ) {
+          associationType = "finished";
+        }
+
+        return {
+          book,
+          associationType,
+        };
+      })
+      .filter(Boolean) as Array<{
+      book: Book;
+      associationType: "started" | "finished" | "progress";
+    }>;
   }, [selectedDate, readingData, books]);
 
   // Handle reading day toggle
   const handleToggleReading = () => {
-    console.log('DayDetailPanel: handleToggleReading clicked', {
-      selectedDate,
-      isFuture,
-      isReadingDay,
-      onToggleReadingAvailable: !!onToggleReading
-    });
     if (!selectedDate || isFuture) {
-      console.log('DayDetailPanel: Early return - no selectedDate or future date');
       return;
     }
     if (!onToggleReading) {
-      console.log('DayDetailPanel: No onToggleReading function provided');
       return;
     }
-    console.log('DayDetailPanel: Calling onToggleReading with:', selectedDate, !isReadingDay);
     onToggleReading(selectedDate, !isReadingDay);
   };
 
@@ -195,15 +210,15 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 
   // Handle notes cancel
   const handleCancelNotes = () => {
-    setNotesValue(readingData?.notes || '');
+    setNotesValue(readingData?.notes || "");
     setIsEditingNotes(false);
   };
 
   // Handle book selection toggle
   const handleToggleBook = (bookId: number) => {
-    setSelectedBookIds(prev => 
-      prev.includes(bookId) 
-        ? prev.filter(id => id !== bookId)
+    setSelectedBookIds((prev) =>
+      prev.includes(bookId)
+        ? prev.filter((id) => id !== bookId)
         : [...prev, bookId]
     );
   };
@@ -269,47 +284,55 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
               disabled={loading}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 loading
-                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                   : isReadingDay
-                  ? 'bg-success text-white hover:bg-success-dark'
-                  : 'bg-surface border border-border text-text-primary hover:bg-background'
+                    ? "bg-success text-white hover:bg-success-dark"
+                    : "bg-surface border border-border text-text-primary hover:bg-background"
               }`}
               type="button"
             >
-              {loading ? 'Loading...' : isReadingDay ? '✓ Reading Day' : '+ Mark as Reading Day'}
+              {loading
+                ? "Loading..."
+                : isReadingDay
+                  ? "✓ Reading Day"
+                  : "+ Mark as Reading Day"}
             </button>
           )}
         </div>
-        
+
         {isReadingDay && (
           <div className="bg-success/10 border border-success/20 rounded-lg p-3">
             <div className="flex items-center gap-2">
-              <span className="text-success text-xl" role="img" aria-label="Success">
+              <span
+                className="text-success text-xl"
+                role="img"
+                aria-label="Success"
+              >
                 ✓
               </span>
               <span className="text-success font-medium">
                 This is marked as a reading day
               </span>
             </div>
-            
+
             {/* Reading Source */}
             {readingData?.source && (
               <div className="mt-3">
-                <p className="text-sm text-text-secondary mb-2">Reading activity from:</p>
+                <p className="text-sm text-text-primary mb-2">
+                  Reading activity from:
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  <span
-                    className="inline-block px-2 py-1 text-xs bg-surface border border-border rounded"
-                  >
-                    {readingData.source === 'manual' && '👤 Manual entry'}
-                    {readingData.source === 'book' && '📚 Book activity'}
-                    {readingData.source === 'progress' && '📈 Progress update'}
+                  <span className="inline-block px-2 py-1 text-xs bg-surface border border-border rounded text-primary">
+                    {readingData.source === "manual" && "👤 Manual entry"}
+                    {readingData.source === "book" && "📚 Book activity"}
+                    {readingData.source === "progress" && "📈 Progress update"}
                   </span>
                 </div>
               </div>
             )}
           </div>
         )}
-        
+
         {!isReadingDay && !isFuture && (
           <div className="bg-surface border border-border rounded-lg p-3">
             <p className="text-text-secondary text-sm">
@@ -317,7 +340,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
             </p>
           </div>
         )}
-        
+
         {isFuture && (
           <div className="bg-text-secondary/5 border border-text-secondary/20 rounded-lg p-3">
             <p className="text-text-secondary text-sm">
@@ -337,7 +360,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
               className="text-sm text-primary hover:text-primary-dark"
               type="button"
             >
-              {associatedBooks.length > 0 ? 'Edit Books' : 'Add Books'}
+              {associatedBooks.length > 0 ? "Edit Books" : "Add Books"}
             </button>
           )}
         </div>
@@ -361,15 +384,21 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
                       className="rounded border-border focus:ring-2 focus:ring-primary/20"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-text-primary truncate" title={book.title}>
+                      <p
+                        className="font-medium text-text-primary truncate"
+                        title={book.title}
+                      >
                         {book.title}
                       </p>
-                      <p className="text-sm text-text-secondary truncate" title={book.author}>
+                      <p
+                        className="text-sm text-text-secondary truncate"
+                        title={book.author}
+                      >
                         {book.author}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-text-secondary capitalize">
-                          {book.status.replace('_', ' ')}
+                          {book.status.replace("_", " ")}
                         </span>
                         {book.progress > 0 && (
                           <span className="text-xs text-text-secondary">
@@ -385,7 +414,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={handleCancelBooks}
-                className="px-3 py-1 text-sm border border-border rounded hover:bg-surface"
+                className="px-3 py-1 text-sm border border-border rounded hover:bg-surface text-text-secondary hover:text-text-primary"
                 type="button"
               >
                 Cancel
@@ -432,11 +461,11 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
               className="text-sm text-primary hover:text-primary-dark"
               type="button"
             >
-              {readingData?.notes ? 'Edit' : 'Add Note'}
+              {readingData?.notes ? "Edit" : "Add Note"}
             </button>
           )}
         </div>
-        
+
         {isEditingNotes ? (
           <div className="space-y-3">
             <textarea
@@ -454,7 +483,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
               <div className="flex gap-2">
                 <button
                   onClick={handleCancelNotes}
-                  className="px-3 py-1 text-sm border border-border rounded hover:bg-surface"
+                  className="px-3 py-1 text-sm border border-border rounded hover:bg-surface text-text-secondary hover:text-text-primary"
                   type="button"
                 >
                   Cancel
@@ -488,3 +517,4 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 };
 
 export default DayDetailPanel;
+

@@ -132,21 +132,30 @@ export function calculateStreaksFromDays(readingDays: Set<string>): {
   }
   
   if (foundRecent) {
-    // Count backwards from the most recent reading day
+    // Find the most recent reading day and count backwards from there
     currentStreak = 0;
     checkDate = new Date(today);
     
-    // Go back day by day and count consecutive reading days
+    // First, find the most recent reading day (today or yesterday)
+    let startDate = new Date(today);
+    for (let i = 0; i < 2; i++) {
+      if (readingDays.has(formatDateToLocalISO(startDate))) {
+        break; // Found the most recent reading day
+      }
+      startDate.setDate(startDate.getDate() - 1);
+    }
+    
+    // Now count backwards from the most recent reading day
+    checkDate = new Date(startDate);
     for (let i = 0; i < 365; i++) { // Check up to a year
       const dateStr = formatDateToLocalISO(checkDate);
       
       if (readingDays.has(dateStr)) {
         currentStreak++;
-      } else if (currentStreak > 0) {
-        // Found a gap after starting the count
+      } else {
+        // Found a gap - streak ends here
         break;
       }
-      // If currentStreak is still 0, keep looking for the start
       checkDate.setDate(checkDate.getDate() - 1);
     }
   }
