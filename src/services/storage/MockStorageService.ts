@@ -462,7 +462,10 @@ export class MockStorageService implements StorageService {
     this.streakHistory.readingDays.add(todayISO);
     this.streakHistory.lastCalculated = new Date();
     
-    return { ...this.streakHistory };
+    return {
+      ...this.streakHistory,
+      readingDays: new Set(this.streakHistory.readingDays)
+    };
   }
 
   // Enhanced streak history methods - Phase 1.3 implementation

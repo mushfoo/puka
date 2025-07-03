@@ -161,10 +161,24 @@ export class ReadingDataService {
         readingDays = streakHistory.readingDays;
       } else if (streakHistory.readingDays instanceof Set) {
         readingDays = streakHistory.readingDays;
+      } else if (typeof streakHistory.readingDays === 'object' && streakHistory.readingDays !== null) {
+        // Handle case where readingDays might be a serialized Set (converted to an object)
+        console.warn('readingDays appears to be a serialized Set object, attempting to extract values');
+        if ('values' in streakHistory.readingDays && typeof (streakHistory.readingDays as any).values === 'function') {
+          readingDays = (streakHistory.readingDays as any).values();
+        } else {
+          // Try to extract values from the object structure
+          readingDays = Object.values(streakHistory.readingDays as any).filter(v => typeof v === 'string');
+        }
       } else {
         // Handle case where readingDays might be serialized differently
         console.warn('Unexpected readingDays type:', typeof streakHistory.readingDays);
-        readingDays = Array.from(streakHistory.readingDays as any);
+        try {
+          readingDays = Array.from(streakHistory.readingDays as any);
+        } catch (e) {
+          console.error('Failed to convert readingDays to iterable:', e);
+          return;
+        }
       }
     } catch (error) {
       console.error('Error processing readingDays:', error);

@@ -1065,7 +1065,10 @@ export class FileSystemStorageService implements StorageService {
     this.streakHistory = currentHistory;
     await this.saveStreakHistoryToFile();
     
-    return { ...currentHistory };
+    return {
+      ...currentHistory,
+      readingDays: new Set(currentHistory.readingDays)
+    };
   }
 
   // Enhanced streak history methods - Phase 1.3 implementation
