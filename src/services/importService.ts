@@ -1,12 +1,17 @@
-import Papa from 'papaparse';
-import { Book, StreakImportResult } from '@/types';
-import { ImportData, ImportError, ImportOptions } from './storage/StorageService';
-import { 
-  extractReadingPeriods, 
-  generateReadingDays, 
+import Papa from "papaparse";
+import { Book, StreakImportResult } from "@/types";
+import {
+  ImportData,
+  ImportError,
+  ImportOptions,
+} from "./storage/StorageService";
+import {
+  extractReadingPeriods,
+  generateReadingDays,
   validateReadingPeriods,
-  getReadingPeriodStats 
-} from '@/utils/readingPeriodExtractor';
+  getReadingPeriodStats,
+} from "@/utils/readingPeriodExtractor";
+import { processStreakImport } from "@/utils/streakCalculator";
 // import { processStreakImport } from '@/utils/streakCalculator'; // Disabled for now
 
 export interface ColumnMapping {
@@ -18,7 +23,7 @@ export interface ImportFormat {
   name: string;
   description: string;
   columnMapping: ColumnMapping;
-  statusMapping?: { [key: string]: Book['status'] };
+  statusMapping?: { [key: string]: Book["status"] };
   dateFormat?: string;
 }
 
@@ -61,62 +66,62 @@ export interface StreakPreview {
 export class ImportService {
   private static readonly SUPPORTED_FORMATS: ImportFormat[] = [
     {
-      id: 'puka-native',
-      name: 'Puka Native CSV',
-      description: 'Native Puka export format',
+      id: "puka-native",
+      name: "Puka Native CSV",
+      description: "Native Puka export format",
       columnMapping: {
-        'Title': 'title',
-        'Author': 'author',
-        'Status': 'status',
-        'Progress': 'progress',
-        'Notes': 'notes',
-        'ISBN': 'isbn',
-        'Genre': 'genre',
-        'Total Pages': 'totalPages',
-        'Current Page': 'currentPage',
-        'Rating': 'rating',
-        'Published Date': 'publishedDate',
-        'Date Added': 'dateAdded',
-        'Date Modified': 'dateModified',
-        'Date Started': 'dateStarted',
-        'Date Finished': 'dateFinished'
+        Title: "title",
+        Author: "author",
+        Status: "status",
+        Progress: "progress",
+        Notes: "notes",
+        ISBN: "isbn",
+        Genre: "genre",
+        "Total Pages": "totalPages",
+        "Current Page": "currentPage",
+        Rating: "rating",
+        "Published Date": "publishedDate",
+        "Date Added": "dateAdded",
+        "Date Modified": "dateModified",
+        "Date Started": "dateStarted",
+        "Date Finished": "dateFinished",
       },
       statusMapping: {
-        'want_to_read': 'want_to_read',
-        'currently_reading': 'currently_reading',
-        'finished': 'finished'
-      }
+        want_to_read: "want_to_read",
+        currently_reading: "currently_reading",
+        finished: "finished",
+      },
     },
     {
-      id: 'goodreads',
-      name: 'Goodreads CSV',
-      description: 'Standard Goodreads export format',
+      id: "goodreads",
+      name: "Goodreads CSV",
+      description: "Standard Goodreads export format",
       columnMapping: {
-        'Title': 'title',
-        'Author': 'author',
-        'My Rating': 'rating',
-        'Number of Pages': 'totalPages',
-        'Year Published': 'publishedDate',
-        'Date Read': 'dateFinished',
-        'Date Added': 'dateAdded',
-        'Bookshelves': 'status',
-        'My Review': 'notes'
+        Title: "title",
+        Author: "author",
+        "My Rating": "rating",
+        "Number of Pages": "totalPages",
+        "Year Published": "publishedDate",
+        "Date Read": "dateFinished",
+        "Date Added": "dateAdded",
+        Bookshelves: "status",
+        "My Review": "notes",
       },
       statusMapping: {
-        'to-read': 'want_to_read',
-        'want-to-read': 'want_to_read',
-        'currently-reading': 'currently_reading',
-        'reading': 'currently_reading',
-        'read': 'finished',
-        'finished': 'finished'
-      }
+        "to-read": "want_to_read",
+        "want-to-read": "want_to_read",
+        "currently-reading": "currently_reading",
+        reading: "currently_reading",
+        read: "finished",
+        finished: "finished",
+      },
     },
     {
-      id: 'generic',
-      name: 'Generic CSV',
-      description: 'Generic CSV with flexible column mapping',
-      columnMapping: {} // Will be filled by user mapping
-    }
+      id: "generic",
+      name: "Generic CSV",
+      description: "Generic CSV with flexible column mapping",
+      columnMapping: {}, // Will be filled by user mapping
+    },
   ];
 
   /**
@@ -136,16 +141,18 @@ export class ImportService {
             success: false,
             totalRows: 0,
             validRows: 0,
-            errors: [{
-              row: 0,
-              field: 'file',
-              message: `Failed to parse CSV: ${error.message}`,
-              data: null
-            }],
+            errors: [
+              {
+                row: 0,
+                field: "file",
+                message: `Failed to parse CSV: ${error.message}`,
+                data: null,
+              },
+            ],
             sampleBooks: [],
-            columns: []
+            columns: [],
           });
-        }
+        },
       });
     });
   }
@@ -156,7 +163,7 @@ export class ImportService {
   static parseCSVText(csvText: string): ImportPreview {
     const results = Papa.parse(csvText, {
       header: true,
-      skipEmptyLines: true
+      skipEmptyLines: true,
     });
 
     return this.processParseResults(results);
@@ -165,7 +172,9 @@ export class ImportService {
   /**
    * Process Papa Parse results into preview data
    */
-  private static processParseResults(results: Papa.ParseResult<any>): ImportPreview {
+  private static processParseResults(
+    results: Papa.ParseResult<any>,
+  ): ImportPreview {
     const errors: ImportError[] = [];
     const columns = results.meta.fields || [];
 
@@ -174,16 +183,16 @@ export class ImportService {
       results.errors.forEach((error, index) => {
         errors.push({
           row: error.row || index,
-          field: 'parse',
+          field: "parse",
           message: error.message,
-          data: null
+          data: null,
         });
       });
     }
 
     // Detect format
     const suggestedFormat = this.detectFormat(columns);
-    
+
     // Process sample data (first 20 rows for preview, or all if fewer)
     const sampleData = results.data.slice(0, Math.min(results.data.length, 20));
     const sampleBooks: Partial<Book>[] = [];
@@ -196,16 +205,19 @@ export class ImportService {
         } catch (error) {
           errors.push({
             row: index,
-            field: 'conversion',
-            message: error instanceof Error ? error.message : 'Conversion failed',
-            data: row
+            field: "conversion",
+            message:
+              error instanceof Error ? error.message : "Conversion failed",
+            data: row,
           });
         }
       });
     }
 
     // Calculate validRows based on successful conversions for the full dataset
-    const totalValidRows = suggestedFormat ? this.calculateValidRows(results.data, suggestedFormat) : 0;
+    const totalValidRows = suggestedFormat
+      ? this.calculateValidRows(results.data, suggestedFormat)
+      : 0;
 
     return {
       success: results.errors.length === 0,
@@ -214,7 +226,7 @@ export class ImportService {
       errors,
       sampleBooks,
       suggestedFormat,
-      columns
+      columns,
     };
   }
 
@@ -223,7 +235,7 @@ export class ImportService {
    */
   private static calculateValidRows(data: any[], format: ImportFormat): number {
     let validCount = 0;
-    
+
     data.forEach((row) => {
       try {
         this.convertRowToBook(row, format);
@@ -240,18 +252,22 @@ export class ImportService {
    */
   private static detectFormat(columns: string[]): ImportFormat | undefined {
     if (!columns || columns.length === 0) {
-      return this.SUPPORTED_FORMATS.find(f => f.id === 'generic');
+      return this.SUPPORTED_FORMATS.find((f) => f.id === "generic");
     }
 
-    const columnSet = new Set(columns.map(col => col.toLowerCase().trim()));
+    const columnSet = new Set(columns.map((col) => col.toLowerCase().trim()));
 
     // Check for exact matches first
     for (const format of this.SUPPORTED_FORMATS) {
-      if (format.id === 'generic') continue;
+      if (format.id === "generic") continue;
 
-      const formatColumns = Object.keys(format.columnMapping).map(col => col.toLowerCase().trim());
-      const matchCount = formatColumns.filter(col => columnSet.has(col)).length;
-      
+      const formatColumns = Object.keys(format.columnMapping).map((col) =>
+        col.toLowerCase().trim(),
+      );
+      const matchCount = formatColumns.filter((col) =>
+        columnSet.has(col),
+      ).length;
+
       // Format detection debug (can be removed in production)
 
       // Require at least 3 key columns to match for format detection
@@ -264,17 +280,21 @@ export class ImportService {
       }
 
       // Special check for key columns that strongly indicate a format
-      if (format.id === 'goodreads') {
-        const keyGoodreadsColumns = ['title', 'author', 'bookshelves'];
-        const keyMatches = keyGoodreadsColumns.filter(col => columnSet.has(col)).length;
+      if (format.id === "goodreads") {
+        const keyGoodreadsColumns = ["title", "author", "bookshelves"];
+        const keyMatches = keyGoodreadsColumns.filter((col) =>
+          columnSet.has(col),
+        ).length;
         if (keyMatches >= 2) {
           return format;
         }
       }
 
-      if (format.id === 'puka-native') {
-        const keyPukaColumns = ['title', 'author', 'status', 'progress'];
-        const keyMatches = keyPukaColumns.filter(col => columnSet.has(col)).length;
+      if (format.id === "puka-native") {
+        const keyPukaColumns = ["title", "author", "status", "progress"];
+        const keyMatches = keyPukaColumns.filter((col) =>
+          columnSet.has(col),
+        ).length;
         if (keyMatches >= 3) {
           return format;
         }
@@ -282,61 +302,68 @@ export class ImportService {
     }
 
     // If no format matches well, suggest generic format
-    return this.SUPPORTED_FORMATS.find(f => f.id === 'generic');
+    return this.SUPPORTED_FORMATS.find((f) => f.id === "generic");
   }
 
   /**
    * Convert CSV row to Book object
    */
-  private static convertRowToBook(row: any, format: ImportFormat): Partial<Book> {
+  private static convertRowToBook(
+    row: any,
+    format: ImportFormat,
+  ): Partial<Book> {
     const book: Partial<Book> = {};
     const errors: string[] = [];
 
     // For generic format, try to map common column names
-    if (format.id === 'generic') {
+    if (format.id === "generic") {
       return this.convertGenericRow(row);
     }
 
     // Map columns to book fields using format mapping
     for (const [csvColumn, bookField] of Object.entries(format.columnMapping)) {
       const value = row[csvColumn];
-      if (value === undefined || value === null || value === '') continue;
+      if (value === undefined || value === null || value === "") continue;
 
       try {
         switch (bookField) {
-          case 'title':
-          case 'author':
-          case 'notes':
-          case 'isbn':
-          case 'genre':
-          case 'publishedDate':
+          case "title":
+          case "author":
+          case "notes":
+          case "isbn":
+          case "genre":
+          case "publishedDate":
             book[bookField] = String(value).trim();
             break;
 
-          case 'progress': {
+          case "progress": {
             const progressValue = Number(value);
             if (!isNaN(progressValue)) {
               if (progressValue < 0 || progressValue > 100) {
-                throw new Error(`Progress must be between 0 and 100, got ${progressValue}`);
+                throw new Error(
+                  `Progress must be between 0 and 100, got ${progressValue}`,
+                );
               }
               book.progress = progressValue;
             }
             break;
           }
 
-          case 'rating': {
+          case "rating": {
             const ratingValue = Number(value);
             if (!isNaN(ratingValue)) {
               if (ratingValue < 0 || ratingValue > 5) {
-                throw new Error(`Rating must be between 0 and 5, got ${ratingValue}`);
+                throw new Error(
+                  `Rating must be between 0 and 5, got ${ratingValue}`,
+                );
               }
               book.rating = ratingValue;
             }
             break;
           }
 
-          case 'totalPages':
-          case 'currentPage': {
+          case "totalPages":
+          case "currentPage": {
             const numValue = Number(value);
             if (!isNaN(numValue) && numValue >= 0) {
               book[bookField] = numValue;
@@ -344,14 +371,14 @@ export class ImportService {
             break;
           }
 
-          case 'status':
+          case "status":
             book.status = this.mapStatus(value, format.statusMapping);
             break;
 
-          case 'dateAdded':
-          case 'dateModified':
-          case 'dateStarted':
-          case 'dateFinished': {
+          case "dateAdded":
+          case "dateModified":
+          case "dateStarted":
+          case "dateFinished": {
             const date = this.parseDate(value);
             if (date) {
               book[bookField] = date;
@@ -365,10 +392,11 @@ export class ImportService {
         }
       } catch (error) {
         // For validation errors (progress, rating), re-throw to fail the entire row
-        if (error instanceof Error && (
-          error.message.includes('Progress must be between') ||
-          error.message.includes('Rating must be between')
-        )) {
+        if (
+          error instanceof Error &&
+          (error.message.includes("Progress must be between") ||
+            error.message.includes("Rating must be between"))
+        ) {
           throw error;
         }
         // For other conversion errors, log and continue
@@ -378,13 +406,13 @@ export class ImportService {
 
     // Set defaults for required fields
     if (!book.title) {
-      throw new Error('Title is required');
+      throw new Error("Title is required");
     }
     if (!book.author) {
-      book.author = 'Unknown Author';
+      book.author = "Unknown Author";
     }
     if (book.status === undefined) {
-      book.status = 'want_to_read';
+      book.status = "want_to_read";
     }
     if (book.progress === undefined) {
       book.progress = 0;
@@ -396,14 +424,14 @@ export class ImportService {
     }
 
     // Auto-set status based on progress if not explicitly set
-    const statusColumn = this.getCSVColumnForField('status', format);
+    const statusColumn = this.getCSVColumnForField("status", format);
     if (book.progress !== undefined && statusColumn && !row[statusColumn]) {
       if (book.progress === 0) {
-        book.status = 'want_to_read';
+        book.status = "want_to_read";
       } else if (book.progress === 100) {
-        book.status = 'finished';
+        book.status = "finished";
       } else {
-        book.status = 'currently_reading';
+        book.status = "currently_reading";
       }
     }
 
@@ -415,14 +443,19 @@ export class ImportService {
    */
   private static convertGenericRow(row: any): Partial<Book> {
     const book: Partial<Book> = {};
-    
+
     // Common patterns for title
-    const titlePatterns = ['title', 'book', 'book title', 'name'];
-    const authorPatterns = ['author', 'author name', 'writer', 'by'];
-    const statusPatterns = ['status', 'shelf', 'bookshelves', 'reading status'];
-    const progressPatterns = ['progress', 'percent', 'completion', '% complete'];
-    const ratingPatterns = ['rating', 'my rating', 'score', 'stars'];
-    const notesPatterns = ['notes', 'review', 'my review', 'comments'];
+    const titlePatterns = ["title", "book", "book title", "name"];
+    const authorPatterns = ["author", "author name", "writer", "by"];
+    const statusPatterns = ["status", "shelf", "bookshelves", "reading status"];
+    const progressPatterns = [
+      "progress",
+      "percent",
+      "completion",
+      "% complete",
+    ];
+    const ratingPatterns = ["rating", "my rating", "score", "stars"];
+    const notesPatterns = ["notes", "review", "my review", "comments"];
 
     // Find title
     for (const pattern of titlePatterns) {
@@ -458,7 +491,9 @@ export class ImportService {
         const numValue = Number(value);
         if (!isNaN(numValue)) {
           if (numValue < 0 || numValue > 100) {
-            throw new Error(`Progress must be between 0 and 100, got ${numValue}`);
+            throw new Error(
+              `Progress must be between 0 and 100, got ${numValue}`,
+            );
           }
           book.progress = numValue;
         }
@@ -492,13 +527,13 @@ export class ImportService {
 
     // Set defaults
     if (!book.title) {
-      throw new Error('Title is required');
+      throw new Error("Title is required");
     }
     if (!book.author) {
-      book.author = 'Unknown Author';
+      book.author = "Unknown Author";
     }
     if (book.status === undefined) {
-      book.status = 'want_to_read';
+      book.status = "want_to_read";
     }
     if (book.progress === undefined) {
       book.progress = 0;
@@ -523,8 +558,11 @@ export class ImportService {
   /**
    * Map status value to Book status
    */
-  private static mapStatus(value: string, statusMapping?: { [key: string]: Book['status'] }): Book['status'] {
-    if (!value) return 'want_to_read';
+  private static mapStatus(
+    value: string,
+    statusMapping?: { [key: string]: Book["status"] },
+  ): Book["status"] {
+    if (!value) return "want_to_read";
 
     const normalizedValue = value.toLowerCase().trim();
 
@@ -534,24 +572,34 @@ export class ImportService {
     }
 
     // Fallback to common mappings
-    if (normalizedValue.includes('want') || normalizedValue.includes('to-read')) {
-      return 'want_to_read';
+    if (
+      normalizedValue.includes("want") ||
+      normalizedValue.includes("to-read")
+    ) {
+      return "want_to_read";
     }
-    if (normalizedValue.includes('reading') || normalizedValue.includes('current')) {
-      return 'currently_reading';
+    if (
+      normalizedValue.includes("reading") ||
+      normalizedValue.includes("current")
+    ) {
+      return "currently_reading";
     }
-    if (normalizedValue.includes('finished') || normalizedValue.includes('read') || normalizedValue.includes('done')) {
-      return 'finished';
+    if (
+      normalizedValue.includes("finished") ||
+      normalizedValue.includes("read") ||
+      normalizedValue.includes("done")
+    ) {
+      return "finished";
     }
 
-    return 'want_to_read';
+    return "want_to_read";
   }
 
   /**
    * Parse date string to Date object
    */
   private static parseDate(dateStr: string): Date | undefined {
-    if (!dateStr || dateStr.trim() === '') return undefined;
+    if (!dateStr || dateStr.trim() === "") return undefined;
 
     // Try parsing as ISO date first
     let date = new Date(dateStr);
@@ -582,7 +630,10 @@ export class ImportService {
   /**
    * Get CSV column name for a book field
    */
-  private static getCSVColumnForField(field: string, format: ImportFormat): string | undefined {
+  private static getCSVColumnForField(
+    field: string,
+    format: ImportFormat,
+  ): string | undefined {
     for (const [csvColumn, bookField] of Object.entries(format.columnMapping)) {
       if (bookField === field) {
         return csvColumn;
@@ -601,8 +652,8 @@ export class ImportService {
       mergeDuplicates: false,
       overwriteExisting: false,
       validateData: true,
-      skipInvalid: true
-    }
+      skipInvalid: true,
+    },
   ): ParsedImportData {
     const books: Partial<Book>[] = [];
     const errors: ImportError[] = [];
@@ -620,9 +671,9 @@ export class ImportService {
       } catch (error) {
         errors.push({
           row: index + 1,
-          field: 'general',
-          message: error instanceof Error ? error.message : 'Invalid row data',
-          data: row
+          field: "general",
+          message: error instanceof Error ? error.message : "Invalid row data",
+          data: row,
         });
 
         if (!options.skipInvalid) {
@@ -635,7 +686,7 @@ export class ImportService {
       books,
       errors,
       totalRows: csvData.length,
-      validRows
+      validRows,
     };
   }
 
@@ -644,26 +695,26 @@ export class ImportService {
    */
   private static validateRow(row: any, format: ImportFormat): void {
     // Check for required fields
-    const titleColumn = this.getCSVColumnForField('title', format);
-    if (titleColumn && (!row[titleColumn] || row[titleColumn].trim() === '')) {
-      throw new Error('Title is required');
+    const titleColumn = this.getCSVColumnForField("title", format);
+    if (titleColumn && (!row[titleColumn] || row[titleColumn].trim() === "")) {
+      throw new Error("Title is required");
     }
 
     // Validate progress if present
-    const progressColumn = this.getCSVColumnForField('progress', format);
+    const progressColumn = this.getCSVColumnForField("progress", format);
     if (progressColumn && row[progressColumn] !== undefined) {
       const progress = Number(row[progressColumn]);
       if (isNaN(progress) || progress < 0 || progress > 100) {
-        throw new Error('Progress must be a number between 0 and 100');
+        throw new Error("Progress must be a number between 0 and 100");
       }
     }
 
     // Validate rating if present
-    const ratingColumn = this.getCSVColumnForField('rating', format);
+    const ratingColumn = this.getCSVColumnForField("rating", format);
     if (ratingColumn && row[ratingColumn] !== undefined) {
       const rating = Number(row[ratingColumn]);
       if (isNaN(rating) || rating < 0 || rating > 5) {
-        throw new Error('Rating must be a number between 0 and 5');
+        throw new Error("Rating must be a number between 0 and 5");
       }
     }
   }
@@ -680,10 +731,10 @@ export class ImportService {
    */
   static createCustomFormat(columnMapping: ColumnMapping): ImportFormat {
     return {
-      id: 'custom',
-      name: 'Custom Format',
-      description: 'User-defined column mapping',
-      columnMapping
+      id: "custom",
+      name: "Custom Format",
+      description: "User-defined column mapping",
+      columnMapping,
     };
   }
 
@@ -692,22 +743,22 @@ export class ImportService {
    */
   static createImportData(books: Partial<Book>[]): ImportData {
     return {
-      books: books.map(book => {
+      books: books.map((book) => {
         // Remove id and dateAdded if they exist (should be generated by storage)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id: _id, dateAdded: _dateAdded, ...cleanBook } = book as any;
-        
+
         return {
           ...cleanBook,
           // Ensure required fields have defaults
-          title: book.title || 'Untitled',
-          author: book.author || 'Unknown Author',
-          status: book.status || 'want_to_read',
+          title: book.title || "Untitled",
+          author: book.author || "Unknown Author",
+          status: book.status || "want_to_read",
           progress: book.progress ?? 0,
           // Add dateModified if not present
-          dateModified: book.dateModified || new Date()
+          dateModified: book.dateModified || new Date(),
         };
-      }) as (Omit<Book, 'id' | 'dateAdded'>)[]
+      }) as Omit<Book, "id" | "dateAdded">[],
     };
   }
 
@@ -716,14 +767,14 @@ export class ImportService {
    */
   static analyzeStreakData(books: Partial<Book>[]): StreakPreview {
     // Convert to Book format for analysis
-    const completeBooks = books.map(book => ({
+    const completeBooks = books.map((book) => ({
       ...book,
       id: 0, // Temporary ID for analysis
-      title: book.title || 'Untitled',
-      author: book.author || 'Unknown Author',
-      status: book.status || 'want_to_read',
+      title: book.title || "Untitled",
+      author: book.author || "Unknown Author",
+      status: book.status || "want_to_read",
       progress: book.progress ?? 0,
-      dateAdded: new Date()
+      dateAdded: new Date(),
     })) as Book[];
 
     // Extract reading periods
@@ -737,21 +788,21 @@ export class ImportService {
     let latest: Date | null = null;
 
     if (validPeriods.length > 0) {
-      const allDates = validPeriods.flatMap(p => [p.startDate, p.endDate]);
-      earliest = new Date(Math.min(...allDates.map(d => d.getTime())));
-      latest = new Date(Math.max(...allDates.map(d => d.getTime())));
+      const allDates = validPeriods.flatMap((p) => [p.startDate, p.endDate]);
+      earliest = new Date(Math.min(...allDates.map((d) => d.getTime())));
+      latest = new Date(Math.max(...allDates.map((d) => d.getTime())));
     }
 
     return {
       periodsFound: validPeriods.length,
       totalDaysToAdd: readingDays.size,
       dateRange: { earliest, latest },
-      warnings: warnings.map(w => ({ message: w.message })),
+      warnings: warnings.map((w) => ({ message: w.message })),
       stats: {
         booksWithDates: validPeriods.length,
         averageDaysPerBook: stats.averageDaysPerBook,
-        overlappingPeriods: stats.overlappingPeriods
-      }
+        overlappingPeriods: stats.overlappingPeriods,
+      },
     };
   }
 
@@ -766,49 +817,52 @@ export class ImportService {
       mergeDuplicates: false,
       overwriteExisting: false,
       validateData: true,
-      skipInvalid: true
-    }
-  ): { 
-    importData: ParsedImportData; 
-    streakResult?: StreakImportResult; 
+      skipInvalid: true,
+    },
+  ): {
+    importData: ParsedImportData;
+    streakResult?: StreakImportResult;
   } {
     // Process regular import data
-    const completeBooks = importedBooks.map(book => ({
+    const completeBooks = importedBooks.map((book) => ({
       ...book,
       id: Math.floor(Math.random() * 1000000), // Generate temporary ID
-      title: book.title || 'Untitled',
-      author: book.author || 'Unknown Author',
-      status: book.status || 'want_to_read',
+      title: book.title || "Untitled",
+      author: book.author || "Unknown Author",
+      status: book.status || "want_to_read",
       progress: book.progress ?? 0,
-      dateAdded: new Date()
+      dateAdded: new Date(),
     })) as Book[];
 
     const importData: ParsedImportData = {
       books: completeBooks,
       errors: [],
       totalRows: importedBooks.length,
-      validRows: completeBooks.length
+      validRows: completeBooks.length,
     };
 
     // Calculate streak impact if books have date information
     // NOTE: Disabled automatic streak import to prevent unwanted reading day creation
     // Reading days should be manually created by users, not auto-generated from imports
     let streakResult: StreakImportResult | undefined;
-    const booksWithDates = completeBooks.filter(book => book.dateStarted && book.dateFinished);
-    
+    const booksWithDates = completeBooks.filter(
+      (book) => book.dateStarted && book.dateFinished,
+    );
+
     // Only show preview, don't automatically create reading day entries
     if (booksWithDates.length > 0) {
       // For now, we're not auto-creating reading day entries during import
       // Users can manually mark reading days if needed
-      // 
+      //
       // To re-enable automatic streak import, uncomment:
-      // try {
-      //   streakResult = processStreakImport(booksWithDates, existingBooks);
-      // } catch (error) {
-      //   console.warn('Failed to calculate streak impact:', error);
-      // }
+      try {
+        streakResult = processStreakImport(booksWithDates, booksWithDates);
+      } catch (error) {
+        console.warn("Failed to calculate streak impact:", error);
+      }
     }
 
     return { importData, streakResult };
   }
 }
+
