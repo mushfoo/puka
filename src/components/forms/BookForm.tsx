@@ -30,6 +30,8 @@ interface FormData {
   genre: string;
   rating: string;
   publishedDate: string;
+  dateStarted: string;
+  dateFinished: string;
 }
 
 interface FormErrors {
@@ -39,6 +41,8 @@ interface FormErrors {
   totalPages?: string;
   currentPage?: string;
   rating?: string;
+  dateStarted?: string;
+  dateFinished?: string;
 }
 
 const BookForm: React.FC<BookFormProps> = ({
@@ -61,7 +65,9 @@ const BookForm: React.FC<BookFormProps> = ({
     currentPage: initialBook?.currentPage?.toString() || '',
     genre: initialBook?.genre || '',
     rating: initialBook?.rating?.toString() || '',
-    publishedDate: initialBook?.publishedDate || ''
+    publishedDate: initialBook?.publishedDate || '',
+    dateStarted: initialBook?.dateStarted ? new Date(initialBook.dateStarted).toISOString().split('T')[0] : '',
+    dateFinished: initialBook?.dateFinished ? new Date(initialBook.dateFinished).toISOString().split('T')[0] : ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -81,7 +87,9 @@ const BookForm: React.FC<BookFormProps> = ({
         currentPage: initialBook.currentPage?.toString() || '',
         genre: initialBook.genre || '',
         rating: initialBook.rating?.toString() || '',
-        publishedDate: initialBook.publishedDate || ''
+        publishedDate: initialBook.publishedDate || '',
+        dateStarted: initialBook.dateStarted ? new Date(initialBook.dateStarted).toISOString().split('T')[0] : '',
+        dateFinished: initialBook.dateFinished ? new Date(initialBook.dateFinished).toISOString().split('T')[0] : ''
       });
     }
   }, [initialBook]);
@@ -133,6 +141,30 @@ const BookForm: React.FC<BookFormProps> = ({
       newErrors.rating = 'Rating must be a whole number between 1 and 5';
     }
 
+    // Date validation
+    if (formData.dateStarted) {
+      const startDate = new Date(formData.dateStarted);
+      if (isNaN(startDate.getTime())) {
+        newErrors.dateStarted = 'Invalid start date';
+      }
+    }
+    
+    if (formData.status === 'finished' && formData.dateFinished) {
+      const endDate = new Date(formData.dateFinished);
+      if (isNaN(endDate.getTime())) {
+        newErrors.dateFinished = 'Invalid finish date';
+      }
+      
+      // Only validate date order for finished books with both dates
+      if (formData.dateStarted && !newErrors.dateStarted && !newErrors.dateFinished) {
+        const startDate = new Date(formData.dateStarted);
+        const endDate = new Date(formData.dateFinished);
+        if (startDate > endDate) {
+          newErrors.dateFinished = 'Finish date must be after start date';
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -158,7 +190,9 @@ const BookForm: React.FC<BookFormProps> = ({
         progress: true,
         totalPages: true,
         currentPage: true,
-        rating: true
+        rating: true,
+        dateStarted: true,
+        ...(formData.status === 'finished' && { dateFinished: true })
       });
       return;
     }
@@ -175,9 +209,11 @@ const BookForm: React.FC<BookFormProps> = ({
       genre: formData.genre.trim() || undefined,
       rating: formData.rating ? Number(formData.rating) : undefined,
       publishedDate: formData.publishedDate.trim() || undefined,
-      // Auto-populate dates based on status
-      dateStarted: formData.status === 'currently_reading' ? new Date() : initialBook?.dateStarted,
-      dateFinished: formData.status === 'finished' ? new Date() : initialBook?.dateFinished
+      // Use manual date inputs if provided, otherwise auto-populate based on status
+      dateStarted: formData.dateStarted ? new Date(formData.dateStarted) : 
+                   (formData.status === 'currently_reading' ? new Date() : initialBook?.dateStarted),
+      dateFinished: formData.dateFinished ? new Date(formData.dateFinished) : 
+                    (formData.status === 'finished' ? new Date() : initialBook?.dateFinished)
     };
 
     onSubmit(bookData);
@@ -273,6 +309,12 @@ const BookForm: React.FC<BookFormProps> = ({
         {errors.progress && (
           <p className="mt-1 text-sm text-error">{errors.progress}</p>
         )}
+      </div>
+
+      {/* Reading Dates */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {formData.status !== 'want_to_read' && renderInput('dateStarted', 'Date Started', 'date', undefined, false)}
+        {formData.status === 'finished' && renderInput('dateFinished', 'Date Finished', 'date', undefined, false)}
       </div>
 
       {/* Optional Fields */}

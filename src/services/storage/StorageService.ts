@@ -166,6 +166,13 @@ export interface StorageService {
    * @throws {StorageError} When streak history cannot be cleared
    */
   clearStreakHistory(): Promise<void>;
+
+  /**
+   * Manually mark today as a reading day
+   * @returns Promise resolving to updated streak history
+   * @throws {StorageError} When reading day cannot be added
+   */
+  markReadingDay(): Promise<StreakHistory>;
 }
 
 export interface ImportOptions {

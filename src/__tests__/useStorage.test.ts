@@ -7,6 +7,7 @@ import { Book } from '@/types';
 const mockStorageService = {
   initialize: vi.fn(),
   getBooks: vi.fn(),
+  getStreakHistory: vi.fn(),
   saveBook: vi.fn(),
   updateBook: vi.fn(),
   deleteBook: vi.fn(),
@@ -50,6 +51,7 @@ describe('useStorage', () => {
     vi.clearAllMocks();
     mockStorageService.initialize.mockResolvedValue(undefined);
     mockStorageService.getBooks.mockResolvedValue(mockBooks);
+    mockStorageService.getStreakHistory.mockResolvedValue(null);
   });
 
   it('initializes storage and loads books on mount', async () => {

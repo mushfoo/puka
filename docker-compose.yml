@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "3030:80"
     environment:
       - NODE_ENV=production
     container_name: puka-reading-tracker
@@ -40,4 +40,3 @@ networks:
 
 volumes:
   logs:
-

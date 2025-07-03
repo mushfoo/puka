@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Book, StatusFilter } from '@/types';
+import { Book, StatusFilter, StreakHistory } from '@/types';
 import { createStorageService, StorageService, ExportData } from '@/services/storage';
 
 interface UseStorageResult {
   books: Book[];
+  streakHistory: StreakHistory | null;
   loading: boolean;
   error: string | null;
   addBook: (book: Omit<Book, 'id' | 'dateAdded'>) => Promise<Book | null>;
@@ -15,11 +16,13 @@ interface UseStorageResult {
   searchBooks: (query: string) => Promise<Book[]>;
   getFilteredBooks: (filter: StatusFilter) => Book[];
   getExportData: () => Promise<ExportData | null>;
+  markReadingDay: () => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
 export const useStorage = (): UseStorageResult => {
   const [books, setBooks] = useState<Book[]>([]);
+  const [streakHistory, setStreakHistory] = useState<StreakHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [storageService] = useState<StorageService>(() => createStorageService());
@@ -31,8 +34,36 @@ export const useStorage = (): UseStorageResult => {
       setError(null);
       
       await storageService.initialize();
-      const loadedBooks = await storageService.getBooks();
+      const [loadedBooks, loadedStreakHistory] = await Promise.all([
+        storageService.getBooks(),
+        storageService.getStreakHistory()
+      ]);
       setBooks(loadedBooks);
+      
+      // Auto-create streak history if it doesn't exist and we have books with reading periods
+      if (!loadedStreakHistory && loadedBooks.length > 0) {
+        const booksWithReadingPeriods = loadedBooks.filter(book => 
+          book.dateStarted && book.dateFinished
+        );
+        
+        if (booksWithReadingPeriods.length > 0) {
+          console.log(`Auto-creating streak history from ${booksWithReadingPeriods.length} books with reading periods`);
+          
+          // Dynamically import the streak calculator to avoid circular dependencies
+          const { createStreakHistoryFromBooks } = await import('../utils/streakCalculator');
+          const newStreakHistory = createStreakHistoryFromBooks(loadedBooks);
+          
+          // Save the new streak history
+          await storageService.saveStreakHistory(newStreakHistory);
+          console.log('Auto-created streak history with', newStreakHistory.readingDays.size, 'reading days');
+          
+          setStreakHistory(newStreakHistory);
+        } else {
+          setStreakHistory(loadedStreakHistory);
+        }
+      } else {
+        setStreakHistory(loadedStreakHistory);
+      }
     } catch (err) {
       console.error('Failed to initialize storage:', err);
       setError(err instanceof Error ? err.message : 'Failed to load books');
@@ -168,6 +199,19 @@ export const useStorage = (): UseStorageResult => {
     }
   }, [storageService]);
 
+  // Mark today as a reading day
+  const markReadingDay = useCallback(async (): Promise<boolean> => {
+    try {
+      const updatedHistory = await storageService.markReadingDay();
+      setStreakHistory(updatedHistory);
+      return true;
+    } catch (err) {
+      console.error('Failed to mark reading day:', err);
+      setError(err instanceof Error ? err.message : 'Failed to mark reading day');
+      return false;
+    }
+  }, [storageService]);
+
   // Refresh data
   const refresh = useCallback(async (): Promise<void> => {
     await initializeStorage();
@@ -175,6 +219,7 @@ export const useStorage = (): UseStorageResult => {
 
   return {
     books,
+    streakHistory,
     loading,
     error,
     addBook,
@@ -186,6 +231,7 @@ export const useStorage = (): UseStorageResult => {
     searchBooks,
     getFilteredBooks,
     getExportData,
+    markReadingDay,
     refresh
   };
 };
