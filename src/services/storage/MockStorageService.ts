@@ -444,6 +444,27 @@ export class MockStorageService implements StorageService {
     this.streakHistory = null;
   }
 
+  async markReadingDay(): Promise<StreakHistory> {
+    this.ensureInitialized();
+    
+    // Get or create streak history
+    if (!this.streakHistory) {
+      this.streakHistory = {
+        readingDays: new Set<string>(),
+        bookPeriods: [],
+        lastCalculated: new Date()
+      };
+    }
+    
+    // Add today to reading days
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    this.streakHistory.readingDays.add(todayISO);
+    this.streakHistory.lastCalculated = new Date();
+    
+    return { ...this.streakHistory };
+  }
+
   // Enhanced streak history methods - Phase 1.3 implementation
   
   async getEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null> {

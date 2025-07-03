@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Book } from '@/types';
-import { calculateStreak } from '@/utils/streakCalculator';
+import { Book, StreakHistory } from '@/types';
+import { calculateStreakWithHistory } from '@/utils/streakCalculator';
 import ReadingHistoryModal from './modals/ReadingHistoryModal';
 
 interface StreakDisplayProps {
   /** Books data to calculate streak from */
   books: Book[];
+  /** Streak history for enhanced calculation */
+  streakHistory?: StreakHistory;
+  /** Function to manually mark today as a reading day */
+  onMarkReadingDay?: () => Promise<boolean>;
   /** Whether today has reading activity */
   hasReadToday?: boolean;
   /** Compact display mode */
@@ -20,6 +24,8 @@ interface StreakDisplayProps {
 
 const StreakDisplay: React.FC<StreakDisplayProps> = ({
   books,
+  streakHistory,
+  onMarkReadingDay,
   hasReadToday = false,
   compact = false,
   className = '',
@@ -28,15 +34,57 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
 }) => {
   // State for reading history modal
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  // Calculate streak data from books
+  const [isMarkingReadingDay, setIsMarkingReadingDay] = React.useState(false);
+
+  // Calculate streak data from books with history integration
   const streakData = React.useMemo(() => {
-    return calculateStreak(books, 30); // 30 pages as default daily goal
-  }, [books]);
+    return calculateStreakWithHistory(books, streakHistory, 30); // 30 pages as default daily goal
+  }, [books, streakHistory]);
+
+  const handleMarkReadingDay = async () => {
+    if (!onMarkReadingDay || isMarkingReadingDay) return;
+    
+    try {
+      setIsMarkingReadingDay(true);
+      const success = await onMarkReadingDay();
+      if (!success) {
+        console.error('Failed to mark reading day');
+      }
+    } catch (error) {
+      console.error('Error marking reading day:', error);
+    } finally {
+      setIsMarkingReadingDay(false);
+    }
+  };
   
   const { currentStreak, longestStreak, todayProgress, dailyGoal, hasReadToday: calculatedHasReadToday } = streakData;
   
   // Use calculated value or fallback to prop
   const actualHasReadToday = calculatedHasReadToday || hasReadToday;
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('StreakDisplay Debug:', {
+      hasOnMarkReadingDay: !!onMarkReadingDay,
+      actualHasReadToday,
+      calculatedHasReadToday,
+      currentStreak,
+      longestStreak
+    });
+  }, [onMarkReadingDay, actualHasReadToday, calculatedHasReadToday, currentStreak, longestStreak]);
+  
+  // Debug logging for troubleshooting
+  React.useEffect(() => {
+    console.log('StreakDisplay Debug Info:', {
+      calculatedHasReadToday,
+      hasReadTodayProp: hasReadToday,
+      actualHasReadToday,
+      currentStreak,
+      todayProgress,
+      onMarkReadingDayAvailable: !!onMarkReadingDay,
+      today: new Date().toISOString().split('T')[0]
+    });
+  }, [calculatedHasReadToday, hasReadToday, actualHasReadToday, currentStreak, todayProgress, onMarkReadingDay]);
 
   const getStreakMessage = () => {
     if (currentStreak === 0) {
@@ -143,18 +191,42 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
             </div>
           )}
 
-          {/* Status Message and Edit Button */}
+          {/* Status Message and Actions */}
           <div className="flex items-center justify-between">
             <span className="text-xs opacity-75">
               {getStreakMessage()}
             </span>
             <div className="flex items-center gap-2">
-              {actualHasReadToday && (
+              {/* I Read Today Button - Always show when onMarkReadingDay is available */}
+              {onMarkReadingDay && (
+                <button
+                  onClick={handleMarkReadingDay}
+                  disabled={isMarkingReadingDay || actualHasReadToday}
+                  className={`text-xs px-3 py-1 rounded-full transition-all duration-200 
+                           focus:outline-none focus:ring-2 focus:ring-white/50
+                           ${actualHasReadToday 
+                             ? 'bg-green-500/30 text-white cursor-default' 
+                             : 'bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed'
+                           }`}
+                  aria-label={actualHasReadToday ? "Already marked as read today" : "Mark today as a reading day"}
+                >
+                  {isMarkingReadingDay 
+                    ? '...' 
+                    : actualHasReadToday 
+                      ? '✅ Read today' 
+                      : '📚 I read today'
+                  }
+                </button>
+              )}
+              
+              {/* Active Indicator - Only show when read today and no button */}
+              {actualHasReadToday && !onMarkReadingDay && (
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                   <span className="text-xs opacity-75">Active</span>
                 </div>
               )}
+              
               <button
                 onClick={handleOpenHistory}
                 className="text-xs opacity-75 hover:opacity-100 transition-opacity underline"

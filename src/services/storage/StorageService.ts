@@ -170,6 +170,13 @@ export interface StorageService {
   clearStreakHistory(): Promise<void>;
 
   /**
+   * Manually mark today as a reading day
+   * @returns Promise resolving to updated streak history
+   * @throws {StorageError} When reading day cannot be added
+   */
+  markReadingDay(): Promise<StreakHistory>;
+
+  /**
    * Get enhanced streak history with detailed reading day entries
    * Automatically migrates from legacy format if needed
    * @returns Promise resolving to enhanced streak history or null if none exists

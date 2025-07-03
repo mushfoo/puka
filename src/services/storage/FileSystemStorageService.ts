@@ -327,7 +327,14 @@ export class FileSystemStorageService implements StorageService {
       
       if (content.trim()) {
         const data = JSON.parse(content);
-        this.books = data.books || [];
+        // Convert date strings back to Date objects (same as localStorage initialization)
+        this.books = (data.books || []).map((book: any) => ({
+          ...book,
+          dateAdded: new Date(book.dateAdded),
+          dateModified: book.dateModified ? new Date(book.dateModified) : undefined,
+          dateStarted: book.dateStarted ? new Date(book.dateStarted) : undefined,
+          dateFinished: book.dateFinished ? new Date(book.dateFinished) : undefined
+        }));
         this.nextId = this.books.length > 0 ? Math.max(...this.books.map(b => b.id || 0)) + 1 : 1;
       } else {
         this.books = [];
@@ -1023,6 +1030,42 @@ export class FileSystemStorageService implements StorageService {
     
     this.streakHistory = null;
     await this.saveStreakHistoryToFile();
+  }
+
+  async markReadingDay(): Promise<StreakHistory> {
+    this.ensureInitialized();
+    
+    // Get or create streak history
+    let currentHistory = this.streakHistory;
+    if (!currentHistory) {
+      // Auto-create from existing books if no history exists
+      const booksWithReadingPeriods = this.books.filter(book => 
+        book.dateStarted && book.dateFinished
+      );
+      
+      if (booksWithReadingPeriods.length > 0) {
+        const { createStreakHistoryFromBooks } = await import('../../utils/streakCalculator');
+        currentHistory = createStreakHistoryFromBooks(this.books);
+      } else {
+        currentHistory = {
+          readingDays: new Set<string>(),
+          bookPeriods: [],
+          lastCalculated: new Date()
+        };
+      }
+    }
+    
+    // Add today to reading days
+    const today = new Date();
+    const todayISO = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+    currentHistory.readingDays.add(todayISO);
+    currentHistory.lastCalculated = new Date();
+    
+    // Save updated history
+    this.streakHistory = currentHistory;
+    await this.saveStreakHistoryToFile();
+    
+    return { ...currentHistory };
   }
 
   // Enhanced streak history methods - Phase 1.3 implementation
