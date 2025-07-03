@@ -1,4 +1,4 @@
-import { Book, StreakHistory } from '@/types';
+import { Book, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 import {
   type StorageService,
   type ExportData,
@@ -8,8 +8,17 @@ import {
   type ImportResult,
   type BookFilter,
   StorageError,
-  StorageErrorCode
+  StorageErrorCode,
+  BulkReadingDayOperation
 } from './StorageService';
+import {
+  migrateStreakHistory,
+  createEmptyEnhancedStreakHistory,
+  addReadingDayEntry,
+  removeReadingDayEntry,
+  synchronizeReadingDays,
+  validateEnhancedStreakHistory
+} from '@/utils/streakMigration';
 
 /**
  * File System Access API Storage Service
@@ -20,12 +29,15 @@ export class FileSystemStorageService implements StorageService {
   private fileHandle: any | null = null;
   private settingsFileHandle: any | null = null;
   private streakFileHandle: any | null = null;
+  private enhancedStreakFileHandle: any | null = null;
   private initialized = false;
   private useLocalStorage = false;
   private books: Book[] = [];
   private settings: UserSettings = this.getDefaultSettings();
   private streakHistory: StreakHistory | null = null;
+  private enhancedStreakHistory: EnhancedStreakHistory | null = null;
   private nextId = 1;
+  private transactionInProgress = false;
 
   /**
    * Check if File System Access API is supported
@@ -113,6 +125,9 @@ export class FileSystemStorageService implements StorageService {
           }))
         };
       }
+
+      // Load enhanced streak history from localStorage
+      await this.loadEnhancedStreakHistory();
     } catch (error) {
       console.warn('Failed to load data from localStorage, starting fresh', error);
       this.books = [];
@@ -135,10 +150,14 @@ export class FileSystemStorageService implements StorageService {
             // Verify the handles are still valid
             this.fileHandle = handles.dataFile;
             this.settingsFileHandle = handles.settingsFile;
+            this.streakFileHandle = handles.streakFile;
+            this.enhancedStreakFileHandle = handles.enhancedStreakFile;
             
             // Try to read the files to verify access
             await this.loadBooksFromFile();
             await this.loadSettingsFromFile();
+            await this.loadStreakHistoryFromFile();
+            await this.loadEnhancedStreakHistory();
             return;
           } catch (error) {
             // Handles are stale, need to re-select
@@ -288,7 +307,8 @@ export class FileSystemStorageService implements StorageService {
       localStorage.setItem('puka-file-handles', JSON.stringify({
         dataFile: this.fileHandle,
         settingsFile: this.settingsFileHandle,
-        streakFile: this.streakFileHandle
+        streakFile: this.streakFileHandle,
+        enhancedStreakFile: this.enhancedStreakFileHandle
       }));
     }
   }
@@ -486,6 +506,125 @@ export class FileSystemStorageService implements StorageService {
       await writable.close();
     } catch (error) {
       console.warn('Failed to save streak history:', error);
+    }
+  }
+
+  /**
+   * Load enhanced streak history from file/localStorage
+   */
+  private async loadEnhancedStreakHistory(): Promise<void> {
+    if (this.useLocalStorage) {
+      const data = localStorage.getItem('puka-enhanced-streak-history');
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          this.enhancedStreakHistory = {
+            ...parsed,
+            readingDays: new Set(parsed.readingDays || []),
+            lastCalculated: new Date(parsed.lastCalculated),
+            lastSyncDate: new Date(parsed.lastSyncDate),
+            bookPeriods: (parsed.bookPeriods || []).map((period: any) => ({
+              ...period,
+              startDate: new Date(period.startDate),
+              endDate: new Date(period.endDate)
+            })),
+            readingDayEntries: (parsed.readingDayEntries || []).map((entry: any) => ({
+              ...entry,
+              createdAt: new Date(entry.createdAt),
+              modifiedAt: new Date(entry.modifiedAt)
+            }))
+          };
+        } catch (error) {
+          console.warn('Failed to parse enhanced streak history from localStorage:', error);
+          this.enhancedStreakHistory = null;
+        }
+      }
+      return;
+    }
+
+    if (!this.enhancedStreakFileHandle) {
+      return; // No enhanced streak file handle
+    }
+
+    try {
+      const file = await this.enhancedStreakFileHandle.getFile();
+      const content = await file.text();
+      
+      if (content.trim()) {
+        const data = JSON.parse(content);
+        this.enhancedStreakHistory = {
+          ...data,
+          readingDays: new Set(data.readingDays || []),
+          lastCalculated: new Date(data.lastCalculated),
+          lastSyncDate: new Date(data.lastSyncDate),
+          bookPeriods: (data.bookPeriods || []).map((period: any) => ({
+            ...period,
+            startDate: new Date(period.startDate),
+            endDate: new Date(period.endDate)
+          })),
+          readingDayEntries: (data.readingDayEntries || []).map((entry: any) => ({
+            ...entry,
+            createdAt: new Date(entry.createdAt),
+            modifiedAt: new Date(entry.modifiedAt)
+          }))
+        };
+      } else {
+        this.enhancedStreakHistory = null;
+      }
+    } catch (error) {
+      console.warn('Failed to load enhanced streak history, initializing empty');
+      this.enhancedStreakHistory = null;
+    }
+  }
+
+  /**
+   * Save enhanced streak history to file/localStorage
+   */
+  private async saveEnhancedStreakHistoryToFile(): Promise<void> {
+    if (this.useLocalStorage) {
+      if (this.enhancedStreakHistory) {
+        const serializable = {
+          ...this.enhancedStreakHistory,
+          readingDays: Array.from(this.enhancedStreakHistory.readingDays)
+        };
+        localStorage.setItem('puka-enhanced-streak-history', JSON.stringify(serializable));
+      } else {
+        localStorage.removeItem('puka-enhanced-streak-history');
+      }
+      return;
+    }
+
+    if (!this.enhancedStreakFileHandle) {
+      // Try to create the file handle
+      try {
+        this.enhancedStreakFileHandle = await (window as any).showSaveFilePicker({
+          suggestedName: 'puka-enhanced-streak-history.json',
+          types: [{
+            description: 'Puka Enhanced Streak History Files',
+            accept: { 'application/json': ['.json'] }
+          }]
+        });
+        this.saveFileHandles();
+      } catch (error) {
+        console.warn('Could not create enhanced streak history file:', error);
+        return;
+      }
+    }
+
+    try {
+      const writable = await this.enhancedStreakFileHandle.createWritable();
+      if (this.enhancedStreakHistory) {
+        const serializable = {
+          ...this.enhancedStreakHistory,
+          readingDays: Array.from(this.enhancedStreakHistory.readingDays)
+        };
+        await writable.write(JSON.stringify(serializable, null, 2));
+      } else {
+        await writable.write('{}');
+      }
+      await writable.close();
+    } catch (error) {
+      console.warn('Failed to save enhanced streak history:', error);
     }
   }
 
@@ -926,6 +1065,306 @@ export class FileSystemStorageService implements StorageService {
     this.streakHistory = currentHistory;
     await this.saveStreakHistoryToFile();
     
-    return { ...currentHistory };
+    return {
+      ...currentHistory,
+      readingDays: new Set(currentHistory.readingDays)
+    };
+  }
+
+  // Enhanced streak history methods - Phase 1.3 implementation
+  
+  async getEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null> {
+    this.ensureInitialized();
+    
+    if (this.enhancedStreakHistory) {
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
+    }
+    
+    // Try to load from file/storage
+    await this.loadEnhancedStreakHistory();
+    
+    // If still null, try migration from legacy data
+    if (!this.enhancedStreakHistory && this.streakHistory) {
+      return await this.migrateToEnhancedStreakHistory();
+    }
+    
+    if (this.enhancedStreakHistory && typeof this.enhancedStreakHistory === 'object') {
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
+    }
+    return null;
+  }
+
+  async saveEnhancedStreakHistory(enhancedHistory: EnhancedStreakHistory): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Validate data integrity
+    const validation = validateEnhancedStreakHistory(enhancedHistory);
+    if (!validation.isValid) {
+      throw new StorageError(
+        `Invalid enhanced streak history: ${validation.issues.join(', ')}`,
+        StorageErrorCode.VALIDATION_ERROR
+      );
+    }
+    
+    const now = new Date();
+    this.enhancedStreakHistory = {
+      ...enhancedHistory,
+      lastSyncDate: now
+    };
+    
+    await this.saveEnhancedStreakHistoryToFile();
+    
+    return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
+  }
+
+  async updateEnhancedStreakHistory(updates: Partial<EnhancedStreakHistory>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Get current history or create empty if none exists
+    let currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      currentHistory = createEmptyEnhancedStreakHistory();
+    }
+    
+    // Merge updates
+    const updatedHistory: EnhancedStreakHistory = {
+      ...currentHistory,
+      ...updates,
+      lastSyncDate: new Date()
+    };
+    
+    // Synchronize reading days if readingDayEntries were updated
+    const finalHistory = synchronizeReadingDays(updatedHistory);
+    
+    return await this.saveEnhancedStreakHistory(finalHistory);
+  }
+
+  async addReadingDayEntry(entry: Omit<EnhancedReadingDayEntry, 'createdAt' | 'modifiedAt'>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Validate date format
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(entry.date)) {
+      throw new StorageError(
+        'Invalid date format. Expected YYYY-MM-DD format.',
+        StorageErrorCode.VALIDATION_ERROR
+      );
+    }
+    
+    // Get current history or create empty if none exists
+    let currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      currentHistory = createEmptyEnhancedStreakHistory();
+    }
+    
+    // Add the entry using migration utility
+    const updatedHistory = addReadingDayEntry(currentHistory, entry);
+    
+    return await this.saveEnhancedStreakHistory(updatedHistory);
+  }
+
+  async updateReadingDayEntry(date: string, updates: Partial<Omit<EnhancedReadingDayEntry, 'date' | 'createdAt'>>): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      throw new StorageError(
+        'No enhanced streak history found',
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Find existing entry
+    const existingIndex = currentHistory.readingDayEntries.findIndex(entry => entry.date === date);
+    if (existingIndex === -1) {
+      throw new StorageError(
+        `Reading day entry for ${date} not found`,
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Update the entry
+    const updatedEntries = [...currentHistory.readingDayEntries];
+    updatedEntries[existingIndex] = {
+      ...updatedEntries[existingIndex],
+      ...updates,
+      modifiedAt: new Date()
+    };
+    
+    const updatedHistory: EnhancedStreakHistory = {
+      ...currentHistory,
+      readingDayEntries: updatedEntries,
+      lastSyncDate: new Date()
+    };
+    
+    // Synchronize reading days
+    const finalHistory = synchronizeReadingDays(updatedHistory);
+    
+    return await this.saveEnhancedStreakHistory(finalHistory);
+  }
+
+  async removeReadingDayEntry(date: string): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      throw new StorageError(
+        'No enhanced streak history found',
+        StorageErrorCode.FILE_NOT_FOUND
+      );
+    }
+    
+    // Remove the entry using migration utility
+    const updatedHistory = removeReadingDayEntry(currentHistory, date);
+    
+    return await this.saveEnhancedStreakHistory(updatedHistory);
+  }
+
+  async getReadingDayEntriesInRange(startDate: string, endDate: string): Promise<EnhancedReadingDayEntry[]> {
+    this.ensureInitialized();
+    
+    const currentHistory = await this.getEnhancedStreakHistory();
+    if (!currentHistory) {
+      return [];
+    }
+    
+    return currentHistory.readingDayEntries.filter(entry => {
+      return entry.date >= startDate && entry.date <= endDate;
+    }).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  async migrateToEnhancedStreakHistory(): Promise<EnhancedStreakHistory | null> {
+    this.ensureInitialized();
+    
+    // Check if we already have enhanced history
+    if (this.enhancedStreakHistory) {
+      return JSON.parse(JSON.stringify(this.enhancedStreakHistory));
+    }
+    
+    // Check if we have legacy history to migrate
+    if (!this.streakHistory) {
+      return null;
+    }
+    
+    try {
+      // Perform migration
+      const migratedHistory = migrateStreakHistory(this.streakHistory);
+      
+      // Save the migrated data
+      await this.saveEnhancedStreakHistory(migratedHistory);
+      
+      return JSON.parse(JSON.stringify(migratedHistory));
+    } catch (error) {
+      throw new StorageError(
+        'Failed to migrate streak history to enhanced format',
+        StorageErrorCode.VALIDATION_ERROR,
+        error as Error
+      );
+    }
+  }
+
+  async bulkUpdateReadingDayEntries(operations: BulkReadingDayOperation[]): Promise<EnhancedStreakHistory> {
+    this.ensureInitialized();
+    
+    // Begin transaction-like operation
+    if (this.transactionInProgress) {
+      throw new StorageError(
+        'Another transaction is already in progress',
+        StorageErrorCode.UNKNOWN_ERROR
+      );
+    }
+    
+    this.transactionInProgress = true;
+    
+    try {
+      // Get current history or create empty if none exists
+      let currentHistory = await this.getEnhancedStreakHistory();
+      if (!currentHistory) {
+        currentHistory = createEmptyEnhancedStreakHistory();
+      }
+      
+      // Create a working copy for transaction
+      let workingHistory = { ...currentHistory };
+      
+      // Process all operations
+      for (const operation of operations) {
+        switch (operation.type) {
+          case 'add':
+            if (!operation.entry) {
+              throw new StorageError(
+                `Add operation for ${operation.date} missing entry data`,
+                StorageErrorCode.VALIDATION_ERROR
+              );
+            }
+            workingHistory = addReadingDayEntry(workingHistory, {
+              date: operation.date,
+              ...operation.entry
+            });
+            break;
+            
+          case 'update': {
+            if (!operation.updates) {
+              throw new StorageError(
+                `Update operation for ${operation.date} missing update data`,
+                StorageErrorCode.VALIDATION_ERROR
+              );
+            }
+            
+            // Find existing entry
+            const existingIndex = workingHistory.readingDayEntries.findIndex(
+              entry => entry.date === operation.date
+            );
+            if (existingIndex === -1) {
+              throw new StorageError(
+                `Reading day entry for ${operation.date} not found`,
+                StorageErrorCode.FILE_NOT_FOUND
+              );
+            }
+            
+            // Update the entry
+            const updatedEntries = [...workingHistory.readingDayEntries];
+            updatedEntries[existingIndex] = {
+              ...updatedEntries[existingIndex],
+              ...operation.updates,
+              modifiedAt: new Date()
+            };
+            
+            workingHistory = {
+              ...workingHistory,
+              readingDayEntries: updatedEntries,
+              lastSyncDate: new Date()
+            };
+            break;
+          }
+            
+          case 'remove':
+            workingHistory = removeReadingDayEntry(workingHistory, operation.date);
+            break;
+            
+          default:
+            throw new StorageError(
+              `Unknown bulk operation type: ${(operation as any).type}`,
+              StorageErrorCode.VALIDATION_ERROR
+            );
+        }
+      }
+      
+      // Synchronize and validate final result
+      workingHistory = synchronizeReadingDays(workingHistory);
+      const validation = validateEnhancedStreakHistory(workingHistory);
+      if (!validation.isValid) {
+        throw new StorageError(
+          `Bulk operation resulted in invalid data: ${validation.issues.join(', ')}`,
+          StorageErrorCode.VALIDATION_ERROR
+        );
+      }
+      
+      // Commit the transaction
+      const finalHistory = await this.saveEnhancedStreakHistory(workingHistory);
+      return finalHistory;
+      
+    } finally {
+      this.transactionInProgress = false;
+    }
   }
 }

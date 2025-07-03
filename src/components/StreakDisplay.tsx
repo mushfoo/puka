@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Book, StreakHistory } from '@/types';
 import { calculateStreakWithHistory } from '@/utils/streakCalculator';
+import ReadingHistoryModal from './modals/ReadingHistoryModal';
 
 interface StreakDisplayProps {
   /** Books data to calculate streak from */
@@ -17,6 +18,8 @@ interface StreakDisplayProps {
   className?: string;
   /** Show streak details */
   showDetails?: boolean;
+  /** Callback when streak data is updated */
+  onStreakUpdate?: () => void;
 }
 
 const StreakDisplay: React.FC<StreakDisplayProps> = ({
@@ -26,8 +29,11 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   hasReadToday = false,
   compact = false,
   className = '',
-  showDetails = true
+  showDetails = true,
+  onStreakUpdate
 }) => {
+  // State for reading history modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isMarkingReadingDay, setIsMarkingReadingDay] = React.useState(false);
 
   // Calculate streak data from books with history integration
@@ -56,29 +62,6 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   // Use calculated value or fallback to prop
   const actualHasReadToday = calculatedHasReadToday || hasReadToday;
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('StreakDisplay Debug:', {
-      hasOnMarkReadingDay: !!onMarkReadingDay,
-      actualHasReadToday,
-      calculatedHasReadToday,
-      currentStreak,
-      longestStreak
-    });
-  }, [onMarkReadingDay, actualHasReadToday, calculatedHasReadToday, currentStreak, longestStreak]);
-  
-  // Debug logging for troubleshooting
-  React.useEffect(() => {
-    console.log('StreakDisplay Debug Info:', {
-      calculatedHasReadToday,
-      hasReadTodayProp: hasReadToday,
-      actualHasReadToday,
-      currentStreak,
-      todayProgress,
-      onMarkReadingDayAvailable: !!onMarkReadingDay,
-      today: new Date().toISOString().split('T')[0]
-    });
-  }, [calculatedHasReadToday, hasReadToday, actualHasReadToday, currentStreak, todayProgress, onMarkReadingDay]);
 
   const getStreakMessage = () => {
     if (currentStreak === 0) {
@@ -108,6 +91,23 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
   };
 
   const progressPercentage = dailyGoal > 0 ? Math.min(100, (todayProgress / dailyGoal) * 100) : 0;
+
+  // Handle opening reading history modal
+  const handleOpenHistory = () => {
+    setIsHistoryModalOpen(true);
+  };
+
+  // Handle closing reading history modal
+  const handleCloseHistory = () => {
+    setIsHistoryModalOpen(false);
+  };
+
+  // Handle streak update from modal
+  const handleStreakUpdate = () => {
+    if (onStreakUpdate) {
+      onStreakUpdate();
+    }
+  };
 
   if (compact) {
     return (
@@ -203,6 +203,15 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
                   <span className="text-xs opacity-75">Active</span>
                 </div>
               )}
+              
+              <button
+                onClick={handleOpenHistory}
+                className="text-xs opacity-75 hover:opacity-100 transition-opacity underline"
+                type="button"
+                aria-label="Edit reading history"
+              >
+                📝 Edit history
+              </button>
             </div>
           </div>
 
@@ -216,6 +225,14 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({
           )}
         </>
       )}
+
+      {/* Reading History Modal */}
+      <ReadingHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={handleCloseHistory}
+        books={books}
+        onUpdateStreak={handleStreakUpdate}
+      />
     </div>
   );
 };

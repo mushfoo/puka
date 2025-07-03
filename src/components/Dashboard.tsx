@@ -23,6 +23,7 @@ interface DashboardProps {
   onDeleteBook?: (bookId: number) => Promise<void>;
   onImportComplete?: (result: ImportResult) => void;
   onMarkReadingDay?: () => Promise<boolean>;
+  onStreakUpdate?: () => void;
   loading?: boolean;
   className?: string;
 }
@@ -40,10 +41,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   onDeleteBook,
   onImportComplete,
   onMarkReadingDay,
+  onStreakUpdate,
   loading = false,
   className = ''
 }) => {
-  const [activeFilter, setActiveFilter] = useState<StatusFilter>('all');
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>('currently_reading');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -308,6 +310,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             books={books} 
             streakHistory={streakHistory}
             onMarkReadingDay={onMarkReadingDay}
+            onStreakUpdate={onStreakUpdate}
             showDetails={true}
             compact={false}
             className="shadow-lg"

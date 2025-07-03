@@ -42,7 +42,6 @@ function App() {
 
   const handleUpdateProgress = async (bookId: number, progress: number) => {
     try {
-      console.log(`Updating book ${bookId} progress to ${progress}%`);
       await updateProgress(bookId, progress);
       
       const book = books.find(b => b.id === bookId);
@@ -301,6 +300,7 @@ function App() {
         onDeleteBook={handleDeleteBook}
         onImportComplete={handleImportComplete}
         onMarkReadingDay={markReadingDay}
+        onStreakUpdate={refresh}
         loading={loading}
       />
       
