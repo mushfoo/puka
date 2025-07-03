@@ -8,6 +8,7 @@ interface DayDetailPanelProps {
   onToggleReading: (date: string, isReading: boolean) => void;
   onUpdateNotes: (date: string, notes: string) => void;
   onUpdateBooks?: (date: string, bookIds: number[]) => void;
+  loading?: boolean;
   className?: string;
 }
 
@@ -86,6 +87,7 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
   onToggleReading,
   onUpdateNotes,
   onUpdateBooks,
+  loading = false,
   className = ''
 }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -165,7 +167,21 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 
   // Handle reading day toggle
   const handleToggleReading = () => {
-    if (!selectedDate || isFuture) return;
+    console.log('DayDetailPanel: handleToggleReading clicked', {
+      selectedDate,
+      isFuture,
+      isReadingDay,
+      onToggleReadingAvailable: !!onToggleReading
+    });
+    if (!selectedDate || isFuture) {
+      console.log('DayDetailPanel: Early return - no selectedDate or future date');
+      return;
+    }
+    if (!onToggleReading) {
+      console.log('DayDetailPanel: No onToggleReading function provided');
+      return;
+    }
+    console.log('DayDetailPanel: Calling onToggleReading with:', selectedDate, !isReadingDay);
     onToggleReading(selectedDate, !isReadingDay);
   };
 
@@ -249,14 +265,17 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
           {!isFuture && (
             <button
               onClick={handleToggleReading}
+              disabled={loading}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                isReadingDay
+                loading
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  : isReadingDay
                   ? 'bg-success text-white hover:bg-success-dark'
                   : 'bg-surface border border-border text-text-primary hover:bg-background'
               }`}
               type="button"
             >
-              {isReadingDay ? '✓ Reading Day' : '+ Mark as Reading Day'}
+              {loading ? 'Loading...' : isReadingDay ? '✓ Reading Day' : '+ Mark as Reading Day'}
             </button>
           )}
         </div>

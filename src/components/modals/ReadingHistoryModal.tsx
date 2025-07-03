@@ -93,6 +93,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
 
   // Handle reading day toggle
   const handleToggleReading = useCallback(async (date: string, isReading: boolean) => {
+    console.log('ReadingHistoryModal: handleToggleReading called', { date, isReading });
     try {
       setLoading(true);
       setError(null);
@@ -379,6 +380,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   onToggleReading={handleToggleReading}
                   onUpdateNotes={handleUpdateNotes}
                   onUpdateBooks={handleUpdateBooks}
+                  loading={loading}
                   className="p-6"
                 />
               </div>
