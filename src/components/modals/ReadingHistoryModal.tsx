@@ -88,10 +88,26 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   // Load data when modal opens
   useEffect(() => {
     if (isOpen) {
-      loadReadingData();
+      let isMounted = true;
+      
+      const loadData = async () => {
+        try {
+          await loadReadingData();
+        } catch (error) {
+          if (isMounted) {
+            console.error('Failed to load reading data:', error);
+          }
+        }
+      };
+      
+      loadData();
       // Set current month to today when opening
       setCurrentMonth(new Date());
       setSelectedDate(null);
+      
+      return () => {
+        isMounted = false;
+      };
     }
   }, [isOpen, loadReadingData]);
 

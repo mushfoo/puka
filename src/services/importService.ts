@@ -798,7 +798,6 @@ export class ImportService {
     
     // Only show preview, don't automatically create reading day entries
     if (booksWithDates.length > 0) {
-      console.log(`Import contains ${booksWithDates.length} books with date ranges. Reading day entries NOT automatically created.`);
       // For now, we're not auto-creating reading day entries during import
       // Users can manually mark reading days if needed
       // 

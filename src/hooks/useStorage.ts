@@ -53,7 +53,6 @@ export const useStorage = (): UseStorageResult => {
         );
         
         if (booksWithReadingPeriods.length > 0) {
-          console.log(`Auto-creating streak history from ${booksWithReadingPeriods.length} books with reading periods`);
           
           // Dynamically import the streak calculator to avoid circular dependencies
           const { createStreakHistoryFromBooks } = await import('../utils/streakCalculator');
@@ -61,7 +60,6 @@ export const useStorage = (): UseStorageResult => {
           
           // Save the new streak history
           await storageService.saveStreakHistory(newStreakHistory);
-          console.log('Auto-created streak history with', newStreakHistory.readingDays.size, 'reading days');
           
           setStreakHistory(newStreakHistory);
         } else {
