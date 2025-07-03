@@ -59,6 +59,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
       const streakHistory = await getEnhancedStreakHistory();
       
       const mergedData = ReadingDataService.mergeReadingData(streakHistory, books);
+      console.log('ReadingHistoryModal: Merged reading data:', mergedData);
       setReadingData(mergedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load reading data');
@@ -242,7 +243,10 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
   const selectedDateData = useMemo(() => {
     if (!selectedDate) return undefined;
     const legacyEntry = readingData.get(selectedDate);
-    return legacyEntry ? convertToEnhancedEntry(legacyEntry) : undefined;
+    console.log('ReadingHistoryModal: selectedDateData for', selectedDate, '- legacyEntry:', legacyEntry);
+    const result = legacyEntry ? convertToEnhancedEntry(legacyEntry) : undefined;
+    console.log('ReadingHistoryModal: selectedDateData result:', result);
+    return result;
   }, [selectedDate, readingData, convertToEnhancedEntry]);
 
   // Month navigation handlers

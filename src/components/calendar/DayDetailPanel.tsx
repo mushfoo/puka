@@ -134,8 +134,9 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
 
   // Determine if this is a reading day
   const isReadingDay = useMemo(() => {
+    console.log('DayDetailPanel: Checking isReadingDay for', selectedDate, 'readingData:', readingData);
     return Boolean(readingData?.source);
-  }, [readingData]);
+  }, [readingData, selectedDate]);
 
   // Get associated books based on date
   const associatedBooks = useMemo(() => {
