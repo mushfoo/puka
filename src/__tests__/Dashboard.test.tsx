@@ -89,9 +89,10 @@ describe('Dashboard', () => {
   it('renders book grid with books', () => {
     render(<Dashboard {...defaultProps} />);
     
+    // With default filter set to 'currently_reading', only currently reading books should show
     expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
-    expect(screen.getByText('Project Hail Mary')).toBeInTheDocument();
-    expect(screen.getByText('Atomic Habits')).toBeInTheDocument();
+    expect(screen.queryByText('Project Hail Mary')).not.toBeInTheDocument();
+    expect(screen.queryByText('Atomic Habits')).not.toBeInTheDocument();
   });
 
   it('renders floating action button', () => {
@@ -103,22 +104,25 @@ describe('Dashboard', () => {
   it('filters books when filter tab is clicked', () => {
     render(<Dashboard {...defaultProps} />);
     
-    // Initially shows all books
-    expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
-    expect(screen.getByText('Project Hail Mary')).toBeInTheDocument();
-    expect(screen.getByText('Atomic Habits')).toBeInTheDocument();
-    
-    // Click on "Reading" filter (use first occurrence - mobile)
-    fireEvent.click(screen.getAllByText('Reading')[0]);
-    
-    // Should only show currently reading books
+    // Initially shows only currently reading books (default filter)
     expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
     expect(screen.queryByText('Project Hail Mary')).not.toBeInTheDocument();
     expect(screen.queryByText('Atomic Habits')).not.toBeInTheDocument();
+    
+    // Click on "All" filter to see all books
+    fireEvent.click(screen.getAllByText('All')[0]);
+    
+    // Should now show all books
+    expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
+    expect(screen.getByText('Project Hail Mary')).toBeInTheDocument();
+    expect(screen.getByText('Atomic Habits')).toBeInTheDocument();
   });
 
   it('searches books by title', async () => {
     render(<Dashboard {...defaultProps} />);
+    
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
     
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
@@ -134,6 +138,9 @@ describe('Dashboard', () => {
   it('searches books by author', async () => {
     render(<Dashboard {...defaultProps} />);
     
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
+    
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
     fireEvent.change(searchInput, { target: { value: 'Andy Weir' } });
@@ -148,6 +155,9 @@ describe('Dashboard', () => {
   it('searches books by notes', async () => {
     render(<Dashboard {...defaultProps} />);
     
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
+    
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
     fireEvent.change(searchInput, { target: { value: 'habits' } });
@@ -161,6 +171,9 @@ describe('Dashboard', () => {
 
   it('clears search when clear button is clicked', async () => {
     render(<Dashboard {...defaultProps} />);
+    
+    // First switch to "All" filter to see all books
+    fireEvent.click(screen.getAllByText('All')[0]);
     
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
@@ -185,6 +198,9 @@ describe('Dashboard', () => {
   it('shows search results count', async () => {
     render(<Dashboard {...defaultProps} />);
     
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
+    
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
     fireEvent.change(searchInput, { target: { value: 'Midnight' } });
@@ -196,6 +212,9 @@ describe('Dashboard', () => {
 
   it('shows no results message', async () => {
     render(<Dashboard {...defaultProps} />);
+    
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
     
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
@@ -321,6 +340,9 @@ describe('Dashboard', () => {
   it('case-insensitive search', async () => {
     render(<Dashboard {...defaultProps} />);
     
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
+    
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
     fireEvent.change(searchInput, { target: { value: 'MIDNIGHT' } });
@@ -332,6 +354,9 @@ describe('Dashboard', () => {
 
   it('trims search query', async () => {
     render(<Dashboard {...defaultProps} />);
+    
+    // First switch to "All" filter to see all books for search
+    fireEvent.click(screen.getAllByText('All')[0]);
     
     const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
     
