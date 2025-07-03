@@ -325,8 +325,7 @@ export class ReadingDataService {
    */
   private static processProgressUpdates(
     readingDayMap: ReadingDayMap,
-    books: Book[],
-    timezoneName?: string
+    books: Book[]
   ): void {
     const today = new Date();
     const todayStr = formatDateToLocalISO(today);
@@ -636,12 +635,13 @@ export class ReadingDataService {
         case 'daily':
           periodKey = dateStr;
           break;
-        case 'weekly':
+        case 'weekly': {
           // Get Monday of the week
           const monday = new Date(date);
           monday.setDate(date.getDate() - date.getDay() + 1);
           periodKey = formatDateToLocalISO(monday);
           break;
+        }
         case 'monthly':
           periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
           break;
@@ -763,8 +763,8 @@ export class ReadingDataService {
     const isConsistentReader = totalDays > 30 && (currentStreak > 7 || averageStreakLength > 3);
     
     const preferredReadingDays = Object.entries(weekdayPattern)
-      .filter(([_, count]) => count > totalDays * 0.2) // Days with >20% of total reading
-      .map(([day, _]) => day);
+      .filter(([, count]) => count > totalDays * 0.2) // Days with >20% of total reading
+      .map(([day]) => day);
     
     const readingIntensity = totalDays > 100 ? 'heavy' : totalDays > 30 ? 'moderate' : 'light';
     
@@ -909,7 +909,7 @@ export class ReadingDataService {
     // Process books in chunks
     processChunk(books, (bookChunk) => {
       this.processBookReadingPeriods(readingDayMap, bookChunk, timezoneName);
-      this.processProgressUpdates(readingDayMap, bookChunk, timezoneName);
+      this.processProgressUpdates(readingDayMap, bookChunk);
     });
 
     // Skip validation for performance if requested
@@ -1080,7 +1080,7 @@ export class ReadingDataService {
       readingData: ReadingDayMap,
       processor: (entry: ReadingDayEntry) => ReadingDayEntry | null
     ): Generator<ReadingDayEntry, void, unknown> {
-      for (const [date, entry] of readingData.entries()) {
+      for (const [, entry] of readingData.entries()) {
         const processed = processor(entry);
         if (processed) {
           yield processed;
