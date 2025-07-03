@@ -1,6 +1,7 @@
 import { 
   Book, 
   StreakHistory, 
+  EnhancedStreakHistory,
   ReadingDayMap, 
   ReadingDayEntry, 
   ReadingDataSource 
@@ -24,13 +25,15 @@ export class ReadingDataService {
    * @returns ReadingDayMap with merged data from all sources
    */
   static mergeReadingData(
-    streakHistory: StreakHistory,
+    streakHistory: StreakHistory | EnhancedStreakHistory | null,
     books: Book[]
   ): ReadingDayMap {
     const readingDayMap: ReadingDayMap = new Map();
 
     // Process manual entries from streak history
-    this.processManualEntries(readingDayMap, streakHistory);
+    if (streakHistory) {
+      this.processManualEntries(readingDayMap, streakHistory);
+    }
 
     // Process book completion dates
     this.processBookCompletions(readingDayMap, books);
@@ -143,9 +146,32 @@ export class ReadingDataService {
    */
   private static processManualEntries(
     readingDayMap: ReadingDayMap,
-    streakHistory: StreakHistory
+    streakHistory: StreakHistory | EnhancedStreakHistory
   ): void {
-    for (const dateStr of streakHistory.readingDays) {
+    // Ensure readingDays exists and is iterable (it should be a Set)
+    if (!streakHistory.readingDays) {
+      console.warn('streakHistory.readingDays is undefined, skipping manual entries');
+      return;
+    }
+
+    // Convert to array if it's not already iterable (defensive programming)
+    let readingDays: Iterable<string>;
+    try {
+      if (Array.isArray(streakHistory.readingDays)) {
+        readingDays = streakHistory.readingDays;
+      } else if (streakHistory.readingDays instanceof Set) {
+        readingDays = streakHistory.readingDays;
+      } else {
+        // Handle case where readingDays might be serialized differently
+        console.warn('Unexpected readingDays type:', typeof streakHistory.readingDays);
+        readingDays = Array.from(streakHistory.readingDays as any);
+      }
+    } catch (error) {
+      console.error('Error processing readingDays:', error);
+      return;
+    }
+
+    for (const dateStr of readingDays) {
       const source: ReadingDataSource = {
         type: 'manual',
         timestamp: new Date(), // Use current time as approximation

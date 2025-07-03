@@ -57,6 +57,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
       setError(null);
       
       const streakHistory = await getEnhancedStreakHistory();
+      
       const mergedData = ReadingDataService.mergeReadingData(streakHistory, books);
       setReadingData(mergedData);
     } catch (err) {
