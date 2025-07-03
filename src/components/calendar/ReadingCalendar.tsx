@@ -8,6 +8,7 @@ interface ReadingCalendarProps {
   onDateSelect?: (date: string) => void;
   onDateKeyDown?: (event: React.KeyboardEvent, date: string) => void;
   className?: string;
+  showHeader?: boolean; // Whether to show the month header
 }
 
 const ReadingCalendar: React.FC<ReadingCalendarProps> = ({
@@ -15,7 +16,8 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({
   readingData = new Map(),
   onDateSelect,
   onDateKeyDown,
-  className = ''
+  className = '',
+  showHeader = true
 }) => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -119,11 +121,13 @@ const ReadingCalendar: React.FC<ReadingCalendarProps> = ({
   return (
     <div className={`w-full max-w-md mx-auto ${className}`}>
       {/* Calendar Header */}
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold text-text-primary text-center">
-          {monthHeader}
-        </h2>
-      </div>
+      {showHeader && (
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold text-text-primary text-center">
+            {monthHeader}
+          </h2>
+        </div>
+      )}
       
       {/* Calendar Grid */}
       <div 

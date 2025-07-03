@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { EnhancedReadingDayEntry, Book } from '@/types';
 
 interface DayDetailPanelProps {
@@ -7,6 +7,7 @@ interface DayDetailPanelProps {
   books: Book[];
   onToggleReading: (date: string, isReading: boolean) => void;
   onUpdateNotes: (date: string, notes: string) => void;
+  onUpdateBooks?: (date: string, bookIds: number[]) => void;
   className?: string;
 }
 
@@ -84,10 +85,23 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
   books,
   onToggleReading,
   onUpdateNotes,
+  onUpdateBooks,
   className = ''
 }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState(readingData?.notes || '');
+  const [isEditingBooks, setIsEditingBooks] = useState(false);
+  const [selectedBookIds, setSelectedBookIds] = useState<number[]>(readingData?.bookIds || []);
+
+  // Update selected book IDs when reading data changes
+  useEffect(() => {
+    setSelectedBookIds(readingData?.bookIds || []);
+  }, [readingData?.bookIds]);
+
+  // Update notes value when reading data changes
+  useEffect(() => {
+    setNotesValue(readingData?.notes || '');
+  }, [readingData?.notes]);
 
   // Parse the selected date for display
   const formattedDate = useMemo(() => {
@@ -166,6 +180,28 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
   const handleCancelNotes = () => {
     setNotesValue(readingData?.notes || '');
     setIsEditingNotes(false);
+  };
+
+  // Handle book selection toggle
+  const handleToggleBook = (bookId: number) => {
+    setSelectedBookIds(prev => 
+      prev.includes(bookId) 
+        ? prev.filter(id => id !== bookId)
+        : [...prev, bookId]
+    );
+  };
+
+  // Handle book selection save
+  const handleSaveBooks = () => {
+    if (!selectedDate || !onUpdateBooks) return;
+    onUpdateBooks(selectedDate, selectedBookIds);
+    setIsEditingBooks(false);
+  };
+
+  // Handle book selection cancel
+  const handleCancelBooks = () => {
+    setSelectedBookIds(readingData?.bookIds || []);
+    setIsEditingBooks(false);
   };
 
   // If no date is selected
@@ -272,20 +308,99 @@ const DayDetailPanel: React.FC<DayDetailPanelProps> = ({
       </div>
 
       {/* Associated Books */}
-      {associatedBooks.length > 0 && (
-        <div className="space-y-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
           <h4 className="font-medium text-text-primary">Associated Books</h4>
-          <div className="space-y-2">
-            {associatedBooks.map(({ book, associationType }, index) => (
-              <BookAssociation
-                key={`${book.id}-${index}`}
-                book={book}
-                associationType={associationType}
-              />
-            ))}
-          </div>
+          {onUpdateBooks && !isFuture && (
+            <button
+              onClick={() => setIsEditingBooks(true)}
+              className="text-sm text-primary hover:text-primary-dark"
+              type="button"
+            >
+              {associatedBooks.length > 0 ? 'Edit Books' : 'Add Books'}
+            </button>
+          )}
         </div>
-      )}
+
+        {isEditingBooks ? (
+          <div className="space-y-3">
+            <div className="bg-surface border border-border rounded-lg p-4">
+              <p className="text-sm text-text-secondary mb-3">
+                Select books to associate with this reading day:
+              </p>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {books.map((book) => (
+                  <label
+                    key={book.id}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-background cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBookIds.includes(book.id)}
+                      onChange={() => handleToggleBook(book.id)}
+                      className="rounded border-border focus:ring-2 focus:ring-primary/20"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text-primary truncate" title={book.title}>
+                        {book.title}
+                      </p>
+                      <p className="text-sm text-text-secondary truncate" title={book.author}>
+                        {book.author}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-text-secondary capitalize">
+                          {book.status.replace('_', ' ')}
+                        </span>
+                        {book.progress > 0 && (
+                          <span className="text-xs text-text-secondary">
+                            {book.progress}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelBooks}
+                className="px-3 py-1 text-sm border border-border rounded hover:bg-surface"
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveBooks}
+                className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary-dark"
+                type="button"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {associatedBooks.length > 0 ? (
+              <div className="space-y-2">
+                {associatedBooks.map(({ book, associationType }, index) => (
+                  <BookAssociation
+                    key={`${book.id}-${index}`}
+                    book={book}
+                    associationType={associationType}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-surface border border-border rounded-lg p-3">
+                <p className="text-text-secondary text-sm">
+                  No books associated with this reading day.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Notes Section */}
       <div className="space-y-3">

@@ -165,6 +165,48 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
     }
   }, [readingData, addReadingDayEntry, updateReadingDayEntry, loadReadingData]);
 
+  // Handle book updates
+  const handleUpdateBooks = useCallback(async (date: string, bookIds: number[]) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const existingEntry = readingData.get(date);
+      
+      if (existingEntry) {
+        // Update existing entry
+        await updateReadingDayEntry(date, { 
+          bookIds,
+          modifiedAt: new Date()
+        });
+      } else if (bookIds.length > 0) {
+        // Create new entry with selected books
+        const newEntry: EnhancedReadingDayEntry = {
+          date,
+          source: 'manual',
+          notes: '',
+          bookIds,
+          createdAt: new Date(),
+          modifiedAt: new Date()
+        };
+        
+        await addReadingDayEntry(newEntry);
+      }
+
+      // Reload data to reflect changes
+      await loadReadingData();
+      
+      // Notify parent to update streak display
+      if (onUpdateStreak) {
+        onUpdateStreak();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update book associations');
+    } finally {
+      setLoading(false);
+    }
+  }, [readingData, addReadingDayEntry, updateReadingDayEntry, loadReadingData, onUpdateStreak]);
+
   // Handle modal close
   const handleClose = useCallback(() => {
     setSelectedDate(null);
@@ -322,6 +364,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   onDateSelect={handleDateSelect}
                   onDateKeyDown={handleCalendarKeyDown}
                   className="mx-auto"
+                  showHeader={false}
                 />
               )}
             </div>
@@ -335,6 +378,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   books={books}
                   onToggleReading={handleToggleReading}
                   onUpdateNotes={handleUpdateNotes}
+                  onUpdateBooks={handleUpdateBooks}
                   className="p-6"
                 />
               </div>
