@@ -566,15 +566,22 @@ describe('ReadingDataService', () => {
         createTestBook(1, 'Incomplete Book', {
           status: 'currently_reading',
           progress: 50,
-          dateStarted: '2024-01-01'
+          dateStarted: '2024-01-01',
+          dateModified: '2024-01-03'
           // No dateFinished
         })
       ];
 
       const result = ReadingDataService.mergeReadingData(streakHistory, books);
       
-      // Should not create book completion entries without dateFinished
-      expect(result.has('2024-01-01')).toBe(false);
+      // Should create reading period entries from dateStarted to dateModified for currently reading books
+      expect(result.has('2024-01-01')).toBe(true);
+      expect(result.has('2024-01-02')).toBe(true);
+      expect(result.has('2024-01-03')).toBe(true);
+      
+      // Check that it's marked as progress_update (not book_completion)
+      const entry = result.get('2024-01-01');
+      expect(entry?.sources[0].type).toBe('progress_update');
     });
 
     it('should handle books with only dateFinished', () => {
