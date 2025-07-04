@@ -637,4 +637,344 @@ describe('ReadingDataService', () => {
       expect(result.has(oldDate.toISOString().split('T')[0])).toBe(false);
     });
   });
+
+  describe('extended functionality', () => {
+    describe('getExtendedReadingStatistics', () => {
+      it('should calculate extended statistics correctly', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        
+        // Add reading data for a month
+        for (let i = 1; i <= 30; i++) {
+          const date = `2024-01-${String(i).padStart(2, '0')}`;
+          const sources: ReadingDataSource[] = [
+            {
+              type: 'manual',
+              timestamp: new Date(`2024-01-${String(i).padStart(2, '0')}T10:00:00Z`)
+            }
+          ];
+          readingData.set(date, createTestReadingDayEntry(date, sources, [1]));
+        }
+
+        const stats = ReadingDataService.getExtendedReadingStatistics(readingData);
+
+        expect(stats.totalReadingDays).toBe(30);
+        expect(stats.readingFrequency.averageDaysPerWeek).toBeGreaterThan(0);
+        expect(stats.readingFrequency.averageDaysPerMonth).toBeGreaterThan(0);
+        expect(stats.readingFrequency.consistency).toBeGreaterThan(0);
+        expect(stats.bookStats.mostActiveMonth).toBe('2024-01');
+        expect(stats.bookStats.mostActiveYear).toBe(2024);
+      });
+
+      it('should handle empty reading data', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const stats = ReadingDataService.getExtendedReadingStatistics(readingData);
+
+        expect(stats.totalReadingDays).toBe(0);
+        expect(stats.readingFrequency.averageDaysPerWeek).toBe(0);
+        expect(stats.readingFrequency.averageDaysPerMonth).toBe(0);
+        expect(stats.readingFrequency.consistency).toBe(0);
+        expect(stats.bookStats.mostActiveMonth).toBeNull();
+        expect(stats.bookStats.mostActiveYear).toBeNull();
+      });
+    });
+
+    describe('aggregateByPeriod', () => {
+      let testReadingData: ReadingDayMap;
+
+      beforeEach(() => {
+        testReadingData = new Map();
+        const sources = [{
+          type: 'manual' as const,
+          timestamp: new Date()
+        }];
+        
+        testReadingData.set('2024-01-01', createTestReadingDayEntry('2024-01-01', sources, [1]));
+        testReadingData.set('2024-01-02', createTestReadingDayEntry('2024-01-02', sources, [1]));
+        testReadingData.set('2024-01-15', createTestReadingDayEntry('2024-01-15', sources, [2]));
+        testReadingData.set('2024-02-01', createTestReadingDayEntry('2024-02-01', sources, [2]));
+      });
+
+      it('should aggregate by daily period', () => {
+        const result = ReadingDataService.aggregateByPeriod(testReadingData, 'daily');
+        
+        expect(result.size).toBe(4);
+        expect(result.has('2024-01-01')).toBe(true);
+        expect(result.has('2024-01-02')).toBe(true);
+        expect(result.has('2024-01-15')).toBe(true);
+        expect(result.has('2024-02-01')).toBe(true);
+      });
+
+      it('should aggregate by monthly period', () => {
+        const result = ReadingDataService.aggregateByPeriod(testReadingData, 'monthly');
+        
+        expect(result.size).toBe(2);
+        expect(result.has('2024-01')).toBe(true);
+        expect(result.has('2024-02')).toBe(true);
+        
+        const jan = result.get('2024-01');
+        expect(jan?.readingDays).toBe(3);
+        expect(jan?.books.size).toBe(2);
+        
+        const feb = result.get('2024-02');
+        expect(feb?.readingDays).toBe(1);
+        expect(feb?.books.size).toBe(1);
+      });
+
+      it('should aggregate by yearly period', () => {
+        const result = ReadingDataService.aggregateByPeriod(testReadingData, 'yearly');
+        
+        expect(result.size).toBe(1);
+        expect(result.has('2024')).toBe(true);
+        
+        const year = result.get('2024');
+        expect(year?.readingDays).toBe(4);
+        expect(year?.books.size).toBe(2);
+      });
+    });
+
+    describe('findReadingPatterns', () => {
+      it('should analyze reading patterns correctly', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const sources = [{
+          type: 'manual' as const,
+          timestamp: new Date()
+        }];
+        
+        // Add Monday and Tuesday readings
+        readingData.set('2024-01-01', createTestReadingDayEntry('2024-01-01', sources, [1])); // Monday
+        readingData.set('2024-01-02', createTestReadingDayEntry('2024-01-02', sources, [1])); // Tuesday
+        readingData.set('2024-01-08', createTestReadingDayEntry('2024-01-08', sources, [1])); // Monday
+        readingData.set('2024-01-09', createTestReadingDayEntry('2024-01-09', sources, [1])); // Tuesday
+
+        const patterns = ReadingDataService.findReadingPatterns(readingData);
+
+        expect(patterns.weekdayPattern.Monday).toBe(2);
+        expect(patterns.weekdayPattern.Tuesday).toBe(2);
+        expect(patterns.weekdayPattern.Wednesday).toBe(0);
+        expect(patterns.readingHabits.preferredReadingDays).toContain('Monday');
+        expect(patterns.readingHabits.preferredReadingDays).toContain('Tuesday');
+        expect(patterns.streakAnalysis.longestStreak).toBeGreaterThan(0);
+      });
+    });
+
+    describe('resolveConflictsAdvanced', () => {
+      it('should use advanced scoring for conflict resolution', () => {
+        const recentManualSource: ReadingDataSource = {
+          type: 'manual',
+          timestamp: new Date(), // Recent
+          metadata: { confidence: 'high' }
+        };
+
+        const oldBookSource: ReadingDataSource = {
+          type: 'book_completion',
+          timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+          bookId: 1,
+          metadata: { progress: 100 }
+        };
+
+        const entries = [
+          createTestReadingDayEntry('2024-01-01', [oldBookSource], [1]),
+          createTestReadingDayEntry('2024-01-01', [recentManualSource], [])
+        ];
+
+        const result = ReadingDataService.resolveConflictsAdvanced(entries);
+
+        // Manual source should be first due to higher priority and recency
+        expect(result.sources[0].type).toBe('manual');
+        expect(result.sources).toHaveLength(2);
+        expect(result.bookIds).toContain(1);
+      });
+    });
+  });
+
+  describe('performance and batch operations', () => {
+    describe('mergeReadingDataBatch', () => {
+      it('should handle large datasets efficiently', () => {
+        const streakHistory = createTestStreakHistory(
+          Array.from({ length: 500 }, (_, i) => {
+            const date = new Date('2024-01-01');
+            date.setDate(date.getDate() + i);
+            return date.toISOString().split('T')[0];
+          })
+        );
+
+        const books: Book[] = Array.from({ length: 50 }, (_, i) => 
+          createTestBook(i + 1, `Book ${i + 1}`, {
+            status: 'finished',
+            progress: 100,
+            dateStarted: '2024-01-01',
+            dateFinished: '2024-01-03'
+          })
+        );
+
+        const startTime = performance.now();
+        const result = ReadingDataService.mergeReadingDataBatch(streakHistory, books, {
+          chunkSize: 100,
+          skipValidation: true
+        });
+        const endTime = performance.now();
+
+        expect(result.size).toBeGreaterThan(0);
+        expect(endTime - startTime).toBeLessThan(2000); // Should complete in under 2 seconds
+      });
+    });
+
+    describe('bulkOperations', () => {
+      it('should insert reading days in bulk', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const entries = [
+          {
+            date: '2024-01-01',
+            sources: [{ type: 'manual' as const, timestamp: new Date() }],
+            bookIds: [1]
+          },
+          {
+            date: '2024-01-02',
+            sources: [{ type: 'manual' as const, timestamp: new Date() }],
+            bookIds: [2]
+          }
+        ];
+
+        ReadingDataService.bulkOperations.insertReadingDays(readingData, entries);
+
+        expect(readingData.size).toBe(2);
+        expect(readingData.has('2024-01-01')).toBe(true);
+        expect(readingData.has('2024-01-02')).toBe(true);
+      });
+
+      it('should update reading days in bulk', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const source = { type: 'manual' as const, timestamp: new Date() };
+        
+        readingData.set('2024-01-01', createTestReadingDayEntry('2024-01-01', [source], [1]));
+        readingData.set('2024-01-02', createTestReadingDayEntry('2024-01-02', [source], [2]));
+
+        const updates = [
+          {
+            date: '2024-01-01',
+            updater: (entry: ReadingDayEntry) => ({ ...entry, notes: 'Updated' })
+          },
+          {
+            date: '2024-01-02',
+            updater: (entry: ReadingDayEntry) => ({ ...entry, notes: 'Updated too' })
+          }
+        ];
+
+        ReadingDataService.bulkOperations.updateReadingDays(readingData, updates);
+
+        expect(readingData.get('2024-01-01')?.notes).toBe('Updated');
+        expect(readingData.get('2024-01-02')?.notes).toBe('Updated too');
+      });
+
+      it('should delete reading days in bulk', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const source = { type: 'manual' as const, timestamp: new Date() };
+        
+        readingData.set('2024-01-01', createTestReadingDayEntry('2024-01-01', [source], [1]));
+        readingData.set('2024-01-02', createTestReadingDayEntry('2024-01-02', [source], [2]));
+        readingData.set('2024-01-03', createTestReadingDayEntry('2024-01-03', [source], [3]));
+
+        ReadingDataService.bulkOperations.deleteReadingDays(readingData, ['2024-01-01', '2024-01-03']);
+
+        expect(readingData.size).toBe(1);
+        expect(readingData.has('2024-01-01')).toBe(false);
+        expect(readingData.has('2024-01-02')).toBe(true);
+        expect(readingData.has('2024-01-03')).toBe(false);
+      });
+    });
+
+    describe('streamingOperations', () => {
+      it('should process data in streaming fashion', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const source = { type: 'manual' as const, timestamp: new Date() };
+        
+        for (let i = 1; i <= 100; i++) {
+          const date = `2024-01-${String(i).padStart(2, '0')}`;
+          readingData.set(date, createTestReadingDayEntry(date, [source], [i]));
+        }
+
+        const processor = (entry: ReadingDayEntry) => {
+          if (entry.bookIds[0] % 2 === 0) { // Even book IDs
+            return { ...entry, notes: 'Processed' };
+          }
+          return null;
+        };
+
+        const results = Array.from(ReadingDataService.streamingOperations.processStreaming(readingData, processor));
+
+        expect(results.length).toBe(50); // Half of the entries
+        expect(results.every(r => r.notes === 'Processed')).toBe(true);
+      });
+
+      it('should filter data in streaming fashion', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const source = { type: 'manual' as const, timestamp: new Date() };
+        
+        for (let i = 1; i <= 100; i++) {
+          const date = `2024-01-${String(i).padStart(2, '0')}`;
+          readingData.set(date, createTestReadingDayEntry(date, [source], [i]));
+        }
+
+        const predicate = (entry: ReadingDayEntry) => entry.bookIds[0] > 50;
+        const results = Array.from(ReadingDataService.streamingOperations.filterStreaming(readingData, predicate));
+
+        expect(results.length).toBe(50); // Half of the entries
+        expect(results.every(r => r.bookIds[0] > 50)).toBe(true);
+      });
+    });
+  });
+
+  describe('enhanced validation', () => {
+    describe('validateReadingDataEnhanced', () => {
+      it('should provide detailed validation results', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const validSource = { type: 'manual' as const, timestamp: new Date() };
+        const invalidSource = { type: 'invalid' as any, timestamp: new Date() };
+        
+        readingData.set('2024-01-01', createTestReadingDayEntry('2024-01-01', [validSource], [1]));
+        readingData.set('invalid-date', createTestReadingDayEntry('invalid-date', [invalidSource], []));
+        readingData.set('2024-01-03', createTestReadingDayEntry('2024-01-03', [], [2])); // No sources
+
+        const result = ReadingDataService.validateReadingDataEnhanced(readingData);
+
+        expect(result.isValid).toBe(false);
+        expect(result.summary.totalEntries).toBe(3);
+        expect(result.summary.validEntries).toBe(1);
+        expect(result.summary.errorCount).toBeGreaterThan(0);
+        
+        // Check for specific error codes
+        const errorCodes = result.errors.map(e => e.code);
+        expect(errorCodes).toContain('INVALID_DATE_FORMAT');
+        expect(errorCodes).toContain('INVALID_SOURCE_TYPE');
+        expect(errorCodes).toContain('NO_SOURCES');
+      });
+
+      it('should detect warnings for edge cases', () => {
+        const readingData = new Map<string, ReadingDayEntry>();
+        const source = { type: 'manual' as const, timestamp: new Date() };
+        
+        // Future date
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+        const futureDateStr = futureDate.toISOString().split('T')[0];
+        
+        // Very old date
+        const oldDate = new Date();
+        oldDate.setFullYear(oldDate.getFullYear() - 3);
+        const oldDateStr = oldDate.toISOString().split('T')[0];
+        
+        readingData.set(futureDateStr, createTestReadingDayEntry(futureDateStr, [source], [1]));
+        readingData.set(oldDateStr, createTestReadingDayEntry(oldDateStr, [source], [2]));
+
+        const result = ReadingDataService.validateReadingDataEnhanced(readingData);
+
+        expect(result.isValid).toBe(true); // Warnings don't make it invalid
+        expect(result.summary.warningCount).toBe(2);
+        
+        const warningCodes = result.errors.filter(e => e.severity === 'warning').map(e => e.code);
+        expect(warningCodes).toContain('FUTURE_DATE');
+        expect(warningCodes).toContain('VERY_OLD_DATE');
+      });
+    });
+  });
 });
