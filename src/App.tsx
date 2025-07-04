@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import ToastContainer from './components/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider, AuthPrompt, useOptionalAuth } from './components/auth';
 import { useStorage } from './hooks/useStorage';
 import { useToast } from './hooks/useToast';
 import { Book } from './types';
 import { ExportData, ImportResult } from './services/storage/StorageService';
 
-function App() {
+function AppContent() {
   const {
     books,
     streakHistory,
@@ -25,8 +26,17 @@ function App() {
   } = useStorage();
 
   const [exportData, setExportData] = useState<ExportData | null>(null);
-
+  const { setHasLocalData } = useOptionalAuth();
   const { toasts, removeToast, success, error: showError, info } = useToast();
+
+  // Detect when user has local data for auth prompt
+  useEffect(() => {
+    if (!loading && books.length > 0) {
+      setHasLocalData(true);
+    } else if (!loading && books.length === 0) {
+      setHasLocalData(false);
+    }
+  }, [books.length, loading, setHasLocalData]);
 
   // Fetch export data when books change
   useEffect(() => {
@@ -304,6 +314,9 @@ function App() {
         loading={loading}
       />
       
+      {/* Progressive Auth Prompt */}
+      <AuthPrompt />
+      
       {/* Toast Notifications */}
       <ToastContainer
         toasts={toasts}
@@ -312,6 +325,15 @@ function App() {
         maxToasts={5}
       />
     </ErrorBoundary>
+  );
+}
+
+// Main App component wrapped with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

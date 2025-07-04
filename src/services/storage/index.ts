@@ -14,19 +14,16 @@ export {
 
 export { MockStorageService } from './MockStorageService';
 export { FileSystemStorageService } from './FileSystemStorageService';
+export { SupabaseStorageService } from './SupabaseStorageService';
+export { HybridStorageService } from './HybridStorageService';
 
 // Import types for the factory function
 import { type StorageService } from './StorageService';
-import { FileSystemStorageService } from './FileSystemStorageService';
+import { HybridStorageService } from './HybridStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
-  // Check if File System Access API is available - use it if supported
-  if (FileSystemStorageService.isSupported()) {
-    return new FileSystemStorageService();
-  }
-  
-  // Fall back to FileSystemStorageService with localStorage fallback for browsers that don't support File System Access API
-  // This provides a functioning app with localStorage fallback
-  return new FileSystemStorageService();  // FileSystemStorageService handles localStorage fallback internally
+  // Use hybrid storage service which automatically switches between local and cloud
+  // based on authentication status
+  return new HybridStorageService();
 }

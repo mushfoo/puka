@@ -9,6 +9,7 @@ import EditBookModal from './modals/EditBookModal';
 import ExportModal from './modals/ExportModal';
 import ImportModal from './modals/ImportModal';
 import StreakDisplay from './StreakDisplay';
+import { SyncStatusIndicator } from './sync';
 
 interface DashboardProps {
   books: Book[];
@@ -241,6 +242,9 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </svg>
                 <span className="hidden lg:inline">Export</span>
               </button>
+              
+              {/* Sync Status Indicator */}
+              <SyncStatusIndicator showDetails={false} />
             </div>
           </div>
 
