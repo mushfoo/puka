@@ -1,7 +1,18 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
+import { AuthProvider } from '@/components/auth';
 import { Book } from '@/types';
+
+// Helper function to render components with AuthProvider
+const renderWithAuth = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      {component}
+    </AuthProvider>
+  );
+};
 
 const mockBooks: Book[] = [
   {
@@ -49,14 +60,14 @@ describe('Dashboard', () => {
   });
 
   it('renders app header with title', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     expect(screen.getByText('Puka Reading Tracker')).toBeInTheDocument();
     expect(screen.getByLabelText('Books')).toBeInTheDocument(); // Book emoji
   });
 
   it('renders prominent streak display card', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // Check for streak display elements
     expect(screen.getByText('Reading Streak')).toBeInTheDocument();
@@ -71,14 +82,14 @@ describe('Dashboard', () => {
   });
 
   it('renders search input', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     const searchInputs = screen.getAllByPlaceholderText('Search books...');
     expect(searchInputs.length).toBeGreaterThan(0);
   });
 
   it('renders filter tabs', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     expect(screen.getAllByText('All')).toHaveLength(2); // Mobile + Desktop
     expect(screen.getAllByText('Want to Read').length).toBeGreaterThanOrEqual(2); // Filter tabs + BookCard badges
@@ -87,7 +98,7 @@ describe('Dashboard', () => {
   });
 
   it('renders book grid with books', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // With default filter set to 'currently_reading', only currently reading books should show
     expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
@@ -96,13 +107,13 @@ describe('Dashboard', () => {
   });
 
   it('renders floating action button', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     expect(screen.getByLabelText('Add new book')).toBeInTheDocument();
   });
 
   it('filters books when filter tab is clicked', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // Initially shows only currently reading books (default filter)
     expect(screen.getByText('The Midnight Library')).toBeInTheDocument();
@@ -119,7 +130,7 @@ describe('Dashboard', () => {
   });
 
   it('searches books by title', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -136,7 +147,7 @@ describe('Dashboard', () => {
   });
 
   it('searches books by author', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -153,7 +164,7 @@ describe('Dashboard', () => {
   });
 
   it('searches books by notes', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -170,7 +181,7 @@ describe('Dashboard', () => {
   });
 
   it('clears search when clear button is clicked', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -196,7 +207,7 @@ describe('Dashboard', () => {
   });
 
   it('shows search results count', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -211,7 +222,7 @@ describe('Dashboard', () => {
   });
 
   it('shows no results message', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -226,7 +237,7 @@ describe('Dashboard', () => {
   });
 
   it('combines filter and search', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First filter by "Reading"
     fireEvent.click(screen.getAllByText('Reading')[0]);
@@ -243,7 +254,7 @@ describe('Dashboard', () => {
   });
 
   it('opens add book modal when FAB is clicked', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     const fab = screen.getByLabelText('Add new book');
     fireEvent.click(fab);
@@ -255,7 +266,7 @@ describe('Dashboard', () => {
 
   it('calls onAddBook when book is added through modal', async () => {
     const mockOnAddBook = vi.fn().mockResolvedValue(undefined);
-    render(<Dashboard {...defaultProps} onAddBook={mockOnAddBook} />);
+    renderWithAuth(<Dashboard {...defaultProps} onAddBook={mockOnAddBook} />);
     
     // Open modal
     const fab = screen.getByLabelText('Add new book');
@@ -287,7 +298,7 @@ describe('Dashboard', () => {
       onChangeStatus: vi.fn()
     };
     
-    render(<Dashboard {...defaultProps} {...mockHandlers} />);
+    renderWithAuth(<Dashboard {...defaultProps} {...mockHandlers} />);
     
     // Find and click a quick action button to test handler passing
     const quickActionButtons = screen.getAllByText('+10%');
@@ -298,7 +309,7 @@ describe('Dashboard', () => {
   });
 
   it('shows loading state', () => {
-    render(<Dashboard {...defaultProps} loading={true} />);
+    renderWithAuth(<Dashboard {...defaultProps} loading={true} />);
     
     // Should show skeleton loaders in BookGrid
     const skeletonElements = document.querySelectorAll('.animate-pulse');
@@ -306,7 +317,7 @@ describe('Dashboard', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(
+    const { container } = renderWithAuth(
       <Dashboard {...defaultProps} className="custom-class" />
     );
     
@@ -314,7 +325,7 @@ describe('Dashboard', () => {
   });
 
   it('has responsive header layout', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // Check for mobile and desktop search inputs
     const mobileSearch = document.querySelector('.sm\\:hidden input');
@@ -325,20 +336,20 @@ describe('Dashboard', () => {
   });
 
   it('has sticky header', () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     const header = screen.getByRole('banner');
     expect(header).toHaveClass('sticky', 'top-0');
   });
 
   it('handles empty books list', () => {
-    render(<Dashboard {...defaultProps} books={[]} />);
+    renderWithAuth(<Dashboard {...defaultProps} books={[]} />);
     
     expect(screen.getByText('No books yet')).toBeInTheDocument();
   });
 
   it('case-insensitive search', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
@@ -353,7 +364,7 @@ describe('Dashboard', () => {
   });
 
   it('trims search query', async () => {
-    render(<Dashboard {...defaultProps} />);
+    renderWithAuth(<Dashboard {...defaultProps} />);
     
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);

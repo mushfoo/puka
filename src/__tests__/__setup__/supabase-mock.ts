@@ -1,8 +1,7 @@
-import '@testing-library/jest-dom'
-import { beforeAll, afterAll, vi } from 'vitest'
+import { vi } from 'vitest';
 
-// Mock Supabase globally for all tests
-vi.mock('@/lib/supabase', () => ({
+// Comprehensive Supabase mock for testing
+export const createSupabaseMock = () => ({
   supabase: {
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
@@ -35,30 +34,7 @@ vi.mock('@/lib/supabase', () => ({
     }),
     removeChannel: vi.fn()
   }
-}));
-
-// Suppress console.error during tests to reduce noise from expected error scenarios
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args: any[]) => {
-    // Only suppress certain expected error patterns during tests
-    const message = args[0];
-    if (
-      typeof message === 'string' && (
-        message.includes('Failed to initialize storage:') ||
-        message.includes('Failed to add book:') ||
-        message.includes('Failed to update book:') ||
-        message.includes('Failed to delete book:') ||
-        message.includes('Search failed:') ||
-        message.includes('Warning: `NaN` is an invalid value')
-      )
-    ) {
-      return; // Suppress expected test errors
-    }
-    originalError(...args); // Allow other errors through
-  };
 });
 
-afterAll(() => {
-  console.error = originalError;
-});
+// Mock the Supabase module
+vi.mock('@/lib/supabase', () => createSupabaseMock());
