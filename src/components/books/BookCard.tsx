@@ -28,7 +28,18 @@ const BookCard: React.FC<BookCardProps> = ({
 }) => {
   const [localProgress, setLocalProgress] = useState(book.progress);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [gestureState, setGestureState] = useState({ 
+    isDragging: false, 
+    startX: 0, 
+    startY: 0, 
+    deltaX: 0,
+    gestureHint: '' 
+  });
+  const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [lastGestureAction, setLastGestureAction] = useState<{ type: string, value: number } | null>(null);
+  
   const actionsMenuRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // Close actions menu when clicking outside
   useEffect(() => {
@@ -46,6 +57,130 @@ const BookCard: React.FC<BookCardProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showActionsMenu]);
+
+  // Clear undo timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimeout) {
+        clearTimeout(undoTimeout);
+      }
+    };
+  }, [undoTimeout]);
+
+  // Gesture handling functions
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!interactive || book.status !== 'currently_reading') return;
+    
+    const touch = e.touches[0];
+    setGestureState({
+      isDragging: true,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      deltaX: 0,
+      gestureHint: ''
+    });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!gestureState.isDragging || !interactive || book.status !== 'currently_reading') return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - gestureState.startX;
+    const deltaY = touch.clientY - gestureState.startY;
+    
+    // Only process horizontal gestures (ignore if too much vertical movement)
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) {
+      return;
+    }
+
+    const threshold = 60; // Minimum swipe distance
+    let hint = '';
+    
+    if (deltaX > threshold) {
+      hint = '+10%';
+    } else if (deltaX < -threshold) {
+      hint = '+25%';
+    }
+    
+    setGestureState(prev => ({
+      ...prev,
+      deltaX,
+      gestureHint: hint
+    }));
+  };
+
+  const handleTouchEnd = () => {
+    if (!gestureState.isDragging || !interactive || book.status !== 'currently_reading') {
+      setGestureState(prev => ({ ...prev, isDragging: false, gestureHint: '' }));
+      return;
+    }
+    
+    const threshold = 60;
+    const { deltaX } = gestureState;
+    
+    if (deltaX > threshold) {
+      // Right swipe: +10%
+      handleQuickIncrementWithUndo(10, 'Right swipe: +10%');
+    } else if (deltaX < -threshold) {
+      // Left swipe: +25%
+      handleQuickIncrementWithUndo(25, 'Left swipe: +25%');
+    }
+    
+    setGestureState({
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      deltaX: 0,
+      gestureHint: ''
+    });
+  };
+
+  const handleQuickIncrementWithUndo = (increment: number, actionType: string) => {
+    const previousProgress = localProgress;
+    const newProgress = Math.min(100, Math.max(0, localProgress + increment));
+    
+    // Clear any existing undo timeout
+    if (undoTimeout) {
+      clearTimeout(undoTimeout);
+    }
+    
+    // Apply the increment
+    setLocalProgress(newProgress);
+    if (onQuickUpdate) {
+      onQuickUpdate(book.id, increment);
+    }
+    if (onUpdateProgress) {
+      onUpdateProgress(book.id, newProgress);
+    }
+    
+    // Set up undo capability
+    setLastGestureAction({ type: actionType, value: previousProgress });
+    
+    // Auto-clear undo after 5 seconds
+    const timeout = setTimeout(() => {
+      setLastGestureAction(null);
+    }, 5000);
+    
+    setUndoTimeout(timeout);
+  };
+
+  const handleUndoGesture = () => {
+    if (!lastGestureAction) return;
+    
+    const previousProgress = lastGestureAction.value;
+    setLocalProgress(previousProgress);
+    
+    if (onUpdateProgress) {
+      onUpdateProgress(book.id, previousProgress);
+    }
+    
+    // Clear undo state
+    setLastGestureAction(null);
+    if (undoTimeout) {
+      clearTimeout(undoTimeout);
+      setUndoTimeout(null);
+    }
+  };
 
   const getStatusColor = (status: Book['status']) => {
     switch (status) {
@@ -80,14 +215,7 @@ const BookCard: React.FC<BookCardProps> = ({
   };
 
   const handleQuickIncrement = (increment: number) => {
-    const newProgress = Math.min(100, Math.max(0, localProgress + increment));
-    setLocalProgress(newProgress);
-    if (onQuickUpdate) {
-      onQuickUpdate(book.id, increment);
-    }
-    if (onUpdateProgress) {
-      onUpdateProgress(book.id, newProgress);
-    }
+    handleQuickIncrementWithUndo(increment, `Button: +${increment}%`);
   };
 
   const handleMarkDone = () => {
@@ -118,7 +246,20 @@ const BookCard: React.FC<BookCardProps> = ({
   const progressPercentage = localProgress;
 
   return (
-    <div className={`bg-surface rounded-xl shadow-card p-4 border border-border hover:shadow-lg transition-all duration-200 ${className}`}>
+    <div 
+      ref={cardRef}
+      className={`bg-surface rounded-xl shadow-card p-4 border border-border hover:shadow-lg transition-all duration-200 relative ${className} ${
+        gestureState.isDragging && book.status === 'currently_reading' ? 'select-none' : ''
+      }`}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        transform: gestureState.isDragging && book.status === 'currently_reading' 
+          ? `translateX(${Math.max(-30, Math.min(30, gestureState.deltaX * 0.3))}px)` 
+          : undefined
+      }}
+    >
       {/* Header with title, author, and status */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
@@ -248,6 +389,35 @@ const BookCard: React.FC<BookCardProps> = ({
           <span>Finished {book.dateFinished.toLocaleDateString()}</span>
         )}
       </div>
+
+      {/* Gesture Hint Overlay */}
+      {gestureState.gestureHint && gestureState.isDragging && book.status === 'currently_reading' && (
+        <div className="absolute inset-0 bg-primary/20 rounded-xl flex items-center justify-center pointer-events-none">
+          <div className="bg-primary text-white px-4 py-2 rounded-lg font-medium text-lg">
+            {gestureState.gestureHint}
+          </div>
+        </div>
+      )}
+
+      {/* Undo Button for Gesture Actions */}
+      {lastGestureAction && book.status === 'currently_reading' && (
+        <div className="absolute top-2 right-2 z-10">
+          <button
+            onClick={handleUndoGesture}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded-md transition-colors"
+            title={`Undo: ${lastGestureAction.type}`}
+          >
+            ↶ Undo
+          </button>
+        </div>
+      )}
+
+      {/* Gesture Instructions (show once for first-time users) */}
+      {book.status === 'currently_reading' && interactive && shouldShowProgressControls && !gestureState.isDragging && (
+        <div className="absolute bottom-2 left-2 text-xs text-text-secondary opacity-60 pointer-events-none">
+          💫 Swipe → +10%, ← +25%
+        </div>
+      )}
     </div>
   );
 };

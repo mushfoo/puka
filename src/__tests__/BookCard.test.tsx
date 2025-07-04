@@ -313,4 +313,283 @@ describe('BookCard', () => {
       expect(progressText).not.toBeInTheDocument();
     });
   });
+
+  describe('Gesture-Based Progress Updates', () => {
+    beforeEach(() => {
+      // Mock touch events
+      Object.defineProperty(window, 'TouchEvent', {
+        writable: true,
+        value: class TouchEvent extends Event {
+          touches: Touch[];
+          constructor(type: string, options: any = {}) {
+            super(type, options);
+            this.touches = options.touches || [];
+          }
+        }
+      });
+    });
+
+    const createTouchEvent = (type: string, clientX: number, clientY: number) => ({
+      type,
+      touches: [{ clientX, clientY }],
+      preventDefault: vi.fn()
+    });
+
+    it('handles right swipe for +10% progress', async () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          showQuickActions={true}
+          onQuickUpdate={mockHandlers.onQuickUpdate}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Simulate right swipe gesture
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100)); // 80px right
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+
+      await waitFor(() => {
+        expect(mockHandlers.onQuickUpdate).toHaveBeenCalledWith(1, 10);
+        expect(mockHandlers.onUpdateProgress).toHaveBeenCalledWith(1, 60); // 50 + 10
+      });
+    });
+
+    it('handles left swipe for +25% progress', async () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          showQuickActions={true}
+          onQuickUpdate={mockHandlers.onQuickUpdate}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Simulate left swipe gesture
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 20, 100)); // 80px left
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 20, 100));
+
+      await waitFor(() => {
+        expect(mockHandlers.onQuickUpdate).toHaveBeenCalledWith(1, 25);
+        expect(mockHandlers.onUpdateProgress).toHaveBeenCalledWith(1, 75); // 50 + 25
+      });
+    });
+
+    it('ignores gestures for non-reading books', () => {
+      render(
+        <BookCard 
+          book={mockWantToReadBook} 
+          interactive={true}
+          onQuickUpdate={mockHandlers.onQuickUpdate}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Simulate swipe on want_to_read book
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+
+      expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
+      expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
+    });
+
+    it('ignores short swipes below threshold', () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          onQuickUpdate={mockHandlers.onQuickUpdate}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Simulate short swipe (below 60px threshold)
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 130, 100)); // 30px right
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 130, 100));
+
+      expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
+      expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
+    });
+
+    it('ignores vertical swipes', () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          onQuickUpdate={mockHandlers.onQuickUpdate}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Simulate vertical swipe
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 100, 180)); // 80px down
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 100, 180));
+
+      expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
+      expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
+    });
+
+    it('shows gesture hint during swipe', async () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          showQuickActions={true}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Start swipe
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      
+      // Move beyond threshold
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
+
+      // Should show gesture hint
+      await waitFor(() => {
+        expect(screen.getByText('+10%')).toBeInTheDocument();
+      });
+
+      // End swipe
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+
+      // Hint should disappear
+      await waitFor(() => {
+        expect(screen.queryByText('+10%')).not.toBeInTheDocument();
+      });
+    });
+
+    it('provides undo functionality for gesture actions', async () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          showQuickActions={true}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Perform swipe gesture
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+
+      // Should show undo button
+      await waitFor(() => {
+        expect(screen.getByText('↶ Undo')).toBeInTheDocument();
+      });
+
+      // Click undo
+      fireEvent.click(screen.getByText('↶ Undo'));
+
+      // Should restore previous progress
+      await waitFor(() => {
+        expect(mockHandlers.onUpdateProgress).toHaveBeenLastCalledWith(1, 50); // back to original
+        expect(screen.queryByText('↶ Undo')).not.toBeInTheDocument();
+      });
+    });
+
+    it('auto-hides undo button after timeout', async () => {
+      vi.useFakeTimers();
+      
+      try {
+        render(
+          <BookCard 
+            book={mockBook} 
+            interactive={true}
+            showQuickActions={true}
+            onUpdateProgress={mockHandlers.onUpdateProgress}
+          />
+        );
+
+        const card = document.querySelector('.bg-surface');
+        
+        // Perform gesture
+        fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+        fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
+        fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+
+        // Should show undo button
+        await waitFor(() => {
+          expect(screen.getByText('↶ Undo')).toBeInTheDocument();
+        }, { timeout: 1000 });
+
+        // Fast-forward 5 seconds
+        vi.advanceTimersByTime(5000);
+
+        // Undo button should be gone
+        await waitFor(() => {
+          expect(screen.queryByText('↶ Undo')).not.toBeInTheDocument();
+        }, { timeout: 1000 });
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows gesture instructions for currently reading books', () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={true}
+          showQuickActions={true}
+        />
+      );
+
+      expect(screen.getByText('💫 Swipe → +10%, ← +25%')).toBeInTheDocument();
+    });
+
+    it('does not show gesture instructions for non-interactive cards', () => {
+      render(
+        <BookCard 
+          book={mockBook} 
+          interactive={false}
+        />
+      );
+
+      expect(screen.queryByText('💫 Swipe → +10%, ← +25%')).not.toBeInTheDocument();
+    });
+
+    it('caps progress at 100% with gestures', async () => {
+      const nearCompleteBook = { ...mockBook, progress: 95 };
+      
+      render(
+        <BookCard 
+          book={nearCompleteBook} 
+          interactive={true}
+          onUpdateProgress={mockHandlers.onUpdateProgress}
+        />
+      );
+
+      const card = document.querySelector('.bg-surface');
+      
+      // Swipe for +25% when at 95%
+      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card, createTouchEvent('touchmove', 20, 100)); // left swipe
+      fireEvent.touchEnd(card, createTouchEvent('touchend', 20, 100));
+
+      await waitFor(() => {
+        expect(mockHandlers.onUpdateProgress).toHaveBeenCalledWith(1, 100); // capped at 100
+      }, { timeout: 1000 });
+    });
+  });
 });
