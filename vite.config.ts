@@ -10,6 +10,32 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: '0.0.0.0',
+    port: parseInt(process.env.PORT || '5173')
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: parseInt(process.env.PORT || '4173')
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: process.env.NODE_ENV === 'development',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['papaparse']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 500,
+    minify: 'terser'
+  },
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+  },
   test: {
     globals: true,
     environment: 'jsdom',

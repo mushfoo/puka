@@ -1,0 +1,7 @@
+{
+  "status": "healthy",
+  "timestamp": "2025-07-05T00:00:00Z",
+  "version": "2.0.0",
+  "service": "puka-reading-tracker",
+  "environment": "production"
+}
