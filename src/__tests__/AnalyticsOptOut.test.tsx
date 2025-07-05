@@ -15,8 +15,16 @@ vi.mock('../utils/analytics', () => ({
 }))
 
 describe('AnalyticsOptOut Component', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    // Reset mock implementations to default values
+    const { getAnalyticsState } = await import('../utils/analytics')
+    vi.mocked(getAnalyticsState).mockReturnValue({
+      enabled: true,
+      optOutAvailable: true,
+      hasOptedOut: false,
+      domain: 'test-domain.com'
+    })
   })
 
   it('should render analytics opt-out component', () => {
@@ -31,13 +39,13 @@ describe('AnalyticsOptOut Component', () => {
     render(<AnalyticsOptOut />)
     
     // Check tracking information
-    expect(screen.getByText('Page views and feature usage')).toBeInTheDocument()
-    expect(screen.getByText('Performance metrics')).toBeInTheDocument()
-    expect(screen.getByText('Anonymous error reports')).toBeInTheDocument()
+    expect(screen.getByText('• Page views and feature usage')).toBeInTheDocument()
+    expect(screen.getByText('• Performance metrics')).toBeInTheDocument()
+    expect(screen.getByText('• Anonymous error reports')).toBeInTheDocument()
     
     // Check non-tracking information
-    expect(screen.getByText('Book titles, authors, or reading data')).toBeInTheDocument()
-    expect(screen.getByText('Personal information or account details')).toBeInTheDocument()
+    expect(screen.getByText('• Book titles, authors, or reading data')).toBeInTheDocument()
+    expect(screen.getByText('• Personal information or account details')).toBeInTheDocument()
   })
 
   it('should display current analytics status', () => {
@@ -47,14 +55,14 @@ describe('AnalyticsOptOut Component', () => {
     expect(screen.getByRole('button', { name: 'Disable' })).toBeInTheDocument()
   })
 
-  it('should handle opt-out toggle', () => {
-    const { setOptOut } = require('../utils/analytics')
+  it('should handle opt-out toggle', async () => {
+    const { setOptOut } = await import('../utils/analytics')
     render(<AnalyticsOptOut />)
     
     const toggleButton = screen.getByRole('button', { name: 'Disable' })
     fireEvent.click(toggleButton)
     
-    expect(setOptOut).toHaveBeenCalledWith(true)
+    expect(vi.mocked(setOptOut)).toHaveBeenCalledWith(true)
   })
 
   it('should show close button when onClose is provided', () => {
@@ -68,9 +76,9 @@ describe('AnalyticsOptOut Component', () => {
     expect(mockOnClose).toHaveBeenCalled()
   })
 
-  it('should not render when analytics is disabled', () => {
-    const { getAnalyticsState } = require('../utils/analytics')
-    getAnalyticsState.mockReturnValue({
+  it('should not render when analytics is disabled', async () => {
+    const { getAnalyticsState } = await import('../utils/analytics')
+    vi.mocked(getAnalyticsState).mockReturnValue({
       enabled: false,
       optOutAvailable: true,
       hasOptedOut: false,
@@ -81,9 +89,9 @@ describe('AnalyticsOptOut Component', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('should not render when opt-out is not available', () => {
-    const { getAnalyticsState } = require('../utils/analytics')
-    getAnalyticsState.mockReturnValue({
+  it('should not render when opt-out is not available', async () => {
+    const { getAnalyticsState } = await import('../utils/analytics')
+    vi.mocked(getAnalyticsState).mockReturnValue({
       enabled: true,
       optOutAvailable: false,
       hasOptedOut: false,
