@@ -353,9 +353,9 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
       />
 
       {/* Modal */}
-      <div className="relative flex items-center justify-center min-h-full p-4">
+      <div className="relative flex items-center justify-center min-h-full p-2 sm:p-4">
         <div
-          className="relative w-full max-w-5xl bg-background rounded-2xl shadow-2xl border border-border overflow-hidden"
+          className="relative w-full max-w-5xl max-h-[95vh] bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={handleModalKeyDown}
           role="dialog"
@@ -364,22 +364,22 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
           tabIndex={-1}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-border">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border flex-shrink-0">
             <div>
               <h2
                 id="reading-history-title"
-                className="text-2xl font-semibold text-text-primary"
+                className="text-xl sm:text-2xl font-semibold text-text-primary"
               >
                 Reading History
               </h2>
-              <p className="text-text-secondary mt-1">
+              <p className="text-text-secondary mt-1 text-sm sm:text-base">
                 View and manage your reading activity
               </p>
             </div>
 
             <button
               onClick={handleClose}
-              className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary"
+              className="p-2 hover:bg-background rounded-lg transition-colors text-text-primary touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Close reading history"
               type="button"
             >
@@ -411,15 +411,15 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
             </div>
           )}
 
-          {/* Content */}
-          <div className="flex flex-col lg:flex-row">
+          {/* Content - Scrollable */}
+          <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
             {/* Calendar Section */}
-            <div className="flex-1 p-6 border-r border-border lg:border-r-border lg:border-r">
+            <div className="flex-1 p-4 sm:p-6 border-r border-border lg:border-r-border lg:border-r overflow-y-auto">
               {/* Month Navigation */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-background z-10 py-2">
                 <button
                   onClick={handlePreviousMonth}
-                  className="p-2 hover:bg-surface rounded-lg transition-colors"
+                  className="p-2 hover:bg-surface rounded-lg transition-colors touch-manipulation"
                   aria-label="Previous month"
                   type="button"
                 >
@@ -438,13 +438,13 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   </svg>
                 </button>
 
-                <h3 className="text-xl font-semibold text-text-primary">
+                <h3 className="text-lg sm:text-xl font-semibold text-text-primary">
                   {monthHeader}
                 </h3>
 
                 <button
                   onClick={handleNextMonth}
-                  className="p-2 hover:bg-surface rounded-lg transition-colors"
+                  className="p-2 hover:bg-surface rounded-lg transition-colors touch-manipulation"
                   aria-label="Next month"
                   type="button"
                 >
@@ -469,7 +469,7 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
                     <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
-                    <p className="text-text-secondary">
+                    <p className="text-text-secondary text-sm">
                       Loading reading data...
                     </p>
                   </div>
@@ -490,8 +490,8 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
             </div>
 
             {/* Detail Panel */}
-            <div className="w-full lg:w-96 lg:flex-shrink-0">
-              <div className="h-full max-h-[60vh] lg:max-h-none overflow-y-auto">
+            <div className="w-full lg:w-96 lg:flex-shrink-0 flex flex-col">
+              <div className="flex-1 overflow-y-auto">
                 <DayDetailPanel
                   selectedDate={selectedDate || undefined}
                   readingData={selectedDateData}
@@ -500,15 +500,15 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
                   onUpdateNotes={handleUpdateNotes}
                   onUpdateBooks={handleUpdateBooks}
                   loading={loading}
-                  className="p-6"
+                  className="p-4 sm:p-6"
                 />
               </div>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between p-6 border-t border-border bg-surface/50">
-            <div className="text-sm text-text-secondary">
+          {/* Footer - Always visible */}
+          <div className="flex items-center justify-between p-4 sm:p-6 border-t border-border bg-surface/50 flex-shrink-0">
+            <div className="text-xs sm:text-sm text-text-secondary">
               {selectedDate ? (
                 <>
                   Selected:{" "}
@@ -519,10 +519,10 @@ const ReadingHistoryModal: React.FC<ReadingHistoryModalProps> = ({
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 onClick={handleClose}
-                className="px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary"
+                className="px-3 sm:px-4 py-2 border border-border rounded-lg hover:bg-background transition-colors font-semibold text-text-primary text-sm touch-manipulation min-h-[44px]"
                 type="button"
               >
                 Close

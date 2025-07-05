@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Book, StatusFilter, StreakHistory } from '@/types';
 import { ExportData, ImportResult } from '@/services/storage/StorageService';
 import BookGrid from './books/BookGrid';
@@ -56,6 +56,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isUpdatingBook, setIsUpdatingBook] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [selectedBookIndex, setSelectedBookIndex] = useState(-1);
+  const [showBookSwitcher, setShowBookSwitcher] = useState(false);
+  const [activeBookId, setActiveBookId] = useState<number | null>(null);
+  
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const bookSwitcherRef = useRef<HTMLDivElement>(null);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -65,6 +72,163 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs or modals are open
+      if (
+        e.target instanceof HTMLInputElement || 
+        e.target instanceof HTMLTextAreaElement ||
+        isAddModalOpen || 
+        isEditModalOpen || 
+        isExportModalOpen || 
+        isImportModalOpen ||
+        showKeyboardHelp
+      ) {
+        return;
+      }
+
+      const isCtrl = e.ctrlKey || e.metaKey;
+      
+      switch (e.key.toLowerCase()) {
+        case '/':
+          e.preventDefault();
+          searchInputRef.current?.focus();
+          break;
+          
+        case 'a':
+          if (isCtrl) {
+            e.preventDefault();
+            handleOpenAddModal();
+          }
+          break;
+          
+        case 'e':
+          if (isCtrl && books.length > 0) {
+            e.preventDefault();
+            handleOpenExportModal();
+          }
+          break;
+          
+        case 'i':
+          if (isCtrl) {
+            e.preventDefault();
+            handleOpenImportModal();
+          }
+          break;
+          
+        case 'escape':
+          e.preventDefault();
+          setSearchQuery('');
+          setSelectedBookIndex(-1);
+          break;
+          
+        case '?':
+          e.preventDefault();
+          setShowKeyboardHelp(true);
+          break;
+          
+        case '1':
+          e.preventDefault();
+          setActiveFilter('all');
+          break;
+          
+        case '2':
+          e.preventDefault();
+          setActiveFilter('want_to_read');
+          break;
+          
+        case '3':
+          e.preventDefault();
+          setActiveFilter('currently_reading');
+          break;
+          
+        case '4':
+          e.preventDefault();
+          setActiveFilter('finished');
+          break;
+          
+        case 'arrowdown':
+          e.preventDefault();
+          setSelectedBookIndex(prev => 
+            prev < filteredBooks.length - 1 ? prev + 1 : 0
+          );
+          break;
+          
+        case 'arrowup':
+          e.preventDefault();
+          setSelectedBookIndex(prev => 
+            prev > 0 ? prev - 1 : filteredBooks.length - 1
+          );
+          break;
+          
+        case 'enter':
+          if (selectedBookIndex >= 0 && selectedBookIndex < filteredBooks.length) {
+            e.preventDefault();
+            handleEditBook(filteredBooks[selectedBookIndex]);
+          }
+          break;
+          
+        case 'r':
+          if (onMarkReadingDay) {
+            e.preventDefault();
+            onMarkReadingDay();
+          }
+          break;
+          
+        case 'b': {
+          // Access current reading books directly from books state
+          const currentReading = books.filter(book => book.status === 'currently_reading');
+          if (currentReading.length > 1) {
+            e.preventDefault();
+            setShowBookSwitcher(!showBookSwitcher);
+          }
+          break;
+        }
+          
+        case 'n': {
+          if (isCtrl) {
+            e.preventDefault();
+            const currentReading = books.filter(book => book.status === 'currently_reading');
+            if (currentReading.length > 1) {
+              const currentIndex = currentReading.findIndex(book => book.id === activeBookId);
+              const nextIndex = (currentIndex + 1) % currentReading.length;
+              setActiveBookId(currentReading[nextIndex].id);
+            }
+          }
+          break;
+        }
+          
+        case 'p': {
+          if (isCtrl) {
+            e.preventDefault();
+            const currentReading = books.filter(book => book.status === 'currently_reading');
+            if (currentReading.length > 1) {
+              const currentIndex = currentReading.findIndex(book => book.id === activeBookId);
+              const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentReading.length - 1;
+              setActiveBookId(currentReading[prevIndex].id);
+            }
+          }
+          break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isAddModalOpen, 
+    isEditModalOpen, 
+    isExportModalOpen, 
+    isImportModalOpen, 
+    showKeyboardHelp,
+    selectedBookIndex, 
+    books,
+    onMarkReadingDay,
+    activeBookId,
+    showBookSwitcher
+  ]);
 
   // Filter books based on active filter and search query
   const filteredBooks = useMemo(() => {
@@ -87,6 +251,38 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return filtered;
   }, [books, activeFilter, debouncedSearchQuery]);
+
+  // Get currently reading books
+  const currentlyReadingBooks = useMemo(() => {
+    return books.filter(book => book.status === 'currently_reading');
+  }, [books]);
+
+  // Close book switcher when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bookSwitcherRef.current && !bookSwitcherRef.current.contains(event.target as Node)) {
+        setShowBookSwitcher(false);
+      }
+    };
+
+    if (showBookSwitcher) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBookSwitcher]);
+
+  // Set initial active book (most recently modified currently reading book)
+  useEffect(() => {
+    if (currentlyReadingBooks.length > 0 && activeBookId === null) {
+      const mostRecent = currentlyReadingBooks.reduce((latest, book) => 
+        book.dateModified && (!latest.dateModified || book.dateModified > latest.dateModified) ? book : latest
+      );
+      setActiveBookId(mostRecent.id);
+    }
+  }, [currentlyReadingBooks, activeBookId]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -190,14 +386,88 @@ const Dashboard: React.FC<DashboardProps> = ({
               <h1 className="text-xl sm:text-2xl font-bold text-primary">
                 Puka Reading Tracker
               </h1>
+              
+              {/* Quick Book Switcher - Show when multiple books are being read */}
+              {currentlyReadingBooks.length > 1 && (
+                <div className="relative ml-4" ref={bookSwitcherRef}>
+                  <button
+                    onClick={() => setShowBookSwitcher(!showBookSwitcher)}
+                    className="flex items-center gap-2 px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors text-sm"
+                    title={`Switch between ${currentlyReadingBooks.length} currently reading books (Press B)`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span className="max-w-24 sm:max-w-32 truncate">
+                      {currentlyReadingBooks.find(book => book.id === activeBookId)?.title || 'Switch Book'}
+                    </span>
+                    <span className="text-xs opacity-75 hidden sm:inline">
+                      {currentlyReadingBooks.findIndex(book => book.id === activeBookId) + 1}/{currentlyReadingBooks.length}
+                    </span>
+                  </button>
+                  
+                  {showBookSwitcher && (
+                    <div className="absolute top-full left-0 mt-2 bg-surface border border-border rounded-lg shadow-lg py-2 z-50 min-w-64 max-w-sm">
+                      <div className="px-3 py-2 text-xs font-medium text-text-secondary border-b border-border">
+                        Currently Reading ({currentlyReadingBooks.length})
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {currentlyReadingBooks.map((book) => (
+                          <button
+                            key={book.id}
+                            onClick={() => {
+                              setActiveBookId(book.id);
+                              setShowBookSwitcher(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 hover:bg-background transition-colors ${
+                              book.id === activeBookId ? 'bg-primary/10 border-r-2 border-primary' : ''
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-text-primary truncate text-sm">
+                                  {book.title}
+                                </div>
+                                <div className="text-xs text-text-secondary truncate">
+                                  {book.author}
+                                </div>
+                              </div>
+                              <div className="ml-2 flex items-center gap-2">
+                                <div className="text-xs text-text-secondary">
+                                  {book.progress}%
+                                </div>
+                                <div className="w-2 h-2 bg-primary rounded-full" style={{ opacity: book.progress / 100 }} />
+                                {book.id === activeBookId && (
+                                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                                )}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="px-3 py-2 text-xs text-text-secondary border-t border-border">
+                        <div className="flex justify-between items-center">
+                          <span>Shortcuts:</span>
+                          <div className="flex gap-2">
+                            <kbd className="px-1 py-0.5 bg-background rounded text-xs">B</kbd>
+                            <kbd className="px-1 py-0.5 bg-background rounded text-xs">Ctrl+N</kbd>
+                            <kbd className="px-1 py-0.5 bg-background rounded text-xs">Ctrl+P</kbd>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            {/* Search, Import, Export - Desktop (moved streak out) */}
+            {/* Search, Import, Export - Desktop */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="relative">
                 <input
+                  ref={searchInputRef}
                   type="text"
-                  placeholder="Search books..."
+                  placeholder="Search books... (Press / to focus)"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   className="pl-10 pr-10 py-2 w-64 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -248,8 +518,8 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Search, Import and Export - Mobile */}
-          <div className="sm:hidden pb-4 space-y-3">
+          {/* Search - Mobile (Simplified) */}
+          <div className="sm:hidden pb-3">
             <div className="relative">
               <input
                 type="text"
@@ -277,15 +547,17 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               )}
             </div>
-            
-            {/* Import and Export Buttons - Mobile */}
-            <div className="grid grid-cols-2 gap-3">
+          </div>
+          
+          {/* Import and Export - Mobile (Moved to main content) */}
+          <div className="sm:hidden pb-3">
+            <div className="flex gap-2">
               <button
                 onClick={handleOpenImportModal}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-surface hover:bg-border text-text-primary border border-border rounded-md transition-colors text-sm"
                 title="Import books from CSV"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4" />
                 </svg>
                 <span>Import</span>
@@ -293,10 +565,10 @@ const Dashboard: React.FC<DashboardProps> = ({
               <button
                 onClick={handleOpenExportModal}
                 disabled={books.length === 0}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-surface hover:bg-border text-text-primary border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 title="Export your library"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Export</span>
@@ -353,6 +625,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           onDelete={handleDeleteBook}
           loading={loading}
           showQuickActions={true}
+          selectedIndex={selectedBookIndex}
         />
       </main>
 
@@ -395,6 +668,135 @@ const Dashboard: React.FC<DashboardProps> = ({
         onClose={handleCloseImportModal}
         onImportComplete={handleImportComplete}
       />
+
+      {/* Keyboard Help Modal */}
+      {showKeyboardHelp && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-text-primary">Keyboard Shortcuts</h3>
+                <button
+                  onClick={() => setShowKeyboardHelp(false)}
+                  className="text-text-secondary hover:text-text-primary"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-text-primary mb-2">Navigation</h4>
+                  <div className="space-y-1 text-sm text-text-secondary">
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">?</kbd></span>
+                      <span>Show this help</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">/</kbd></span>
+                      <span>Focus search</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Esc</kbd></span>
+                      <span>Clear search</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">↑</kbd> <kbd className="px-2 py-1 bg-background rounded">↓</kbd></span>
+                      <span>Navigate books</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Enter</kbd></span>
+                      <span>Edit selected book</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-text-primary mb-2">Actions</h4>
+                  <div className="space-y-1 text-sm text-text-secondary">
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Ctrl+A</kbd></span>
+                      <span>Add new book</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Ctrl+E</kbd></span>
+                      <span>Export books</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Ctrl+I</kbd></span>
+                      <span>Import books</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">R</kbd></span>
+                      <span>Mark reading day</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-text-primary mb-2">Book Switching</h4>
+                  <div className="space-y-1 text-sm text-text-secondary">
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">B</kbd></span>
+                      <span>Toggle book switcher</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Ctrl+N</kbd></span>
+                      <span>Next reading book</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">Ctrl+P</kbd></span>
+                      <span>Previous reading book</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-text-primary mb-2">Filters</h4>
+                  <div className="space-y-1 text-sm text-text-secondary">
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">1</kbd></span>
+                      <span>All books</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">2</kbd></span>
+                      <span>Want to Read</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">3</kbd></span>
+                      <span>Currently Reading</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span><kbd className="px-2 py-1 bg-background rounded">4</kbd></span>
+                      <span>Finished</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-border">
+                <p className="text-xs text-text-secondary">
+                  Press <kbd className="px-1 py-0.5 bg-background rounded text-xs">?</kbd> anytime to show this help
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Help Button - Desktop only */}
+      <button
+        onClick={() => setShowKeyboardHelp(true)}
+        className="hidden sm:block fixed bottom-20 right-4 bg-surface border border-border text-text-secondary hover:text-text-primary hover:border-primary rounded-full p-2 shadow-lg transition-colors z-40"
+        title="Keyboard shortcuts (?)"
+        aria-label="Show keyboard shortcuts"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
     </div>
   );
 };

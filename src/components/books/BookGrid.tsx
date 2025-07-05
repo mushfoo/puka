@@ -14,6 +14,7 @@ interface BookGridProps {
   showQuickActions?: boolean;
   loading?: boolean;
   className?: string;
+  selectedIndex?: number;
 }
 
 const BookGrid: React.FC<BookGridProps> = ({
@@ -26,7 +27,8 @@ const BookGrid: React.FC<BookGridProps> = ({
   onDelete,
   showQuickActions = true,
   loading = false,
-  className = ''
+  className = '',
+  selectedIndex = -1
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -137,6 +139,7 @@ const BookGrid: React.FC<BookGridProps> = ({
           onDelete={onDelete}
           showQuickActions={showQuickActions}
           interactive={true}
+          className={itemIndex === selectedIndex ? 'ring-2 ring-primary ring-offset-2' : ''}
         />
       </div>
     );
@@ -145,7 +148,7 @@ const BookGrid: React.FC<BookGridProps> = ({
   // Regular grid rendering for small datasets
   const renderRegularGrid = () => (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-max">
-      {books.map((book) => (
+      {books.map((book, index) => (
         <BookCard
           key={book.id}
           book={book}
@@ -157,6 +160,7 @@ const BookGrid: React.FC<BookGridProps> = ({
           onDelete={onDelete}
           showQuickActions={showQuickActions}
           interactive={true}
+          className={index === selectedIndex ? 'ring-2 ring-primary ring-offset-2' : ''}
         />
       ))}
     </div>

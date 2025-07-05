@@ -84,7 +84,7 @@ describe('Dashboard', () => {
   it('renders search input', () => {
     renderWithAuth(<Dashboard {...defaultProps} />);
     
-    const searchInputs = screen.getAllByPlaceholderText('Search books...');
+    const searchInputs = screen.getAllByPlaceholderText(/Search books/);
     expect(searchInputs.length).toBeGreaterThan(0);
   });
 
@@ -135,7 +135,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'Midnight' } });
     
@@ -152,7 +152,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'Andy Weir' } });
     
@@ -169,7 +169,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'habits' } });
     
@@ -186,7 +186,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     // Enter search query
     fireEvent.change(searchInput, { target: { value: 'Midnight' } });
@@ -212,7 +212,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'Midnight' } });
     
@@ -227,7 +227,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'nonexistent' } });
     
@@ -243,7 +243,7 @@ describe('Dashboard', () => {
     fireEvent.click(screen.getAllByText('Reading')[0]);
     
     // Then search
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     fireEvent.change(searchInput, { target: { value: 'Midnight' } });
     
     await waitFor(() => {
@@ -354,7 +354,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: 'MIDNIGHT' } });
     
@@ -369,7 +369,7 @@ describe('Dashboard', () => {
     // First switch to "All" filter to see all books for search
     fireEvent.click(screen.getAllByText('All')[0]);
     
-    const searchInput = screen.getAllByPlaceholderText('Search books...')[0];
+    const searchInput = screen.getAllByPlaceholderText(/Search books/)[0];
     
     fireEvent.change(searchInput, { target: { value: '  Midnight  ' } });
     
