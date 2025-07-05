@@ -1,7 +1,18 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
+import { AuthProvider } from '@/components/auth';
 import { Book } from '@/types';
+
+// Helper function to render components with AuthProvider
+const renderWithAuth = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      {component}
+    </AuthProvider>
+  );
+};
 
 const mockBooks: Book[] = [
   {
@@ -51,7 +62,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Navigation Shortcuts', () => {
     it('focuses search input when "/" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -67,7 +78,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('clears search when "Escape" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -87,7 +98,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('shows keyboard help when "?" is pressed', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -103,7 +114,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('closes keyboard help when close button is clicked', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -129,7 +140,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Action Shortcuts', () => {
     it('opens add modal when "Ctrl+A" is pressed', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -150,12 +161,15 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
     it('opens export modal when "Ctrl+E" is pressed', async () => {
       const exportData = {
-        format: 'csv' as const,
-        data: mockBooks,
-        filename: 'books.csv'
+        books: mockBooks,
+        metadata: {
+          exportDate: new Date().toISOString(),
+          version: '1.0',
+          totalBooks: mockBooks.length
+        }
       };
 
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           exportData={exportData}
@@ -176,7 +190,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('opens import modal when "Ctrl+I" is pressed', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -197,7 +211,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('marks reading day when "R" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onMarkReadingDay={mockHandlers.onMarkReadingDay}
@@ -214,7 +228,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Filter Shortcuts', () => {
     it('changes filter to "all" when "1" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -230,7 +244,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('changes filter to "want_to_read" when "2" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -246,7 +260,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('changes filter to "currently_reading" when "3" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -262,7 +276,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('changes filter to "finished" when "4" is pressed', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -280,7 +294,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Book Navigation', () => {
     it('navigates through books with arrow keys', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -310,7 +324,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('opens edit modal for selected book when "Enter" is pressed', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onUpdateBook={mockHandlers.onUpdateBook}
@@ -333,7 +347,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Shortcut Blocking', () => {
     it('does not trigger shortcuts when typing in search input', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -351,7 +365,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('does not trigger shortcuts when modals are open', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -379,7 +393,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
 
   describe('Accessibility', () => {
     it('shows keyboard help button', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -391,7 +405,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('keyboard help modal has proper accessibility attributes', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -408,7 +422,7 @@ describe('Dashboard Keyboard Shortcuts', () => {
     });
 
     it('provides helpful placeholder text for search', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooks}
           onAddBook={mockHandlers.onAddBook}

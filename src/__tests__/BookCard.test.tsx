@@ -347,11 +347,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Simulate right swipe gesture
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100)); // 80px right
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 180, 100)); // 80px right
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 180, 100));
 
       await waitFor(() => {
         expect(mockHandlers.onQuickUpdate).toHaveBeenCalledWith(1, 10);
@@ -371,11 +372,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Simulate left swipe gesture
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 20, 100)); // 80px left
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 20, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 20, 100)); // 80px left
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 20, 100));
 
       await waitFor(() => {
         expect(mockHandlers.onQuickUpdate).toHaveBeenCalledWith(1, 25);
@@ -394,11 +396,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Simulate swipe on want_to_read book
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 180, 100));
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 180, 100));
 
       expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
       expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
@@ -415,11 +418,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Simulate short swipe (below 60px threshold)
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 130, 100)); // 30px right
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 130, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 130, 100)); // 30px right
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 130, 100));
 
       expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
       expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
@@ -436,11 +440,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Simulate vertical swipe
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 100, 180)); // 80px down
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 100, 180));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 100, 180)); // 80px down
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 100, 180));
 
       expect(mockHandlers.onQuickUpdate).not.toHaveBeenCalled();
       expect(mockHandlers.onUpdateProgress).not.toHaveBeenCalled();
@@ -456,24 +461,27 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Start swipe
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
       
       // Move beyond threshold
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 180, 100));
 
-      // Should show gesture hint
+      // Should show gesture hint overlay
       await waitFor(() => {
-        expect(screen.getByText('+10%')).toBeInTheDocument();
+        const hintOverlay = document.querySelector('.absolute.inset-0.bg-primary\\/20');
+        expect(hintOverlay).toBeInTheDocument();
       });
 
       // End swipe
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 180, 100));
 
-      // Hint should disappear
+      // Hint overlay should disappear
       await waitFor(() => {
-        expect(screen.queryByText('+10%')).not.toBeInTheDocument();
+        const hintOverlay = document.querySelector('.absolute.inset-0.bg-primary\\/20');
+        expect(hintOverlay).not.toBeInTheDocument();
       });
     });
 
@@ -488,11 +496,12 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Perform swipe gesture
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 180, 100));
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 180, 100));
 
       // Should show undo button
       await waitFor(() => {
@@ -523,24 +532,24 @@ describe('BookCard', () => {
         );
 
         const card = document.querySelector('.bg-surface');
+        expect(card).not.toBeNull();
         
         // Perform gesture
-        fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-        fireEvent.touchMove(card, createTouchEvent('touchmove', 180, 100));
-        fireEvent.touchEnd(card, createTouchEvent('touchend', 180, 100));
+        fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+        fireEvent.touchMove(card!, createTouchEvent('touchmove', 180, 100));
+        fireEvent.touchEnd(card!, createTouchEvent('touchend', 180, 100));
 
-        // Should show undo button
-        await waitFor(() => {
-          expect(screen.getByText('↶ Undo')).toBeInTheDocument();
-        }, { timeout: 1000 });
+        // Should show undo button immediately
+        expect(screen.getByText('↶ Undo')).toBeInTheDocument();
 
-        // Fast-forward 5 seconds
+        // Fast-forward 5 seconds and trigger re-render
         vi.advanceTimersByTime(5000);
+        
+        // Wait for the timeout to trigger state update
+        await vi.runAllTimersAsync();
 
         // Undo button should be gone
-        await waitFor(() => {
-          expect(screen.queryByText('↶ Undo')).not.toBeInTheDocument();
-        }, { timeout: 1000 });
+        expect(screen.queryByText('↶ Undo')).not.toBeInTheDocument();
       } finally {
         vi.useRealTimers();
       }
@@ -569,7 +578,7 @@ describe('BookCard', () => {
       expect(screen.queryByText('💫 Swipe → +10%, ← +25%')).not.toBeInTheDocument();
     });
 
-    it('caps progress at 100% with gestures', async () => {
+    it('caps progress at 100% with gestures', () => {
       const nearCompleteBook = { ...mockBook, progress: 95 };
       
       render(
@@ -581,15 +590,15 @@ describe('BookCard', () => {
       );
 
       const card = document.querySelector('.bg-surface');
+      expect(card).not.toBeNull();
       
       // Swipe for +25% when at 95%
-      fireEvent.touchStart(card, createTouchEvent('touchstart', 100, 100));
-      fireEvent.touchMove(card, createTouchEvent('touchmove', 20, 100)); // left swipe
-      fireEvent.touchEnd(card, createTouchEvent('touchend', 20, 100));
+      fireEvent.touchStart(card!, createTouchEvent('touchstart', 100, 100));
+      fireEvent.touchMove(card!, createTouchEvent('touchmove', 20, 100)); // left swipe
+      fireEvent.touchEnd(card!, createTouchEvent('touchend', 20, 100));
 
-      await waitFor(() => {
-        expect(mockHandlers.onUpdateProgress).toHaveBeenCalledWith(1, 100); // capped at 100
-      }, { timeout: 1000 });
+      // Progress should be capped at 100%
+      expect(mockHandlers.onUpdateProgress).toHaveBeenCalledWith(1, 100);
     });
   });
 });

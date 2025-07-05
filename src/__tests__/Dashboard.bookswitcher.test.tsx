@@ -1,7 +1,18 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
+import { AuthProvider } from '@/components/auth';
 import { Book } from '@/types';
+
+// Helper function to render components with AuthProvider
+const renderWithAuth = (component: React.ReactElement) => {
+  return render(
+    <AuthProvider>
+      {component}
+    </AuthProvider>
+  );
+};
 
 const mockBooksMultipleReading: Book[] = [
   {
@@ -81,7 +92,7 @@ describe('Dashboard Book Switcher', () => {
 
   describe('Book Switcher Visibility', () => {
     it('shows book switcher when multiple books are currently reading', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -94,7 +105,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('does not show book switcher when only one book is currently reading', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -111,7 +122,7 @@ describe('Dashboard Book Switcher', () => {
         status: 'want_to_read' as const
       }));
 
-      render(
+      renderWithAuth(
         <Dashboard 
           books={noReadingBooks}
           onAddBook={mockHandlers.onAddBook}
@@ -125,7 +136,7 @@ describe('Dashboard Book Switcher', () => {
 
   describe('Book Switcher Functionality', () => {
     it('opens and closes book switcher dropdown when button is clicked', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -153,7 +164,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('displays book information correctly in switcher', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -178,7 +189,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('shows active book indicator correctly', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -196,7 +207,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('switches active book when clicked in dropdown', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -224,7 +235,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('closes dropdown when clicking outside', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -249,7 +260,7 @@ describe('Dashboard Book Switcher', () => {
 
   describe('Keyboard Shortcuts', () => {
     it('toggles book switcher when "B" is pressed', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -272,7 +283,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('does not toggle switcher with "B" when only one book is reading', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -287,7 +298,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('cycles through books with Ctrl+N (next)', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -325,7 +336,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('cycles through books with Ctrl+P (previous)', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -363,7 +374,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('does not cycle books when only one book is reading', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -390,7 +401,7 @@ describe('Dashboard Book Switcher', () => {
 
   describe('Active Book Management', () => {
     it('sets most recently modified book as initial active book', () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -404,7 +415,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('updates position indicator when switching books', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -430,7 +441,7 @@ describe('Dashboard Book Switcher', () => {
     });
 
     it('shows keyboard shortcuts help in dropdown', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
@@ -451,7 +462,7 @@ describe('Dashboard Book Switcher', () => {
 
   describe('Integration with Keyboard Help', () => {
     it('includes book switching shortcuts in keyboard help modal', async () => {
-      render(
+      renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}

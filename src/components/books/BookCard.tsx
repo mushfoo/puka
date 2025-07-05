@@ -35,7 +35,7 @@ const BookCard: React.FC<BookCardProps> = ({
     deltaX: 0,
     gestureHint: '' 
   });
-  const [undoTimeout, setUndoTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [undoTimeout, setUndoTimeout] = useState<number | null>(null);
   const [lastGestureAction, setLastGestureAction] = useState<{ type: string, value: number } | null>(null);
   
   const actionsMenuRef = useRef<HTMLDivElement>(null);
@@ -161,7 +161,7 @@ const BookCard: React.FC<BookCardProps> = ({
       setLastGestureAction(null);
     }, 5000);
     
-    setUndoTimeout(timeout);
+    setUndoTimeout(timeout as unknown as number);
   };
 
   const handleUndoGesture = () => {

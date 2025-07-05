@@ -177,30 +177,41 @@ const Dashboard: React.FC<DashboardProps> = ({
           }
           break;
           
-        case 'b':
-          if (currentlyReadingBooks.length > 1) {
+        case 'b': {
+          // Access current reading books directly from books state
+          const currentReading = books.filter(book => book.status === 'currently_reading');
+          if (currentReading.length > 1) {
             e.preventDefault();
             setShowBookSwitcher(!showBookSwitcher);
           }
           break;
+        }
           
-        case 'n':
-          if (isCtrl && currentlyReadingBooks.length > 1) {
+        case 'n': {
+          if (isCtrl) {
             e.preventDefault();
-            const currentIndex = currentlyReadingBooks.findIndex(book => book.id === activeBookId);
-            const nextIndex = (currentIndex + 1) % currentlyReadingBooks.length;
-            setActiveBookId(currentlyReadingBooks[nextIndex].id);
+            const currentReading = books.filter(book => book.status === 'currently_reading');
+            if (currentReading.length > 1) {
+              const currentIndex = currentReading.findIndex(book => book.id === activeBookId);
+              const nextIndex = (currentIndex + 1) % currentReading.length;
+              setActiveBookId(currentReading[nextIndex].id);
+            }
           }
           break;
+        }
           
-        case 'p':
-          if (isCtrl && currentlyReadingBooks.length > 1) {
+        case 'p': {
+          if (isCtrl) {
             e.preventDefault();
-            const currentIndex = currentlyReadingBooks.findIndex(book => book.id === activeBookId);
-            const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentlyReadingBooks.length - 1;
-            setActiveBookId(currentlyReadingBooks[prevIndex].id);
+            const currentReading = books.filter(book => book.status === 'currently_reading');
+            if (currentReading.length > 1) {
+              const currentIndex = currentReading.findIndex(book => book.id === activeBookId);
+              const prevIndex = currentIndex > 0 ? currentIndex - 1 : currentReading.length - 1;
+              setActiveBookId(currentReading[prevIndex].id);
+            }
           }
           break;
+        }
       }
     };
 
@@ -212,46 +223,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     isExportModalOpen, 
     isImportModalOpen, 
     showKeyboardHelp,
-    filteredBooks, 
     selectedBookIndex, 
-    books.length,
+    books,
     onMarkReadingDay,
-    currentlyReadingBooks,
     activeBookId,
     showBookSwitcher
   ]);
-
-  // Close book switcher when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (bookSwitcherRef.current && !bookSwitcherRef.current.contains(event.target as Node)) {
-        setShowBookSwitcher(false);
-      }
-    };
-
-    if (showBookSwitcher) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showBookSwitcher]);
-
-  // Get currently reading books
-  const currentlyReadingBooks = useMemo(() => {
-    return books.filter(book => book.status === 'currently_reading');
-  }, [books]);
-
-  // Set initial active book (most recently modified currently reading book)
-  useEffect(() => {
-    if (currentlyReadingBooks.length > 0 && activeBookId === null) {
-      const mostRecent = currentlyReadingBooks.reduce((latest, book) => 
-        book.dateModified && (!latest.dateModified || book.dateModified > latest.dateModified) ? book : latest
-      );
-      setActiveBookId(mostRecent.id);
-    }
-  }, [currentlyReadingBooks, activeBookId]);
 
   // Filter books based on active filter and search query
   const filteredBooks = useMemo(() => {
@@ -274,6 +251,38 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return filtered;
   }, [books, activeFilter, debouncedSearchQuery]);
+
+  // Get currently reading books
+  const currentlyReadingBooks = useMemo(() => {
+    return books.filter(book => book.status === 'currently_reading');
+  }, [books]);
+
+  // Close book switcher when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (bookSwitcherRef.current && !bookSwitcherRef.current.contains(event.target as Node)) {
+        setShowBookSwitcher(false);
+      }
+    };
+
+    if (showBookSwitcher) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBookSwitcher]);
+
+  // Set initial active book (most recently modified currently reading book)
+  useEffect(() => {
+    if (currentlyReadingBooks.length > 0 && activeBookId === null) {
+      const mostRecent = currentlyReadingBooks.reduce((latest, book) => 
+        book.dateModified && (!latest.dateModified || book.dateModified > latest.dateModified) ? book : latest
+      );
+      setActiveBookId(mostRecent.id);
+    }
+  }, [currentlyReadingBooks, activeBookId]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
