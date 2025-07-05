@@ -88,10 +88,22 @@ const BookCard: React.FC<BookCardProps> = ({
     const deltaX = touch.clientX - gestureState.startX;
     const deltaY = touch.clientY - gestureState.startY;
     
-    // Only process horizontal gestures (ignore if too much vertical movement)
-    if (Math.abs(deltaY) > Math.abs(deltaX) * 0.5) {
+    // Detect if this is primarily vertical scrolling
+    const isVerticalScroll = Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 20;
+    
+    // If vertical scrolling detected, abandon gesture
+    if (isVerticalScroll) {
+      setGestureState(prev => ({ ...prev, isDragging: false, gestureHint: '' }));
       return;
     }
+    
+    // Only process horizontal gestures with significant movement
+    if (Math.abs(deltaX) < 30) {
+      return;
+    }
+    
+    // Prevent default scrolling for horizontal gestures
+    e.preventDefault();
 
     const threshold = 60; // Minimum swipe distance
     let hint = '';
@@ -115,15 +127,18 @@ const BookCard: React.FC<BookCardProps> = ({
       return;
     }
     
-    const threshold = 60;
+    const threshold = 80; // Increased threshold for more deliberate gestures
     const { deltaX } = gestureState;
     
-    if (deltaX > threshold) {
-      // Right swipe: +10%
-      handleQuickIncrementWithUndo(10, 'Right swipe: +10%');
-    } else if (deltaX < -threshold) {
-      // Left swipe: +25%
-      handleQuickIncrementWithUndo(25, 'Left swipe: +25%');
+    // Only trigger if gesture was significant and primarily horizontal
+    if (Math.abs(deltaX) >= threshold) {
+      if (deltaX > 0) {
+        // Right swipe: +10%
+        handleQuickIncrementWithUndo(10, 'Right swipe: +10%');
+      } else {
+        // Left swipe: +25%
+        handleQuickIncrementWithUndo(25, 'Left swipe: +25%');
+      }
     }
     
     setGestureState({
@@ -278,7 +293,7 @@ const BookCard: React.FC<BookCardProps> = ({
             <div className="relative" ref={actionsMenuRef}>
               <button
                 onClick={() => setShowActionsMenu(!showActionsMenu)}
-                className="p-1 hover:bg-background rounded-full transition-colors"
+                className="p-2 hover:bg-background rounded-full transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Book actions"
               >
                 <svg className="w-4 h-4 text-text-secondary" fill="currentColor" viewBox="0 0 20 20">
@@ -334,25 +349,25 @@ const BookCard: React.FC<BookCardProps> = ({
 
           {/* Quick Action Buttons */}
           {showQuickActions && (
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 onClick={() => handleQuickIncrement(10)}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-4 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
               >
                 +10%
               </button>
               <button
                 onClick={() => handleQuickIncrement(25)}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex-1 bg-primary/10 hover:bg-primary/20 text-primary font-medium py-4 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
               >
                 +25%
               </button>
               <button
                 onClick={handleMarkDone}
                 disabled={progressPercentage >= 100}
-                className="flex-1 bg-success hover:bg-success/90 text-white font-medium py-3 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                className="flex-1 bg-success hover:bg-success/90 text-white font-medium py-4 px-3 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] touch-manipulation"
               >
                 Done ✓
               </button>
@@ -401,10 +416,10 @@ const BookCard: React.FC<BookCardProps> = ({
 
       {/* Undo Button for Gesture Actions */}
       {lastGestureAction && book.status === 'currently_reading' && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 left-2 z-10">
           <button
             onClick={handleUndoGesture}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded-md transition-colors"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-3 py-2 rounded-md transition-colors touch-manipulation min-h-[40px]"
             title={`Undo: ${lastGestureAction.type}`}
           >
             ↶ Undo
@@ -412,9 +427,9 @@ const BookCard: React.FC<BookCardProps> = ({
         </div>
       )}
 
-      {/* Gesture Instructions (show once for first-time users) */}
+      {/* Gesture Instructions (show for mobile users) */}
       {book.status === 'currently_reading' && interactive && shouldShowProgressControls && !gestureState.isDragging && (
-        <div className="absolute bottom-2 left-2 text-xs text-text-secondary opacity-60 pointer-events-none">
+        <div className="absolute bottom-2 left-2 text-xs text-text-secondary bg-background/80 px-2 py-1 rounded-md pointer-events-none sm:opacity-60 sm:bg-transparent sm:px-0 sm:py-0">
           💫 Swipe → +10%, ← +25%
         </div>
       )}

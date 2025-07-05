@@ -392,16 +392,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className="relative ml-4" ref={bookSwitcherRef}>
                   <button
                     onClick={() => setShowBookSwitcher(!showBookSwitcher)}
-                    className="hidden sm:flex items-center gap-2 px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors text-sm"
+                    className="flex items-center gap-2 px-3 py-1 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors text-sm"
                     title={`Switch between ${currentlyReadingBooks.length} currently reading books (Press B)`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
-                    <span className="max-w-32 truncate">
+                    <span className="max-w-24 sm:max-w-32 truncate">
                       {currentlyReadingBooks.find(book => book.id === activeBookId)?.title || 'Switch Book'}
                     </span>
-                    <span className="text-xs opacity-75">
+                    <span className="text-xs opacity-75 hidden sm:inline">
                       {currentlyReadingBooks.findIndex(book => book.id === activeBookId) + 1}/{currentlyReadingBooks.length}
                     </span>
                   </button>
@@ -461,7 +461,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               )}
             </div>
             
-            {/* Search, Import, Export - Desktop (moved streak out) */}
+            {/* Search, Import, Export - Desktop */}
             <div className="hidden sm:flex items-center gap-4">
               <div className="relative">
                 <input
@@ -518,12 +518,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Search, Import and Export - Mobile */}
-          <div className="sm:hidden pb-4 space-y-3">
+          {/* Search - Mobile (Simplified) */}
+          <div className="sm:hidden pb-3">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search books... (Press / to focus)"
+                placeholder="Search books..."
                 value={searchQuery}
                 onChange={handleSearchChange}
                 className="pl-10 pr-10 py-2 w-full border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -547,15 +547,17 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               )}
             </div>
-            
-            {/* Import and Export Buttons - Mobile */}
-            <div className="grid grid-cols-2 gap-3">
+          </div>
+          
+          {/* Import and Export - Mobile (Moved to main content) */}
+          <div className="sm:hidden pb-3">
+            <div className="flex gap-2">
               <button
                 onClick={handleOpenImportModal}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-surface hover:bg-border text-text-primary border border-border rounded-md transition-colors text-sm"
                 title="Import books from CSV"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 12l2 2 4-4" />
                 </svg>
                 <span>Import</span>
@@ -563,10 +565,10 @@ const Dashboard: React.FC<DashboardProps> = ({
               <button
                 onClick={handleOpenExportModal}
                 disabled={books.length === 0}
-                className="flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-1 px-2 py-1 bg-surface hover:bg-border text-text-primary border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 title="Export your library"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span>Export</span>
@@ -784,10 +786,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
-      {/* Keyboard Help Button - Fixed position */}
+      {/* Keyboard Help Button - Desktop only */}
       <button
         onClick={() => setShowKeyboardHelp(true)}
-        className="fixed bottom-20 right-4 bg-surface border border-border text-text-secondary hover:text-text-primary hover:border-primary rounded-full p-2 shadow-lg transition-colors z-40"
+        className="hidden sm:block fixed bottom-20 right-4 bg-surface border border-border text-text-secondary hover:text-text-primary hover:border-primary rounded-full p-2 shadow-lg transition-colors z-40"
         title="Keyboard shortcuts (?)"
         aria-label="Show keyboard shortcuts"
       >

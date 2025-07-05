@@ -99,7 +99,7 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
-      // Should show the switcher button (only on desktop)
+      // Should show the switcher button (now visible on both mobile and desktop)
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       expect(switcherButton).toBeInTheDocument();
     });
@@ -243,8 +243,9 @@ describe('Dashboard Book Switcher', () => {
         expect(screen.queryByText('Currently Reading (3)')).not.toBeInTheDocument();
       });
 
-      // Button should now show Book One as active
-      expect(screen.getByText('Book One')).toBeInTheDocument();
+      // Button should now show Book One as active - check the switcher button specifically
+      const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
+      expect(switcherButton).toHaveTextContent('Book One');
     });
 
     it('closes dropdown when clicking outside', async () => {
