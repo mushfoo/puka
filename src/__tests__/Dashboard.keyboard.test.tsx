@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "@/components/Dashboard";
 import { AuthProvider } from "@/components/auth";
@@ -113,7 +119,9 @@ describe("Dashboard Keyboard Shortcuts", () => {
       });
 
       // Close help - find the X button in the modal
-      const modal = screen.getByText("Keyboard Shortcuts").closest('.fixed');
+      const modal = screen
+        .getByText("Keyboard Shortcuts")
+        .closest(".fixed") as HTMLElement;
       const closeButton = within(modal!).getByRole("button");
       fireEvent.click(closeButton);
 
@@ -411,4 +419,3 @@ describe("Dashboard Keyboard Shortcuts", () => {
     });
   });
 });
-
