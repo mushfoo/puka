@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
 import { AuthProvider } from '@/components/auth';
@@ -150,9 +150,12 @@ describe('Dashboard Book Switcher', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Currently Reading (3)')).toBeInTheDocument();
-        expect(screen.getByText('Book One')).toBeInTheDocument();
-        expect(screen.getByText('Book Two')).toBeInTheDocument();
-        expect(screen.getByText('Book Three')).toBeInTheDocument();
+        // Check for books in the dropdown specifically
+        const dropdown = screen.getByText('Currently Reading (3)').closest('.absolute');
+        expect(dropdown).toBeInTheDocument();
+        expect(dropdown).toHaveTextContent('Book One');
+        expect(dropdown).toHaveTextContent('Book Two');
+        expect(dropdown).toHaveTextContent('Book Three');
       });
 
       // Click to close
@@ -175,16 +178,20 @@ describe('Dashboard Book Switcher', () => {
       fireEvent.click(switcherButton);
       
       await waitFor(() => {
-        // Check book titles and authors
-        expect(screen.getByText('Book One')).toBeInTheDocument();
-        expect(screen.getByText('Author One')).toBeInTheDocument();
-        expect(screen.getByText('Book Two')).toBeInTheDocument();
-        expect(screen.getByText('Author Two')).toBeInTheDocument();
+        // Check that dropdown is visible
+        const dropdown = screen.getByText('Currently Reading (3)').closest('.absolute');
+        expect(dropdown).toBeInTheDocument();
         
-        // Check progress percentages
-        expect(screen.getByText('30%')).toBeInTheDocument();
-        expect(screen.getByText('60%')).toBeInTheDocument();
-        expect(screen.getByText('90%')).toBeInTheDocument();
+        // Check book titles and authors within dropdown
+        expect(dropdown).toHaveTextContent('Book One');
+        expect(dropdown).toHaveTextContent('Author One');
+        expect(dropdown).toHaveTextContent('Book Two');
+        expect(dropdown).toHaveTextContent('Author Two');
+        
+        // Check progress percentages within dropdown
+        expect(dropdown).toHaveTextContent('30%');
+        expect(dropdown).toHaveTextContent('60%');
+        expect(dropdown).toHaveTextContent('90%');
       });
     });
 
@@ -201,8 +208,11 @@ describe('Dashboard Book Switcher', () => {
       
       await waitFor(() => {
         // Most recently modified book (Book Two) should be active initially
-        const activeBook = screen.getByText('Book Two').closest('button');
-        expect(activeBook).toHaveClass('bg-primary/10', 'border-r-2', 'border-primary');
+        // Find Book Two within the dropdown specifically
+        const dropdown = screen.getByText('Currently Reading (3)').closest('.absolute');
+        const activeBook = dropdown?.querySelector('button.bg-primary\\/10');
+        expect(activeBook).toBeInTheDocument();
+        expect(activeBook).toHaveTextContent('Book Two');
       });
     });
 
@@ -221,8 +231,11 @@ describe('Dashboard Book Switcher', () => {
         expect(screen.getByText('Currently Reading (3)')).toBeInTheDocument();
       });
 
-      // Click on Book One
-      const bookOneButton = screen.getByText('Book One').closest('button');
+      // Click on Book One button in the dropdown
+      const dropdown = screen.getByText('Currently Reading (3)').closest('.absolute') as HTMLElement;
+      const bookButtons = within(dropdown).getAllByRole('button');
+      const bookOneButton = bookButtons.find(button => button.textContent?.includes('Book One'));
+      expect(bookOneButton).toBeInTheDocument();
       fireEvent.click(bookOneButton!);
       
       await waitFor(() => {
