@@ -244,8 +244,8 @@ describe('Dashboard Book Switcher', () => {
       });
 
       // Button should now show Book One as active - check the switcher button specifically
-      const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
-      expect(switcherButton).toHaveTextContent('Book One');
+      const updatedSwitcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
+      expect(updatedSwitcherButton).toHaveTextContent('Book One');
     });
 
     it('closes dropdown when clicking outside', async () => {

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import Dashboard from "@/components/Dashboard";
 import { AuthProvider } from "@/components/auth";
@@ -112,8 +112,9 @@ describe("Dashboard Keyboard Shortcuts", () => {
         expect(screen.getByText("Keyboard Shortcuts")).toBeInTheDocument();
       });
 
-      // Close help
-      const closeButton = screen.getByRole("button", { name: /close/i });
+      // Close help - find the X button in the modal
+      const modal = screen.getByText("Keyboard Shortcuts").closest('.fixed');
+      const closeButton = within(modal!).getByRole("button");
       fireEvent.click(closeButton);
 
       await waitFor(() => {
@@ -168,7 +169,7 @@ describe("Dashboard Keyboard Shortcuts", () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByText("Export Your Library")).toBeInTheDocument();
+        expect(screen.getByText("Export Library")).toBeInTheDocument();
       });
     });
 
@@ -219,8 +220,8 @@ describe("Dashboard Keyboard Shortcuts", () => {
       fireEvent.keyDown(document, { key: "1", preventDefault: vi.fn() });
 
       // Check that "All" filter is active
-      const allTab = screen.getByRole("button", { name: /All/i });
-      expect(allTab).toHaveAttribute("aria-selected", "true");
+      const allTabs = screen.getAllByRole("tab", { name: /All/i });
+      expect(allTabs[0]).toHaveAttribute("aria-selected", "true");
     });
 
     it('changes filter to "want_to_read" when "2" is pressed', () => {
@@ -232,10 +233,10 @@ describe("Dashboard Keyboard Shortcuts", () => {
       fireEvent.keyDown(document, { key: "2", preventDefault: vi.fn() });
 
       // Check that "Want to Read" filter is active
-      const wantToReadTab = screen.getByRole("button", {
+      const wantToReadTabs = screen.getAllByRole("tab", {
         name: /Want to Read/i,
       });
-      expect(wantToReadTab).toHaveAttribute("aria-selected", "true");
+      expect(wantToReadTabs[0]).toHaveAttribute("aria-selected", "true");
     });
 
     it('changes filter to "currently_reading" when "3" is pressed', () => {
@@ -270,6 +271,9 @@ describe("Dashboard Keyboard Shortcuts", () => {
       renderWithAuth(
         <Dashboard books={mockBooks} onAddBook={mockHandlers.onAddBook} />,
       );
+
+      // First switch to "All" filter to see all books
+      fireEvent.keyDown(document, { key: "1", preventDefault: vi.fn() });
 
       // Press down arrow
       fireEvent.keyDown(document, {
@@ -401,7 +405,8 @@ describe("Dashboard Keyboard Shortcuts", () => {
         <Dashboard books={mockBooks} onAddBook={mockHandlers.onAddBook} />,
       );
 
-      const searchInputs = screen.getAllByPlaceholderText(/Press \/ to focus/);
+      // Desktop has "Press / to focus", mobile just has "Search books..."
+      const searchInputs = screen.getAllByPlaceholderText(/Search books/);
       expect(searchInputs.length).toBeGreaterThan(0);
     });
   });
