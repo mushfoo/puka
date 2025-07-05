@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { initializeAnalytics } from './utils/analytics'
 
 // PWA Service Worker Registration
 if ('serviceWorker' in navigator) {
@@ -33,6 +34,9 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+
+// Initialize analytics
+initializeAnalytics()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
