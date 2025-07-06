@@ -1,0 +1,463 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      skip_migrations:
+        description: 'Skip Supabase migrations'
+        type: boolean
+        default: false
+      environment:
+        description: 'Deployment environment'
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20.x'
+  RAILWAY_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+
+jobs:
+  # Run all tests and quality checks
+  test:
+    name: Test & Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run type checking
+      run: npm run type-check
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run unit tests
+      run: npm test -- --run --coverage
+      
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage/
+        
+    - name: Check test coverage
+      run: |
+        COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+        echo "Test coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+          echo "::warning::Test coverage is below 80%"
+        fi
+
+  # Security and dependency checks
+  security:
+    name: Security Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Run npm audit
+      run: npm audit --production
+      continue-on-error: true
+      
+    - name: Run dependency check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'puka'
+        path: '.'
+        format: 'JSON'
+        args: >
+          --enableRetired
+          --enableExperimental
+      continue-on-error: true
+      
+    - name: Upload dependency check results
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-check-report
+        path: reports/
+
+  # Build and optimize application
+  build:
+    name: Build & Optimize
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+        VITE_APP_ENV: ${{ env.RAILWAY_ENVIRONMENT }}
+        VITE_APP_VERSION: ${{ github.sha }}
+        
+    - name: Analyze bundle size
+      run: |
+        echo "Bundle size analysis:"
+        find dist -name "*.js" -o -name "*.css" | xargs ls -lh
+        TOTAL_SIZE=$(du -sh dist | cut -f1)
+        echo "Total build size: $TOTAL_SIZE"
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: dist/
+        retention-days: 7
+
+  # Run Supabase migrations
+  migrate:
+    name: Supabase Migrations
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event.inputs.skip_migrations != 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+        
+    - name: Check migration status
+      run: |
+        echo "Checking migration status..."
+        supabase migration list --db-url "${{ secrets.SUPABASE_DB_URL }}"
+      
+    - name: Run migrations
+      run: |
+        echo "Running migrations..."
+        supabase migration up --db-url "${{ secrets.SUPABASE_DB_URL }}"
+      
+    - name: Validate schema
+      run: |
+        echo "Validating database schema..."
+        supabase db diff --db-url "${{ secrets.SUPABASE_DB_URL }}" --schema public
+        
+    - name: Generate TypeScript types
+      run: |
+        echo "Generating TypeScript types..."
+        supabase gen types typescript --db-url "${{ secrets.SUPABASE_DB_URL }}" > src/types/supabase.ts
+        
+    - name: Commit type updates
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore: update Supabase TypeScript types [skip ci]"
+        file_pattern: src/types/supabase.ts
+        skip_checkout: true
+        
+  # Deploy to Railway
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: [build, migrate]
+    environment: 
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.deployment_url }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install Railway CLI
+      run: |
+        curl -fsSL https://railway.app/install.sh | sh
+        echo "$HOME/.railway/bin" >> $GITHUB_PATH
+        
+    - name: Configure Railway
+      run: |
+        railway login --token "${{ secrets.RAILWAY_TOKEN }}"
+        railway link "${{ secrets.RAILWAY_PROJECT_ID }}"
+        railway environment "${{ env.RAILWAY_ENVIRONMENT }}"
+        
+    - name: Set deployment variables
+      run: |
+        railway variables set \
+          NODE_ENV=production \
+          VITE_APP_ENV="${{ env.RAILWAY_ENVIRONMENT }}" \
+          VITE_APP_VERSION="${{ github.sha }}" \
+          VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+          VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+          DEPLOYMENT_ID="${{ github.run_id }}-${{ github.run_number }}" \
+          GIT_COMMIT_SHA="${{ github.sha }}" \
+          GIT_COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          
+    - name: Deploy to Railway
+      id: deploy
+      run: |
+        echo "Deploying to Railway..."
+        DEPLOYMENT_OUTPUT=$(railway up --detach)
+        echo "$DEPLOYMENT_OUTPUT"
+        
+        # Extract deployment URL
+        DEPLOYMENT_URL=$(echo "$DEPLOYMENT_OUTPUT" | grep -oP 'https://[^\s]+' | head -1)
+        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+        
+        # Get deployment ID
+        DEPLOYMENT_ID=$(railway status --json | jq -r '.deployment.id')
+        echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+        
+    - name: Monitor deployment
+      run: |
+        echo "Monitoring deployment progress..."
+        railway logs --deployment "${{ steps.deploy.outputs.deployment_id }}" --follow &
+        LOG_PID=$!
+        
+        # Wait for deployment to complete (max 10 minutes)
+        TIMEOUT=600
+        ELAPSED=0
+        while [ $ELAPSED -lt $TIMEOUT ]; do
+          STATUS=$(railway status --json | jq -r '.deployment.status')
+          echo "Deployment status: $STATUS"
+          
+          if [ "$STATUS" = "SUCCESS" ]; then
+            echo "Deployment completed successfully!"
+            kill $LOG_PID 2>/dev/null || true
+            exit 0
+          elif [ "$STATUS" = "FAILED" ]; then
+            echo "::error::Deployment failed!"
+            kill $LOG_PID 2>/dev/null || true
+            exit 1
+          fi
+          
+          sleep 10
+          ELAPSED=$((ELAPSED + 10))
+        done
+        
+        echo "::error::Deployment timed out after 10 minutes"
+        kill $LOG_PID 2>/dev/null || true
+        exit 1
+
+  # Verify deployment health
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get deployment URL
+      id: get_url
+      run: |
+        railway login --token "${{ secrets.RAILWAY_TOKEN }}"
+        railway link "${{ secrets.RAILWAY_PROJECT_ID }}"
+        railway environment "${{ env.RAILWAY_ENVIRONMENT }}"
+        
+        DEPLOYMENT_URL=$(railway status --json | jq -r '.deployment.staticUrl // .deployment.url')
+        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+        
+    - name: Wait for service to be ready
+      run: |
+        echo "Waiting for service to be ready..."
+        sleep 30
+        
+    - name: Health check
+      run: |
+        DEPLOYMENT_URL="${{ steps.get_url.outputs.deployment_url }}"
+        echo "Checking health at: $DEPLOYMENT_URL"
+        
+        for i in {1..10}; do
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL")
+          echo "Health check attempt $i: HTTP $HTTP_STATUS"
+          
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Health check passed!"
+            exit 0
+          fi
+          
+          sleep 10
+        done
+        
+        echo "::error::Health check failed after 10 attempts"
+        exit 1
+        
+    - name: Run smoke tests
+      run: |
+        DEPLOYMENT_URL="${{ steps.get_url.outputs.deployment_url }}"
+        
+        # Check main page loads
+        curl -f "$DEPLOYMENT_URL" || exit 1
+        
+        # Check static assets are served
+        curl -f "$DEPLOYMENT_URL/assets/" || true
+        
+        # Check API connectivity (if applicable)
+        curl -f "$DEPLOYMENT_URL/api/health" || true
+        
+    - name: Performance check
+      run: |
+        DEPLOYMENT_URL="${{ steps.get_url.outputs.deployment_url }}"
+        
+        # Simple performance check using curl
+        echo "Running performance check..."
+        TIME_TOTAL=$(curl -s -o /dev/null -w "%{time_total}" "$DEPLOYMENT_URL")
+        echo "Page load time: ${TIME_TOTAL}s"
+        
+        # Alert if load time is too high
+        if (( $(echo "$TIME_TOTAL > 3" | bc -l) )); then
+          echo "::warning::Page load time is above 3 seconds"
+        fi
+
+  # Rollback on failure
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy, verify]
+    if: failure()
+    
+    steps:
+    - name: Configure Railway
+      run: |
+        curl -fsSL https://railway.app/install.sh | sh
+        echo "$HOME/.railway/bin" >> $GITHUB_PATH
+        railway login --token "${{ secrets.RAILWAY_TOKEN }}"
+        railway link "${{ secrets.RAILWAY_PROJECT_ID }}"
+        railway environment "${{ env.RAILWAY_ENVIRONMENT }}"
+        
+    - name: Rollback to previous deployment
+      run: |
+        echo "Rolling back to previous deployment..."
+        PREVIOUS_DEPLOYMENT=$(railway deployments --json | jq -r '.[1].id')
+        
+        if [ -n "$PREVIOUS_DEPLOYMENT" ]; then
+          railway rollback "$PREVIOUS_DEPLOYMENT"
+          echo "Rolled back to deployment: $PREVIOUS_DEPLOYMENT"
+        else
+          echo "::warning::No previous deployment found to rollback to"
+        fi
+        
+    - name: Notify rollback
+      run: |
+        echo "::error::Deployment failed and was rolled back"
+
+  # Send notifications
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy, verify]
+    if: always()
+    
+    steps:
+    - name: Prepare notification data
+      id: notification
+      run: |
+        if [ "${{ needs.verify.result }}" = "success" ]; then
+          STATUS="✅ Success"
+          COLOR="good"
+        else
+          STATUS="❌ Failed"
+          COLOR="danger"
+        fi
+        
+        echo "status=$STATUS" >> $GITHUB_OUTPUT
+        echo "color=$COLOR" >> $GITHUB_OUTPUT
+        
+    - name: Send Slack notification
+      if: vars.SLACK_WEBHOOK_URL != ''
+      uses: 8398a7/action-slack@v3
+      with:
+        status: custom
+        custom_payload: |
+          {
+            "attachments": [{
+              "color": "${{ steps.notification.outputs.color }}",
+              "title": "Deployment ${{ steps.notification.outputs.status }}",
+              "fields": [
+                {
+                  "title": "Environment",
+                  "value": "${{ env.RAILWAY_ENVIRONMENT }}",
+                  "short": true
+                },
+                {
+                  "title": "Commit",
+                  "value": "${{ github.sha }}",
+                  "short": true
+                },
+                {
+                  "title": "Author",
+                  "value": "${{ github.actor }}",
+                  "short": true
+                },
+                {
+                  "title": "Message",
+                  "value": "${{ github.event.head_commit.message }}",
+                  "short": false
+                }
+              ],
+              "footer": "GitHub Actions",
+              "footer_icon": "https://github.githubassets.com/favicon.ico",
+              "ts": ${{ github.event.head_commit.timestamp }}
+            }]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ vars.SLACK_WEBHOOK_URL }}
+        
+    - name: Create GitHub deployment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const deployment = await github.rest.repos.createDeployment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.sha,
+            environment: '${{ env.RAILWAY_ENVIRONMENT }}',
+            auto_merge: false,
+            required_contexts: [],
+            payload: {
+              railway_deployment_id: '${{ needs.deploy.outputs.deployment_id }}',
+              deployment_url: '${{ needs.deploy.outputs.deployment_url }}'
+            }
+          });
+          
+          await github.rest.repos.createDeploymentStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            deployment_id: deployment.data.id,
+            state: '${{ needs.verify.result }}' === 'success' ? 'success' : 'failure',
+            environment_url: '${{ needs.deploy.outputs.deployment_url }}',
+            description: 'Deployment ${{ steps.notification.outputs.status }}'
+          });

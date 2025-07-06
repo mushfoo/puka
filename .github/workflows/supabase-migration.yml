@@ -1,0 +1,102 @@
+name: Supabase Migration
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run migration in dry-run mode'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  migrate:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+        
+    - name: Verify migrations
+      run: |
+        echo "Checking migration files..."
+        ls -la supabase/migrations/
+        
+    - name: Link Supabase project
+      run: |
+        supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+          --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Run migrations (Dry Run)
+      if: github.event.inputs.dry_run == 'true'
+      run: |
+        echo "Running migrations in dry-run mode..."
+        supabase db push --dry-run
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Run migrations
+      if: github.event.inputs.dry_run != 'true'
+      run: |
+        echo "Applying database migrations..."
+        supabase db push
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Generate TypeScript types
+      run: |
+        supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} \
+          > src/types/database.types.ts
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Commit type updates
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: 'chore: update database types after migration'
+        file_pattern: src/types/database.types.ts
+        skip_dirty_check: false
+        
+    - name: Verify migration status
+      run: |
+        echo "Checking migration status..."
+        supabase migration list
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Create migration summary
+      if: success()
+      run: |
+        echo "## Migration Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Migrations applied successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Applied migrations:" >> $GITHUB_STEP_SUMMARY
+        ls -1 supabase/migrations/*.sql | sed 's/.*\//- /' >> $GITHUB_STEP_SUMMARY
+        
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '❌ Database migration failed! Check the [workflow logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'
+          })
