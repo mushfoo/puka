@@ -244,7 +244,7 @@ Yes! Puka is a Progressive Web App (PWA):
 
 No. Puka is privacy-focused:
 - All data stays on your device
-- No analytics or tracking
+- No data collection or tracking
 - No account creation required
 - No data sent to external servers
 - You have complete control over your information

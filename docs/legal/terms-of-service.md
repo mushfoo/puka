@@ -95,7 +95,6 @@ We grant you a limited, non-exclusive, non-transferable license to use the Servi
 
 ### Data Collection
 - We collect minimal data necessary to provide the Service
-- Analytics data is anonymous and privacy-focused
 - You can opt out of all optional data collection
 
 ### Data Security

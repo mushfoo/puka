@@ -27,14 +27,6 @@ If you choose to create an account and enable cloud synchronization:
 
 ### Automatically Collected Information
 
-**Analytics Data (with your consent):**
-- Page views and feature usage patterns
-- Performance metrics and error reports
-- General usage statistics (anonymous)
-- Device type and browser information (anonymous)
-
-We use privacy-focused analytics (Plausible Analytics) that does not track individual users or collect personal information.
-
 **Technical Information:**
 - Browser type and version
 - Operating system
@@ -53,11 +45,6 @@ We use privacy-focused analytics (Plausible Analytics) that does not track indiv
 - Backup your data to prevent loss
 - Provide account authentication and security
 
-### Analytics Data
-- Improve app performance and user experience
-- Understand feature usage and adoption
-- Identify and fix technical issues
-- Plan future development priorities
 
 ## Data Sharing and Disclosure
 
@@ -66,7 +53,6 @@ We do not sell, trade, or otherwise transfer your personal information to third 
 ### Service Providers
 - **Supabase:** Cloud database and authentication services (encrypted data only)
 - **Railway:** Hosting platform (no access to user data)
-- **Plausible Analytics:** Privacy-focused analytics (anonymous data only)
 
 ### Legal Requirements
 We may disclose your information if required by law or in response to valid legal process.
@@ -101,10 +87,6 @@ In the event of a merger, acquisition, or sale of assets, user data may be trans
 - Compatible with other reading tracking services
 - No vendor lock-in or proprietary formats
 
-### Analytics Opt-Out
-- Disable analytics tracking at any time
-- Retroactively remove collected analytics data
-- Preference stored locally and respected across sessions
 
 ## Data Retention
 
@@ -117,9 +99,6 @@ In the event of a merger, acquisition, or sale of assets, user data may be trans
 - Deleted within 30 days of account deletion request
 - Backup copies removed within 90 days
 
-### Analytics Data
-- Anonymous aggregated data retained for up to 2 years
-- Individual session data not stored or trackable
 
 ## Children's Privacy
 
@@ -138,7 +117,6 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 ### CCPA Compliance (California Users)
 - **Right to Know:** What personal information we collect and how it's used
 - **Right to Delete:** Request deletion of personal information
-- **Right to Opt-Out:** Opt-out of analytics and tracking
 - **Non-Discrimination:** Equal service regardless of privacy choices
 
 ## Third-Party Services
@@ -155,11 +133,6 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 - **Security:** Enterprise-grade infrastructure security
 - **Privacy Policy:** https://railway.app/legal/privacy
 
-### Plausible Analytics
-- **Privacy-First:** GDPR, CCPA, and PECR compliant
-- **No Cookies:** Doesn't use cookies or track personal data
-- **Anonymous:** Cannot identify individual users
-- **Privacy Policy:** https://plausible.io/privacy
 
 ## Cookies and Tracking
 
@@ -169,7 +142,6 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 - **No Tracking Cookies:** We do not use cookies for advertising or cross-site tracking
 
 ### Third-Party Cookies
-- Our analytics provider (Plausible) does not use cookies
 - Supabase may use technical cookies for authentication
 - No advertising or social media tracking cookies
 
@@ -205,4 +177,4 @@ We believe in transparency regarding our privacy practices:
 
 ---
 
-**Summary:** Puka Reading Tracker prioritizes your privacy by keeping most data on your device, using privacy-focused analytics, and giving you complete control over your information. We only collect what's necessary to provide the service, and you can opt out of any optional features at any time.
+**Summary:** Puka Reading Tracker prioritizes your privacy by keeping most data on your device and giving you complete control over your information. We only collect what's necessary to provide the service.
