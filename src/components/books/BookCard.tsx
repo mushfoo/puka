@@ -399,9 +399,9 @@ const BookCard: React.FC<BookCardProps> = ({
 
       {/* Additional Info */}
       <div className="flex justify-between items-center mt-3 text-xs text-text-secondary">
-        <span>Added {book.dateAdded.toLocaleDateString()}</span>
+        <span>Added {book.dateAdded.toLocaleDateString('en-GB')}</span>
         {book.status === 'finished' && book.dateFinished && (
-          <span>Finished {book.dateFinished.toLocaleDateString()}</span>
+          <span>Finished {book.dateFinished.toLocaleDateString('en-GB')}</span>
         )}
       </div>
 
