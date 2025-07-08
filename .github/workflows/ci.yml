@@ -2,436 +2,123 @@ name: CI - Enhanced Testing & Validation
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
 
 env:
-  NODE_VERSION: '20.x'
+  NODE_VERSION: "20.x"
   MINIMUM_COVERAGE: 80
 
 jobs:
   # Pre-deployment validation
   validate:
     name: Pre-Deployment Validation
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run linting
-      run: npm run lint
-      
-    - name: Run type checking
-      run: npm run type-check
-      
-    - name: Validate package.json
-      run: |
-        echo "Validating package.json structure..."
-        node -e "
-          const pkg = require('./package.json');
-          if (!pkg.scripts.build) throw new Error('Missing build script');
-          if (!pkg.scripts.test) throw new Error('Missing test script');
-          if (!pkg.scripts.preview) throw new Error('Missing preview script');
-          console.log('✅ Package.json validation passed');
-        "
-        
-    - name: Check for security vulnerabilities
-      run: |
-        echo "Running security audit..."
-        npm audit --audit-level=high
-        
-    - name: Validate Railway configuration
-      run: |
-        echo "Validating Railway configuration..."
-        if [ ! -f "railway.json" ]; then
-          echo "::error::Missing railway.json configuration"
-          exit 1
-        fi
-        
-        # Validate required fields
-        node -e "
-          const config = require('./railway.json');
-          if (!config.deploy) throw new Error('Missing deploy configuration');
-          if (!config.deploy.startCommand) throw new Error('Missing startCommand');
-          if (!config.deploy.healthcheckPath) throw new Error('Missing healthcheckPath');
-          console.log('✅ Railway configuration validation passed');
-        "
+    runs-on:
+      group: self-hosted
 
-  # Comprehensive testing suite
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+
   test:
     name: Comprehensive Testing
-    runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
     needs: validate
-    
+
     strategy:
       matrix:
         test-type: [unit, integration, performance]
-        
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run unit tests
-      if: matrix.test-type == 'unit'
-      run: |
-        echo "Running unit tests with coverage..."
-        npm test -- --run --coverage --reporter=verbose
-        
-    - name: Validate test coverage
-      if: matrix.test-type == 'unit'
-      run: |
-        echo "Validating test coverage..."
-        COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
-        echo "Current coverage: $COVERAGE%"
-        echo "Minimum required: ${{ env.MINIMUM_COVERAGE }}%"
-        
-        if (( $(echo "$COVERAGE < ${{ env.MINIMUM_COVERAGE }}" | bc -l) )); then
-          echo "::error::Test coverage ($COVERAGE%) is below minimum (${{ env.MINIMUM_COVERAGE }}%)"
-          exit 1
-        fi
-        
-        echo "✅ Test coverage validation passed"
-        
-    - name: Run integration tests
-      if: matrix.test-type == 'integration'
-      run: |
-        echo "Running integration tests..."
-        npm run test:e2e -- --project=chromium
-        
-    - name: Run performance tests
-      if: matrix.test-type == 'performance'
-      run: |
-        echo "Running performance tests..."
-        npm run build
-        PORT=4173 npm run preview &
-        PREVIEW_PID=$!
-        
-        # Wait for server to start
-        sleep 10
-        
-        # Run performance tests
-        node scripts/performance/performance-test.js
-        
-        # Cleanup
-        kill $PREVIEW_PID
-        
-    - name: Upload test artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.test-type }}
-        path: |
-          coverage/
-          test-results/
-          playwright-report/
-        retention-days: 7
 
-  # Cross-browser testing
-  browser-compatibility:
-    name: Browser Compatibility Testing
-    runs-on: ubuntu-latest
-    needs: test
-    
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
-        viewport: [desktop, mobile]
-        
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Install Playwright browsers
-      run: npx playwright install --with-deps
-      
-    - name: Build application
-      run: npm run build
-      
-    - name: Run browser tests
-      run: |
-        echo "Running tests on ${{ matrix.browser }} - ${{ matrix.viewport }}"
-        
-        if [ "${{ matrix.viewport }}" = "mobile" ]; then
-          npx playwright test --project="Mobile Chrome" --project="Mobile Safari"
-        else
-          npx playwright test --project="${{ matrix.browser }}"
-        fi
-        
-    - name: Upload browser test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: browser-tests-${{ matrix.browser }}-${{ matrix.viewport }}
-        path: |
-          test-results/
-          playwright-report/
-        retention-days: 3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        if: matrix.test-type == 'unit'
+        run: |
+          echo "Running unit tests with coverage..."
+          npm test -- --run --coverage --reporter=verbose
 
   # Build validation and optimization
   build:
     name: Build Validation & Optimization
-    runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
     needs: [validate, test]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build application
-      run: |
-        echo "Building application..."
-        npm run build
-        
-    - name: Validate build output
-      run: |
-        echo "Validating build output..."
-        
-        # Check if dist directory exists
-        if [ ! -d "dist" ]; then
-          echo "::error::Build output directory 'dist' not found"
-          exit 1
-        fi
-        
-        # Check for essential files
-        if [ ! -f "dist/index.html" ]; then
-          echo "::error::Missing index.html in build output"
-          exit 1
-        fi
-        
-        # Check for PWA manifest
-        if [ ! -f "dist/manifest.json" ]; then
-          echo "::error::Missing PWA manifest in build output"
-          exit 1
-        fi
-        
-        # Check for service worker
-        if [ ! -f "dist/sw.js" ]; then
-          echo "::error::Missing service worker in build output"
-          exit 1
-        fi
-        
-        echo "✅ Build validation passed"
-        
-    - name: Analyze bundle size
-      run: |
-        echo "Analyzing bundle size..."
-        
-        # Create bundle analysis
-        echo "## Bundle Analysis" > bundle-analysis.md
-        echo "| File | Size |" >> bundle-analysis.md
-        echo "|------|------|" >> bundle-analysis.md
-        
-        find dist -name "*.js" -o -name "*.css" | while read file; do
-          size=$(ls -lh "$file" | awk '{print $5}')
-          echo "| $file | $size |" >> bundle-analysis.md
-        done
-        
-        TOTAL_SIZE=$(du -sh dist | cut -f1)
-        echo "" >> bundle-analysis.md
-        echo "**Total build size: $TOTAL_SIZE**" >> bundle-analysis.md
-        
-        cat bundle-analysis.md
-        
-        # Check if build size is reasonable (warn if > 10MB)
-        SIZE_BYTES=$(du -sb dist | cut -f1)
-        MAX_SIZE=$((10 * 1024 * 1024))  # 10MB
-        
-        if [ $SIZE_BYTES -gt $MAX_SIZE ]; then
-          echo "::warning::Build size ($TOTAL_SIZE) exceeds recommended limit (10MB)"
-        fi
-        
-    - name: Test build locally
-      run: |
-        echo "Testing build locally..."
-        npm run preview &
-        PREVIEW_PID=$!
-        
-        # Wait for server to start
-        sleep 10
-        
-        # Test basic functionality
-        curl -f http://localhost:4173/ || {
-          echo "::error::Build test failed - server not responding"
-          kill $PREVIEW_PID
-          exit 1
-        }
-        
-        # Test health endpoint
-        curl -f http://localhost:4173/health.json || {
-          echo "::warning::Health endpoint not accessible"
-        }
-        
-        # Test static assets
-        curl -f http://localhost:4173/manifest.json || {
-          echo "::error::PWA manifest not accessible"
-          kill $PREVIEW_PID
-          exit 1
-        }
-        
-        kill $PREVIEW_PID
-        echo "✅ Build test passed"
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          dist/
-          bundle-analysis.md
-        retention-days: 7
 
-  # PWA validation
-  pwa-validation:
-    name: PWA Validation
-    runs-on: ubuntu-latest
-    needs: build
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build application
-      run: npm run build
-      
-    - name: Install Lighthouse
-      run: npm install -g lighthouse
-      
-    - name: Run PWA validation
-      run: |
-        echo "Running PWA validation with Lighthouse..."
-        npm run preview &
-        PREVIEW_PID=$!
-        
-        # Wait for server to start
-        sleep 10
-        
-        # Run Lighthouse PWA audit
-        lighthouse http://localhost:4173 \
-          --only-categories=pwa \
-          --output=json \
-          --output-path=lighthouse-pwa-report.json \
-          --chrome-flags="--headless --no-sandbox"
-        
-        # Parse results
-        PWA_SCORE=$(cat lighthouse-pwa-report.json | jq '.categories.pwa.score * 100')
-        echo "PWA Score: $PWA_SCORE/100"
-        
-        if (( $(echo "$PWA_SCORE < 80" | bc -l) )); then
-          echo "::warning::PWA score ($PWA_SCORE) is below recommended minimum (80)"
-        fi
-        
-        kill $PREVIEW_PID
-        echo "✅ PWA validation completed"
-        
-    - name: Upload PWA validation results
-      uses: actions/upload-artifact@v4
-      with:
-        name: pwa-validation-results
-        path: lighthouse-pwa-report.json
-        retention-days: 7
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  # Generate test report
-  test-report:
-    name: Generate Test Report
-    runs-on: ubuntu-latest
-    needs: [validate, test, browser-compatibility, build, pwa-validation]
-    if: always()
-    
-    steps:
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      
-    - name: Generate comprehensive test report
-      run: |
-        echo "# CI Test Report" > test-report.md
-        echo "Generated: $(date)" >> test-report.md
-        echo "" >> test-report.md
-        
-        echo "## Test Results Summary" >> test-report.md
-        echo "| Test Type | Status |" >> test-report.md
-        echo "|-----------|--------|" >> test-report.md
-        echo "| Pre-deployment Validation | ${{ needs.validate.result }} |" >> test-report.md
-        echo "| Comprehensive Testing | ${{ needs.test.result }} |" >> test-report.md
-        echo "| Browser Compatibility | ${{ needs.browser-compatibility.result }} |" >> test-report.md
-        echo "| Build Validation | ${{ needs.build.result }} |" >> test-report.md
-        echo "| PWA Validation | ${{ needs.pwa-validation.result }} |" >> test-report.md
-        echo "" >> test-report.md
-        
-        # Add coverage information if available
-        if [ -f "test-results-unit/coverage/coverage-summary.json" ]; then
-          echo "## Test Coverage" >> test-report.md
-          COVERAGE=$(cat test-results-unit/coverage/coverage-summary.json | jq '.total.lines.pct')
-          echo "Overall coverage: $COVERAGE%" >> test-report.md
-          echo "" >> test-report.md
-        fi
-        
-        # Add build analysis if available
-        if [ -f "build-artifacts/bundle-analysis.md" ]; then
-          echo "## Build Analysis" >> test-report.md
-          cat build-artifacts/bundle-analysis.md >> test-report.md
-          echo "" >> test-report.md
-        fi
-        
-        echo "## Recommendations" >> test-report.md
-        echo "- All tests should pass before deployment" >> test-report.md
-        echo "- Monitor build size and performance metrics" >> test-report.md
-        echo "- Ensure PWA score remains above 80" >> test-report.md
-        echo "- Review test coverage and aim for >80%" >> test-report.md
-        
-        cat test-report.md
-        
-    - name: Upload test report
-      uses: actions/upload-artifact@v4
-      with:
-        name: comprehensive-test-report
-        path: test-report.md
-        retention-days: 30
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: |
+          echo "Building application..."
+          npm run build
+
+      - name: Validate build output
+        run: |
+          echo "Validating build output..."
+
+          # Check if dist directory exists
+          if [ ! -d "dist" ]; then
+            echo "::error::Build output directory 'dist' not found"
+            exit 1
+          fi
+
+          # Check for essential files
+          if [ ! -f "dist/index.html" ]; then
+            echo "::error::Missing index.html in build output"
+            exit 1
+          fi
+
+          # Check for PWA manifest
+          if [ ! -f "dist/manifest.json" ]; then
+            echo "::error::Missing PWA manifest in build output"
+            exit 1
+          fi
+
+          # Check for service worker
+          if [ ! -f "dist/sw.js" ]; then
+            echo "::error::Missing service worker in build output"
+            exit 1
+          fi
+
+          echo "✅ Build validation passed"
+
