@@ -1,4 +1,4 @@
-name: CI - Enhanced Testing & Validation
+name: CI - Build and Test
 
 on:
   pull_request:
@@ -121,4 +121,3 @@ jobs:
           fi
 
           echo "✅ Build validation passed"
-
