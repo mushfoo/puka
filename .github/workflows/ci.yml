@@ -6,6 +6,11 @@ on:
   push:
     branches: [main]
 
+# Prevent redundant CI runs for rapid pushes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: "20.x"
   MINIMUM_COVERAGE: 80

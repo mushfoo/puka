@@ -16,6 +16,11 @@ on:
           - 'true'
           - 'false'
 
+# Prevent concurrent migrations to avoid database conflicts
+concurrency:
+  group: supabase-migration
+  cancel-in-progress: false
+
 jobs:
   migrate:
     name: Run Database Migrations
