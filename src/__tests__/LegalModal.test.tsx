@@ -132,7 +132,7 @@ describe('LegalModal Component', () => {
     
     expect(screen.getByText('Data We Store Locally')).toBeInTheDocument()
     expect(screen.getByText('Cloud Sync (Optional)')).toBeInTheDocument()
-    expect(screen.getByText('Analytics (With Your Consent)')).toBeInTheDocument()
+    expect(screen.getByText('Your Rights')).toBeInTheDocument()
     expect(screen.getByText('What We Don\'t Collect')).toBeInTheDocument()
   })
 
