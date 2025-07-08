@@ -29,8 +29,7 @@ jobs:
   build:
     name: Build & Optimize
     runs-on:
-      group:
-        - self-hosted
+      group: self-hosted
     needs: [test, security]
 
     steps:
@@ -63,7 +62,8 @@ jobs:
   # Run Supabase migrations
   migrate:
     name: Supabase Migrations
-    runs-on: ubuntu-latest
+    runs-on: 
+      group: self-hosted
     needs: build
     if: github.event.inputs.skip_migrations != 'true'
 
@@ -189,7 +189,8 @@ jobs:
   # Verify deployment health
   verify:
     name: Verify Deployment
-    runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
     needs: deploy
 
     steps:
