@@ -50,7 +50,6 @@ If you choose to create an account and enable cloud synchronization:
 - Backup your data to prevent loss
 - Provide account authentication and security
 
-
 ## Data Sharing and Disclosure
 
 We do not sell, trade, or otherwise transfer your personal information to third parties, except:
@@ -99,7 +98,6 @@ In the event of a merger, acquisition, or sale of assets, user data may be trans
 - Compatible with other reading tracking services
 - No vendor lock-in or proprietary formats
 
-
 ## Data Retention
 
 ### Local Data
@@ -112,7 +110,6 @@ In the event of a merger, acquisition, or sale of assets, user data may be trans
 - Retained while your account is active
 - Deleted within 30 days of account deletion request
 - Backup copies removed within 90 days
-
 
 ## Children's Privacy
 
@@ -150,7 +147,6 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 - **Data Access:** No access to application data
 - **Security:** Enterprise-grade infrastructure security
 - **Privacy Policy:** https://railway.app/legal/privacy
-
 
 ## Cookies and Tracking
 
@@ -197,5 +193,4 @@ We believe in transparency regarding our privacy practices:
 
 ---
 
-**Summary:** Puka Reading Tracker prioritizes your privacy by keeping most data on your device and giving you complete control over your information. We only collect what's necessary to provide the service.
 **Summary:** Puka Reading Tracker prioritizes your privacy by keeping most data on your device and giving you complete control over your information. We only collect what's necessary to provide the service.
