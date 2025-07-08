@@ -50,6 +50,7 @@ Build consistent reading habits with Puka's motivational streak tracking system.
 - System tracks which days you've marked as reading days
 - Calculates consecutive days automatically
 - Maintains streak history for analytics
+- Maintains streak history for tracking
 
 **What Counts as Reading:**
 - Any amount of reading time
@@ -227,6 +228,7 @@ Build consistent reading habits with Puka's motivational streak tracking system.
 ## Advanced Streak Features
 
 ### Streak Analytics
+### Streak Insights
 
 **Pattern Recognition:**
 - Identify your best streak-building periods

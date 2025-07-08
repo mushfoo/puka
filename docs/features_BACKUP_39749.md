@@ -312,8 +312,11 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 
 **Privacy Features:**
 - **No Cloud Storage** - Data never leaves device
+<<<<<<< HEAD
 - **No Tracking** - No analytics or tracking
+=======
 - **No Tracking** - No data collection or tracking
+>>>>>>> 51e433d3b7b5513598ebe7da47ba1b9be4fe3925
 - **No Accounts** - No registration required
 - **Full Control** - Complete data ownership
 

@@ -131,6 +131,9 @@ Master the progress tracking features in Puka Reading Tracker to monitor your re
 ## Reading Analytics
 
 ### Progress Insights
+## Progress Insights
+
+### Reading Patterns
 
 **Speed Tracking:**
 - Monitor how quickly you complete books

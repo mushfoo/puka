@@ -1,0 +1,233 @@
+name: Deploy to Railway
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      skip_migrations:
+        description: "Skip Supabase migrations"
+        type: boolean
+        default: false
+      environment:
+        description: "Deployment environment"
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20.x"
+  RAILWAY_ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+
+jobs:
+  build:
+    name: Build & Optimize
+    runs-on:
+      group: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          VITE_APP_ENV: ${{ env.RAILWAY_ENVIRONMENT }}
+          VITE_APP_VERSION: ${{ github.sha }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 7
+
+  # Run Supabase migrations
+  migrate:
+    name: Supabase Migrations
+    runs-on: 
+      group: self-hosted
+    needs: build
+    if: github.event.inputs.skip_migrations != 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check migration status
+        run: |
+          echo "Checking migration status..."
+          supabase migration list --db-url "${{ secrets.SUPABASE_DB_URL }}"
+
+      - name: Run migrations
+        run: |
+          echo "Running migrations..."
+          supabase migration up --db-url "${{ secrets.SUPABASE_DB_URL }}"
+
+      - name: Validate schema
+        run: |
+          echo "Validating database schema..."
+          supabase db diff --db-url "${{ secrets.SUPABASE_DB_URL }}" --schema public
+
+      - name: Generate TypeScript types
+        run: |
+          echo "Generating TypeScript types..."
+          supabase gen types typescript --db-url "${{ secrets.SUPABASE_DB_URL }}" > src/types/supabase.ts
+
+      - name: Commit type updates
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update Supabase TypeScript types [skip ci]"
+          file_pattern: src/types/supabase.ts
+          skip_checkout: true
+
+  # Deploy to Railway
+  deploy:
+    name: Deploy to Railway
+    runs-on:
+      group: self-hosted
+    needs: [build, migrate]
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: ${{ steps.deploy.outputs.deployment_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Configure Railway
+        run: |
+          railway login --token "${{ secrets.RAILWAY_TOKEN }}"
+          railway link "${{ secrets.RAILWAY_PROJECT_ID }}"
+          railway environment "${{ env.RAILWAY_ENVIRONMENT }}"
+
+      - name: Set deployment variables
+        run: |
+          railway variables set \
+            NODE_ENV=production \
+            VITE_APP_ENV="${{ env.RAILWAY_ENVIRONMENT }}" \
+            VITE_APP_VERSION="${{ github.sha }}" \
+            VITE_SUPABASE_URL="${{ secrets.VITE_SUPABASE_URL }}" \
+            VITE_SUPABASE_ANON_KEY="${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
+            DEPLOYMENT_ID="${{ github.run_id }}-${{ github.run_number }}" \
+            GIT_COMMIT_SHA="${{ github.sha }}" \
+            GIT_COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+
+      - name: Deploy to Railway
+        id: deploy
+        run: |
+          echo "Deploying to Railway..."
+          DEPLOYMENT_OUTPUT=$(railway up --detach)
+          echo "$DEPLOYMENT_OUTPUT"
+
+          # Extract deployment URL
+          DEPLOYMENT_URL=$(echo "$DEPLOYMENT_OUTPUT" | grep -oP 'https://[^\s]+' | head -1)
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+
+          # Get deployment ID
+          DEPLOYMENT_ID=$(railway status --json | jq -r '.deployment.id')
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
+      - name: Monitor deployment
+        run: |
+          echo "Monitoring deployment progress..."
+          railway logs --deployment "${{ steps.deploy.outputs.deployment_id }}" --follow &
+          LOG_PID=$!
+
+          # Wait for deployment to complete (max 10 minutes)
+          TIMEOUT=600
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(railway status --json | jq -r '.deployment.status')
+            echo "Deployment status: $STATUS"
+            
+            if [ "$STATUS" = "SUCCESS" ]; then
+              echo "Deployment completed successfully!"
+              kill $LOG_PID 2>/dev/null || true
+              exit 0
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "::error::Deployment failed!"
+              kill $LOG_PID 2>/dev/null || true
+              exit 1
+            fi
+            
+            sleep 10
+            ELAPSED=$((ELAPSED + 10))
+          done
+
+          echo "::error::Deployment timed out after 10 minutes"
+          kill $LOG_PID 2>/dev/null || true
+          exit 1
+
+  # Verify deployment health
+  verify:
+    name: Verify Deployment
+    runs-on:
+      group: self-hosted
+    needs: deploy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get deployment URL
+        id: get_url
+        run: |
+          railway login --token "${{ secrets.RAILWAY_TOKEN }}"
+          railway link "${{ secrets.RAILWAY_PROJECT_ID }}"
+          railway environment "${{ env.RAILWAY_ENVIRONMENT }}"
+
+          DEPLOYMENT_URL=$(railway status --json | jq -r '.deployment.staticUrl // .deployment.url')
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+
+      - name: Wait for service to be ready
+        run: |
+          echo "Waiting for service to be ready..."
+          sleep 30
+
+      - name: Health check
+        run: |
+          DEPLOYMENT_URL="${{ steps.get_url.outputs.deployment_url }}"
+          echo "Checking health at: $DEPLOYMENT_URL"
+
+          for i in {1..10}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOYMENT_URL")
+            echo "Health check attempt $i: HTTP $HTTP_STATUS"
+            
+            if [ "$HTTP_STATUS" = "200" ]; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            
+            sleep 10
+          done
+
+          echo "::error::Health check failed after 10 attempts"
+          exit 1
+

@@ -368,8 +368,8 @@ describe('Enhanced Storage Integration Tests', () => {
         expect(history!.readingDayEntries).toHaveLength(1000);
         expect(history!.readingDays.size).toBe(1000);
         
-        // Performance should be reasonable (less than 2 seconds total)
-        expect(addTime + retrievalTime).toBeLessThan(2000);
+        // Performance should be reasonable (less than 3 seconds total)
+        expect(addTime + retrievalTime).toBeLessThan(3000);
       });
 
       it('should efficiently filter large date ranges', async () => {

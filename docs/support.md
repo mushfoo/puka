@@ -141,6 +141,7 @@ Device: Samsung Galaxy S21 (Android 11)
 **Features We Won't Add:**
 - Social features (sharing, following, etc.)
 - Complex analytics or statistics
+- Complex statistics or reporting
 - Account systems or cloud storage
 - Advertising or monetization features
 
@@ -234,6 +235,7 @@ Device: Samsung Galaxy S21 (Android 11)
 - All data stays on your device
 - No cloud storage or accounts required
 - No tracking or analytics
+- No data collection or tracking
 - Full control over your information
 
 **Data Sharing:**

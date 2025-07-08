@@ -154,7 +154,7 @@ Learn how to efficiently manage your book collection in Puka Reading Tracker.
 - Consistent categorization helps with discovery
 - Use for reading challenges or goals
 
-### Reading Analytics
+### Reading Insights
 
 **Progress Insights:**
 - Track reading speed trends
