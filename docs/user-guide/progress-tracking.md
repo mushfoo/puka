@@ -146,9 +146,6 @@ Master the progress tracking features in Puka Reading Tracker to monitor your re
 - Maintain momentum on all active books
 - Finish books to maintain motivation
 
-## Reading Analytics
-
-### Progress Insights
 ## Progress Insights
 
 ### Reading Patterns

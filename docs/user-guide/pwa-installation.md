@@ -319,7 +319,6 @@ Install Puka Reading Tracker as a Progressive Web App (PWA) for the best mobile 
 
 - Encrypted local storage
 - Secure data transmission
-- No tracking or analytics
 - No data collection or tracking
 - Privacy by design
 

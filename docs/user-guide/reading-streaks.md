@@ -261,7 +261,6 @@ Build consistent reading habits with Puka's motivational streak tracking system.
 
 ## Advanced Streak Features
 
-### Streak Analytics
 ### Streak Insights
 
 **Pattern Recognition:**

@@ -98,7 +98,7 @@ Complete user documentation and support resources for Puka Reading Tracker.
 **Privacy-first design:**
 
 - **🔒 Local Storage**: All data stays on your device
-- **🚫 No Tracking**: No analytics or data collection
+- **🚫 No Tracking**: No data collection or tracking
 - **🔐 No Accounts**: No registration or sign-up required
 - **💾 Full Control**: Export your data anytime
 - **🛡️ Secure**: No external data transmission
