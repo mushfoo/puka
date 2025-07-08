@@ -137,7 +137,7 @@ const TermsContent: React.FC = () => (
     <ul>
       <li>Most data stays on your device</li>
       <li>Cloud sync is optional and encrypted</li>
-      <li>We use privacy-focused analytics</li>
+      <li>No data collection or tracking</li>
       <li>See our Privacy Policy for complete details</li>
     </ul>
 
@@ -183,15 +183,6 @@ const PrivacyContent: React.FC = () => (
       <li>Account creation and login timestamps</li>
     </ul>
 
-    <h4>Analytics (With Your Consent)</h4>
-    <p>We use privacy-focused analytics that collect:</p>
-    <ul>
-      <li>Anonymous page views and feature usage</li>
-      <li>Performance metrics and error reports</li>
-      <li>General usage statistics (no personal data)</li>
-    </ul>
-    <p>You can opt out of analytics at any time in the app settings.</p>
-
     <h4>What We Don't Collect</h4>
     <ul>
       <li>No tracking across websites</li>
@@ -204,7 +195,7 @@ const PrivacyContent: React.FC = () => (
     <ul>
       <li>Export all your data at any time</li>
       <li>Delete your account and data completely</li>
-      <li>Opt out of analytics and tracking</li>
+      <li>Complete privacy protection</li>
       <li>Use the service without creating an account</li>
     </ul>
 
