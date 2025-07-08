@@ -1,4 +1,4 @@
-name: CI - Enhanced Testing & Validation
+name: CI - Build and Test
 
 on:
   pull_request:
@@ -6,12 +6,16 @@ on:
   push:
     branches: [main]
 
+# Prevent redundant CI runs for rapid pushes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: "20.x"
   MINIMUM_COVERAGE: 80
 
 jobs:
-  # Pre-deployment validation
   validate:
     name: Pre-Deployment Validation
     runs-on:
@@ -44,10 +48,6 @@ jobs:
       group: self-hosted
     needs: validate
 
-    strategy:
-      matrix:
-        test-type: [unit, integration, performance]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,7 +62,6 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        if: matrix.test-type == 'unit'
         run: |
           echo "Running unit tests with coverage..."
           npm test -- --run --coverage --reporter=verbose
@@ -121,4 +120,3 @@ jobs:
           fi
 
           echo "✅ Build validation passed"
-
