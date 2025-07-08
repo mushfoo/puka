@@ -61,7 +61,7 @@ jobs:
   # Run Supabase migrations
   migrate:
     name: Supabase Migrations
-    ruus-on:
+    runs-on:
       group: self-hosted
     needs: build
     if: github.event.inputs.skip_migrations != 'true'
