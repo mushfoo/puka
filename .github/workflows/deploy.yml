@@ -1,4 +1,4 @@
-name: Deploy to Railway
+name: Deploy
 
 on:
   push:
@@ -61,7 +61,7 @@ jobs:
   # Run Supabase migrations
   migrate:
     name: Supabase Migrations
-    runs-on: 
+    ruus-on:
       group: self-hosted
     needs: build
     if: github.event.inputs.skip_migrations != 'true'
@@ -230,4 +230,3 @@ jobs:
 
           echo "::error::Health check failed after 10 attempts"
           exit 1
-
