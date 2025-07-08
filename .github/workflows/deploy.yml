@@ -77,8 +77,7 @@ jobs:
 
       - name: Check migration status
         run: |
-          PROJECT_ID=$(echo "${{ secrets.SUPABASE_DB_URL }}" | sed -n
-          's/.*db\.\([^.]*\)\.supabase\.co.*/\1/p')
+          PROJECT_ID=$(echo "${{ secrets.SUPABASE_DB_URL }}" | sed -n 's/.*db\.\([^.]*\)\.supabase\.co.*/\1/p')
           supabase link --project-ref $PROJECT_ID
           supabase migration list
         env:
