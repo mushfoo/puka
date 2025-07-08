@@ -1,20 +1,22 @@
 {
   "name": "puka",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0 --port $PORT",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "railway:build": "npm run build",
+    "railway:start": "npm run preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.3",
@@ -22,7 +24,8 @@
     "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-window": "^1.8.11"
+    "react-window": "^1.8.11",
+    "terser": "^5.43.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.1",
