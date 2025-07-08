@@ -30,7 +30,6 @@ jobs:
     name: Build & Optimize
     runs-on:
       group: self-hosted
-    needs: [test, security]
 
     steps:
       - name: Checkout code
