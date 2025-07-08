@@ -43,6 +43,10 @@ jobs:
         supabase link --project-ref $PROJECT_ID
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+          --password ${{ secrets.SUPABASE_DB_PASSWORD }}
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Run migrations (Dry Run)
       if: github.event.inputs.dry_run == 'true'
@@ -51,6 +55,7 @@ jobs:
         supabase db push --dry-run
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Run migrations
       if: github.event.inputs.dry_run != 'true'
@@ -67,6 +72,14 @@ jobs:
           > src/types/database.types.ts
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        
+    - name: Generate TypeScript types
+      run: |
+        supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_ID }} \
+          > src/types/database.types.ts
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Commit type updates
       uses: stefanzweifel/git-auto-commit-action@v5
@@ -81,6 +94,7 @@ jobs:
         supabase migration list
       env:
         SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Create migration summary
       if: success()

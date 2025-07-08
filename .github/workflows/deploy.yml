@@ -32,6 +32,7 @@ jobs:
       group:
         - self-hosted
     needs: [test, security]
+      group: self-hosted
 
     steps:
       - name: Checkout code
@@ -64,6 +65,8 @@ jobs:
   migrate:
     name: Supabase Migrations
     runs-on: ubuntu-latest
+    runs-on: 
+      group: self-hosted
     needs: build
     if: github.event.inputs.skip_migrations != 'true'
 
@@ -190,6 +193,8 @@ jobs:
   verify:
     name: Verify Deployment
     runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
     needs: deploy
 
     steps:
