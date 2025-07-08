@@ -125,7 +125,7 @@ jobs:
       run: |
         echo "Running performance tests..."
         npm run build
-        npm run preview &
+        PORT=4173 npm run preview &
         PREVIEW_PID=$!
         
         # Wait for server to start
