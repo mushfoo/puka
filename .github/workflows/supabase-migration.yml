@@ -45,9 +45,10 @@ jobs:
         # Extract project ID from DB URL
         PROJECT_ID=$(echo "${{ secrets.SUPABASE_DB_URL }}" | sed -n 's/.*db\.\([^.]*\)\.supabase\.co.*/\1/p')
         echo "Linking to project: $PROJECT_ID"
-        supabase link --project-ref $PROJECT_ID
+        supabase link --project-ref $PROJECT_ID --branch production
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         
     - name: Run migrations (Dry Run)
       if: github.event.inputs.dry_run == 'true'
@@ -55,7 +56,7 @@ jobs:
         echo "Running migrations in dry-run mode..."
         supabase db push --dry-run
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Run migrations
       if: github.event.inputs.dry_run != 'true'
@@ -63,7 +64,7 @@ jobs:
         echo "Applying database migrations..."
         supabase db push
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Generate TypeScript types
       run: |
@@ -71,7 +72,7 @@ jobs:
         supabase gen types typescript --project-id $PROJECT_ID \
           > src/types/database.types.ts
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Commit type updates
       uses: stefanzweifel/git-auto-commit-action@v5
@@ -85,7 +86,7 @@ jobs:
         echo "Checking migration status..."
         supabase migration list
       env:
-        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         
     - name: Create migration summary
       if: success()

@@ -4,6 +4,15 @@
 # working directory name when running `supabase init`.
 project_id = "puka"
 
+# Remote project configurations for different environments
+[remotes.production]
+# This will be populated by the actual project ref from SUPABASE_DB_URL
+project_id = "env(SUPABASE_PROJECT_REF)"
+
+[remotes.staging]
+# For future staging environment
+project_id = "env(SUPABASE_STAGING_PROJECT_REF)"
+
 [api]
 enabled = true
 # Port to use for the API URL.
