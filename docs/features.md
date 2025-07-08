@@ -9,12 +9,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Main Interface
 
 **Dashboard Layout:**
+
 - **Reading Streak Display** - Shows current and longest streaks with fire emoji
 - **Filter Tabs** - Switch between book statuses (All, Want to Read, Currently Reading, Finished)
 - **Book Grid** - Visual cards showing your books with progress bars
 - **Action Buttons** - Add Book, Import, Export functions
 
 **Visual Elements:**
+
 - Clean, minimal design focused on reading
 - Mobile-first responsive layout
 - Touch-friendly interface elements
@@ -25,6 +27,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Empty State](../screenshots/01-empty-state.png)
 
 **When You Start:**
+
 - Welcoming empty state with clear next steps
 - Prominent "Add Book" button to get started
 - Clean interface that isn't intimidating
@@ -37,6 +40,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Add Book Form](../screenshots/05-add-book-form.png)
 
 **Add Book Interface:**
+
 - **Title & Author** - Required fields for book identification
 - **Status Selection** - Choose reading status (Want to Read, Currently Reading, Finished)
 - **Optional Fields** - Notes, ISBN, genre, pages, rating
@@ -54,6 +58,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Book Cards
 
 **Book Card Elements:**
+
 - **Title and Author** - Prominently displayed
 - **Progress Bar** - Visual progress indicator (green = progress)
 - **Status Badge** - Color-coded reading status
@@ -61,6 +66,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 - **Notes Preview** - Shows personal notes if added
 
 **Progress Indicators:**
+
 - **0%** - Just started or planning to read
 - **1-99%** - In progress with visual bar
 - **100%** - Completed with full green bar
@@ -69,6 +75,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Editing Books
 
 **Edit Functionality:**
+
 - **All Fields Editable** - Change any book information
 - **Status Changes** - Move books between statuses
 - **Progress Updates** - Adjust reading progress
@@ -81,12 +88,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Progress Methods
 
 **Progress Slider:**
+
 - **Drag to Set** - Precise progress control
 - **Visual Feedback** - Real-time percentage display
 - **Smooth Operation** - Responsive slider control
 - **Instant Save** - Progress saves automatically
 
 **Quick Actions:**
+
 - **+10% Button** - Standard reading session increment
 - **+25% Button** - Longer reading session increment
 - **Done ✓ Button** - Instantly mark as complete
@@ -95,6 +104,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Progress Visualization
 
 **Visual Progress:**
+
 - **Green Progress Bars** - Clear completion visualization
 - **Percentage Display** - Exact progress shown
 - **Status Colors** - Different colors for different statuses
@@ -107,6 +117,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Streak Display
 
 **Desktop Streak Display:**
+
 - **Fire Emoji (🔥)** - Indicates active reading streak
 - **Current Streak** - Days of consecutive reading
 - **Longest Streak** - Personal best achievement
@@ -115,6 +126,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Mobile Streak](../screenshots/02-prominent-streak-mobile.png)
 
 **Mobile Streak Display:**
+
 - **Mobile-Optimized** - Fits perfectly on mobile screens
 - **Touch-Friendly** - Easy to interact with on mobile
 - **Same Information** - Current and longest streaks
@@ -125,12 +137,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Streak Update](../screenshots/03-progress-update-streak.png)
 
 **"Read Today" Button:**
+
 - **Prominent Button** - Easy to find and click
 - **One-Click Marking** - Instant reading day tracking
 - **Visual Feedback** - Confirmation of streak update
 - **Streak Building** - Encourages consistent reading
 
 **Streak Behavior:**
+
 - **Consecutive Days** - Must read each day to maintain
 - **Automatic Calculation** - System tracks streaks automatically
 - **Reset on Miss** - Missing a day resets current streak
@@ -143,12 +157,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Status Filtering
 
 **Filter Tabs:**
+
 - **All** - Shows every book regardless of status
 - **Want to Read** - Books planned for future reading
 - **Currently Reading** - Books actively being read
 - **Finished** - Completed books
 
 **Visual Indicators:**
+
 - **Active Tab** - Highlighted current filter
 - **Count Badges** - Shows number of books in each status
 - **Clean Design** - Easy to understand and use
@@ -157,12 +173,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Search Functionality
 
 **Search Features:**
+
 - **Real-Time Search** - Results update as you type
 - **Multiple Fields** - Searches titles, authors, and notes
 - **Case Insensitive** - No need to worry about capitalization
 - **Instant Results** - No delay in search results
 
 **Search Behavior:**
+
 - **Partial Matches** - Finds books with partial text matches
 - **Cross-Status** - Searches across all book statuses
 - **Preserved Filtering** - Search works within selected filters
@@ -175,11 +193,13 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Export Options
 
 **Export Formats:**
+
 - **Puka Native (JSON)** - Complete data preservation
 - **CSV Format** - Spreadsheet-compatible format
 - **Goodreads Compatible** - Direct import to Goodreads
 
 **Export Process:**
+
 1. **Click Export** - Access export options
 2. **Select Format** - Choose appropriate format
 3. **Download File** - Save to device
@@ -188,11 +208,13 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Import Features
 
 **Import Sources:**
+
 - **Goodreads** - Direct import from Goodreads CSV
 - **Custom CSV** - Any CSV with book data
 - **Puka JSON** - Restore from Puka backups
 
 **Import Process:**
+
 1. **Select File** - Choose file to import
 2. **Preview Data** - Review before importing
 3. **Confirm Import** - Add books to library
@@ -201,6 +223,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Export Mobile](../screenshots/11-export-modal-mobile.png)
 
 **Mobile Export:**
+
 - **Mobile-Optimized** - Touch-friendly interface
 - **Same Options** - All export formats available
 - **Easy Access** - Simple tap to export
@@ -213,12 +236,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Mobile Optimization
 
 **Mobile Design:**
+
 - **Mobile-First** - Designed for mobile use
 - **Touch-Friendly** - Minimum 44px touch targets
 - **Responsive Layout** - Adapts to screen size
 - **Fast Performance** - Optimized for mobile devices
 
 **Mobile Features:**
+
 - **Swipe Gestures** - Natural mobile interactions
 - **One-Handed Use** - Comfortable single-hand operation
 - **Offline Support** - Full functionality without internet
@@ -227,6 +252,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ![Mobile 375px](../screenshots/04-mobile-view-375px.png)
 
 **Small Screen Support:**
+
 - **375px Viewport** - Optimized for smallest phones
 - **Compact Layout** - Efficient use of screen space
 - **Readable Text** - Appropriate font sizes
@@ -237,6 +263,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Keyboard Shortcuts
 
 **Available Shortcuts:**
+
 - **Ctrl/Cmd + N** - Add new book
 - **Ctrl/Cmd + E** - Export data
 - **Ctrl/Cmd + I** - Import data
@@ -245,6 +272,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 - **Escape** - Close modals/dialogs
 
 **Accessibility:**
+
 - **Full Keyboard Navigation** - Use without mouse
 - **Screen Reader Support** - Works with assistive technology
 - **Focus Indicators** - Clear focus visualization
@@ -253,12 +281,14 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Gesture Controls
 
 **Touch Gestures:**
+
 - **Swipe Left/Right** - Navigate between books
 - **Long Press** - Access quick actions
 - **Pinch to Zoom** - Zoom interface if needed
 - **Pull to Refresh** - Refresh data
 
 **Gesture Feedback:**
+
 - **Visual Feedback** - Shows gesture recognition
 - **Haptic Feedback** - Tactile response on supported devices
 - **Smooth Animations** - Fluid gesture responses
@@ -269,6 +299,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Fast Loading
 
 **Performance Optimizations:**
+
 - **Instant Startup** - App loads in under 1 second
 - **Smooth Interactions** - All responses under 50ms
 - **Efficient Rendering** - Optimized for large libraries
@@ -277,6 +308,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Offline Capability
 
 **Offline Features:**
+
 - **Complete Offline Use** - No internet required
 - **Data Persistence** - All data stored locally
 - **Offline Sync** - Changes sync when online
@@ -285,6 +317,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Battery Optimization
 
 **Power Efficiency:**
+
 - **Minimal Background Activity** - Doesn't drain battery
 - **Efficient Animations** - Hardware-accelerated
 - **Dark Mode Support** - Easier on OLED displays
@@ -295,6 +328,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Data Storage
 
 **Storage Features:**
+
 - **Local Storage** - All data stays on device
 - **Browser Storage** - Uses browser's local storage
 - **Persistent Data** - Survives browser restarts
@@ -303,6 +337,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Data Backup
 
 **Backup Features:**
+
 - **Export Options** - Multiple backup formats
 - **Automated Reminders** - Reminds to backup regularly
 - **Verification** - Confirms backup integrity
@@ -311,8 +346,8 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Data Privacy
 
 **Privacy Features:**
+
 - **No Cloud Storage** - Data never leaves device
-- **No Tracking** - No analytics or tracking
 - **No Tracking** - No data collection or tracking
 - **No Accounts** - No registration required
 - **Full Control** - Complete data ownership
@@ -322,6 +357,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Theme Support
 
 **Visual Customization:**
+
 - **System Theme** - Follows device theme
 - **Light Mode** - Bright, clean interface
 - **Dark Mode** - Easy on eyes for night reading
@@ -330,6 +366,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Reading Preferences
 
 **Personalization:**
+
 - **Progress Increments** - Customize quick action percentages
 - **Streak Goals** - Set personal reading goals
 - **Book Organization** - Custom sorting and filtering
@@ -340,6 +377,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Browser Integration
 
 **Browser Features:**
+
 - **Bookmark Support** - Easy bookmarking
 - **Share Integration** - Share reading progress
 - **File Associations** - Handle book files
@@ -348,6 +386,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### System Integration
 
 **OS Integration:**
+
 - **Notifications** - Reading reminders (if enabled)
 - **File System** - Access to device files
 - **Clipboard** - Copy/paste book information
@@ -358,6 +397,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Screen Reader Support
 
 **Accessibility Features:**
+
 - **ARIA Labels** - Proper screen reader support
 - **Focus Management** - Logical tab order
 - **Keyboard Navigation** - Full keyboard access
@@ -366,6 +406,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Motor Accessibility
 
 **Motor Support:**
+
 - **Large Touch Targets** - Minimum 44px targets
 - **Gesture Alternatives** - Multiple ways to interact
 - **Voice Navigation** - Voice control support
@@ -374,6 +415,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Cognitive Accessibility
 
 **Cognitive Support:**
+
 - **Simple Interface** - Easy to understand
 - **Clear Language** - Plain language throughout
 - **Consistent Navigation** - Predictable interface
@@ -384,6 +426,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Standards Compliance
 
 **Web Standards:**
+
 - **HTML5** - Modern web standards
 - **CSS3** - Latest styling capabilities
 - **JavaScript ES6+** - Modern JavaScript features
@@ -392,6 +435,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Browser Compatibility
 
 **Compatibility:**
+
 - **Modern Browsers** - Works on all modern browsers
 - **Legacy Support** - Graceful degradation
 - **Regular Updates** - Keeps up with browser changes
@@ -400,6 +444,7 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ### Performance Monitoring
 
 **Monitoring:**
+
 - **Performance Metrics** - Tracks app performance
 - **Error Reporting** - Identifies issues quickly
 - **User Feedback** - Incorporates user suggestions
@@ -408,6 +453,8 @@ Complete guide to all features in Puka Reading Tracker with visual examples.
 ---
 
 **Next Steps:**
+
 - **[Getting Started](user-guide/getting-started.md)** - Begin using these features
 - **[FAQ](faq.md)** - Find answers to common questions
 - **[Support](support.md)** - Get help when needed
+

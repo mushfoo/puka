@@ -29,9 +29,6 @@ jobs:
   build:
     name: Build & Optimize
     runs-on:
-      group:
-        - self-hosted
-    needs: [test, security]
       group: self-hosted
 
     steps:
@@ -64,8 +61,7 @@ jobs:
   # Run Supabase migrations
   migrate:
     name: Supabase Migrations
-    runs-on: ubuntu-latest
-    runs-on: 
+    ruus-on:
       group: self-hosted
     needs: build
     if: github.event.inputs.skip_migrations != 'true'
@@ -192,7 +188,6 @@ jobs:
   # Verify deployment health
   verify:
     name: Verify Deployment
-    runs-on: ubuntu-latest
     runs-on:
       group: self-hosted
     needs: deploy
@@ -235,4 +230,3 @@ jobs:
 
           echo "::error::Health check failed after 10 attempts"
           exit 1
-
