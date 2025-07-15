@@ -56,7 +56,7 @@ npm run db:generate
 
 # Run Prisma migrations
 echo "🔄 Running database migrations..."
-npm run db:migrate
+npm run db:migrate:dev
 
 echo "✅ Database setup complete!"
 echo ""
