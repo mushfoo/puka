@@ -7,8 +7,7 @@ echo "SCRIPT START: migrate-production.sh is executing"
 echo "SCRIPT START: Current directory: $(pwd)"
 echo "SCRIPT START: Script args: $@"
 
-# Temporarily disabled set -e for debugging
-# set -e
+set -e
 
 # Configuration
 SCHEMA_PATH="./prisma/schema.prisma"
