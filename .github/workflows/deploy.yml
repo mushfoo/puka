@@ -12,37 +12,30 @@ concurrency:
 jobs:
   deploy:
     name: Deploy to Railway
-    runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
     environment: production
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Deploy to Staging
+        needs: test
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+        uses: ./.github/workflows/railway-deploy.yml
         with:
-          node-version: '20'
-          cache: 'npm'
+          environment: staging
+        secrets:
+          railway_token: ${{ secrets.RAILWAY_STAGING_TOKEN }}
+          staging_service_id: ${{ secrets.RAILWAY_STAGING_SERVICE_ID }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Deploy to Production
+        needs: [test, deploy-staging]
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: ./.github/workflows/railway-deploy.yml
+        with:
+          environment: production
+        secrets:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          production_service_id: ${{ secrets.RAILWAY_PRODUCTION_SERVICE_ID }}
 
-      - name: Build
-        run: npm run build
-        env:
-          NODE_ENV: production
-          VITE_APP_ENV: production
-          VITE_APP_VERSION: ${{ github.sha }}
-
-      - name: Deploy to Railway
-        run: |
-          # Install Railway CLI
-          curl -fsSL https://railway.app/install.sh | sh
-          export PATH="$HOME/.railway/bin:$PATH"
-          
-          # Deploy
-          railway login --token "${{ secrets.RAILWAY_TOKEN }}"
-          railway up --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
