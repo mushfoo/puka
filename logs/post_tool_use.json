@@ -2410,5 +2410,69 @@
         }
       ]
     }
+  },
+  {
+    "session_id": "50e52935-dfe9-4096-a71a-1e34bcbd098f",
+    "transcript_path": "/Users/campbellrehu/.claude/projects/-Users-campbellrehu-dev-github-com-mushfoo-puka/50e52935-dfe9-4096-a71a-1e34bcbd098f.jsonl",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git add .",
+      "description": "Stage all changes for commit"
+    },
+    "tool_response": {
+      "stdout": "",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
+  },
+  {
+    "session_id": "50e52935-dfe9-4096-a71a-1e34bcbd098f",
+    "transcript_path": "/Users/campbellrehu/.claude/projects/-Users-campbellrehu-dev-github-com-mushfoo-puka/50e52935-dfe9-4096-a71a-1e34bcbd098f.jsonl",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git status",
+      "description": "Check git status"
+    },
+    "tool_response": {
+      "stdout": "On branch feature/railway-prisma-migration\nChanges to be committed:\n  (use \"git restore --staged <file>...\" to unstage)\n\tnew file:   .env.sample\n\tmodified:   .gitignore\n\tnew file:   docs/RAILWAY_MIGRATION.md\n\tnew file:   logs/chat.json\n\tnew file:   logs/notification.json\n\tnew file:   logs/post_tool_use.json\n\tnew file:   logs/pre_tool_use.json\n\tnew file:   logs/stop.json\n\tnew file:   logs/subagent_stop.json\n\tmodified:   package-lock.json\n\tmodified:   package.json\n\tnew file:   prisma/schema.prisma\n\tnew file:   scripts/migrate-supabase-to-railway.ts\n\tnew file:   src/contexts/NextAuthContext.tsx\n\tnew file:   src/lib/auth.ts\n\tnew file:   src/lib/prisma.ts\n\tnew file:   src/services/storage/PrismaHybridStorageService.ts\n\tnew file:   src/services/storage/PrismaStorageService.ts\n\tnew file:   src/services/storage/SimplePrismaStorageService.ts\n\tmodified:   src/services/storage/index.ts\n\tnew file:   src/services/sync/PollingRealtimeManager.ts\n\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   logs/post_tool_use.json\n\tmodified:   logs/pre_tool_use.json",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
+  },
+  {
+    "session_id": "50e52935-dfe9-4096-a71a-1e34bcbd098f",
+    "transcript_path": "/Users/campbellrehu/.claude/projects/-Users-campbellrehu-dev-github-com-mushfoo-puka/50e52935-dfe9-4096-a71a-1e34bcbd098f.jsonl",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git commit -m \"$(cat <<'EOF'\nfeat: Add Railway + Prisma migration support\n\nImplement comprehensive migration from Supabase to Railway Postgres + Prisma:\n\n## Core Changes\n- Add Prisma schema matching Supabase database structure\n- Implement NextAuth.js authentication to replace Supabase Auth\n- Create PrismaStorageService for direct database access\n- Add polling-based real-time sync to replace Supabase subscriptions\n- Maintain hybrid local/cloud storage architecture\n\n## New Components\n- `prisma/schema.prisma`: Complete database schema with NextAuth support\n- `src/lib/auth.ts`: NextAuth.js configuration with multiple providers\n- `src/lib/prisma.ts`: Prisma client setup with proper singleton pattern\n- `src/services/storage/SimplePrismaStorageService.ts`: Core Prisma operations\n- `src/services/sync/PollingRealtimeManager.ts`: Polling-based real-time updates\n- `scripts/migrate-supabase-to-railway.ts`: Data migration utility\n\n## Migration Features\n- Preserve all existing functionality (books, streaks, settings)\n- Maintain data compatibility with legacy ID mapping\n- Support OAuth providers (Google, GitHub) via NextAuth.js\n- Comprehensive migration script for existing Supabase data\n- Detailed documentation and setup guide\n\n## Developer Experience\n- New npm scripts for Prisma operations (db:generate, db:migrate, etc.)\n- Environment configuration template (.env.sample)\n- Type-safe database operations with Prisma\n- Simplified deployment to Railway platform\n\n## Benefits\n- Reduced vendor lock-in with standard Postgres\n- Improved performance with direct database access\n- Enhanced type safety through Prisma generation\n- More predictable pricing structure\n- Easier local development setup\n\nThis migration maintains 100% feature compatibility while providing a more\nmaintainable and cost-effective infrastructure foundation.\nEOF\n)\"",
+      "description": "Commit migration changes with detailed message"
+    },
+    "tool_response": {
+      "stdout": "[feature/railway-prisma-migration 0e60b70] feat: Add Railway + Prisma migration support\n 21 files changed, 10633 insertions(+), 17 deletions(-)\n create mode 100644 .env.sample\n create mode 100644 docs/RAILWAY_MIGRATION.md\n create mode 100644 logs/chat.json\n create mode 100644 logs/notification.json\n create mode 100644 logs/post_tool_use.json\n create mode 100644 logs/pre_tool_use.json\n create mode 100644 logs/stop.json\n create mode 100644 logs/subagent_stop.json\n create mode 100644 prisma/schema.prisma\n create mode 100644 scripts/migrate-supabase-to-railway.ts\n create mode 100644 src/contexts/NextAuthContext.tsx\n create mode 100644 src/lib/auth.ts\n create mode 100644 src/lib/prisma.ts\n create mode 100644 src/services/storage/PrismaHybridStorageService.ts\n create mode 100644 src/services/storage/PrismaStorageService.ts\n create mode 100644 src/services/storage/SimplePrismaStorageService.ts\n create mode 100644 src/services/sync/PollingRealtimeManager.ts",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
+  },
+  {
+    "session_id": "50e52935-dfe9-4096-a71a-1e34bcbd098f",
+    "transcript_path": "/Users/campbellrehu/.claude/projects/-Users-campbellrehu-dev-github-com-mushfoo-puka/50e52935-dfe9-4096-a71a-1e34bcbd098f.jsonl",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git push -u origin feature/railway-prisma-migration",
+      "description": "Push branch to remote repository"
+    },
+    "tool_response": {
+      "stdout": "branch 'feature/railway-prisma-migration' set up to track 'origin/feature/railway-prisma-migration'.\nremote: \nremote: Create a pull request for 'feature/railway-prisma-migration' on GitHub by visiting:        \nremote:      https://github.com/mushfoo/puka/pull/new/feature/railway-prisma-migration        \nremote: \nTo github.com:mushfoo/puka.git\n * [new branch]      feature/railway-prisma-migration -> feature/railway-prisma-migration",
+      "stderr": "",
+      "interrupted": false,
+      "isImage": false
+    }
   }
 ]
