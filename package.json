@@ -20,7 +20,8 @@
     "db:setup": "./scripts/setup-db.sh",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "./scripts/migrate-production.sh",
+    "db:migrate:dev": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts"
