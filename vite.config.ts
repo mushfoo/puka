@@ -17,7 +17,11 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '4173'),
-    allowedHosts: ['healthcheck.railway.app']
+    allowedHosts: [
+      'healthcheck.railway.app',
+      'puka-staging.up.railway.app',
+      '.up.railway.app' // Allow all Railway subdomains
+    ]
   },
   build: {
     outDir: 'dist',
