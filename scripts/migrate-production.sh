@@ -3,7 +3,12 @@
 # Production migration script for Railway deployment
 # Handles existing databases with proper baselining and robust error handling
 
-set -e
+echo "SCRIPT START: migrate-production.sh is executing"
+echo "SCRIPT START: Current directory: $(pwd)"
+echo "SCRIPT START: Script args: $@"
+
+# Temporarily disabled set -e for debugging
+# set -e
 
 # Configuration
 SCHEMA_PATH="./prisma/schema.prisma"
@@ -262,5 +267,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+echo "SCRIPT: Argument parsing completed"
+echo "SCRIPT: DRY_RUN=$DRY_RUN, VERBOSE=$VERBOSE"
+
 # Run main function
+echo "SCRIPT: About to call main() function"
 main
+echo "SCRIPT: main() function completed"
