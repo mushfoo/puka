@@ -1,6 +1,6 @@
-# Railway + Prisma Migration Guide
+# Railway + Prisma Migration Plan
 
-This guide explains how to migrate from Supabase to Railway Postgres with Prisma for the Puka Reading Tracker.
+This document provides a comprehensive plan for migrating from Supabase to Railway Postgres with Prisma for the Puka Reading Tracker. This is a strategic planning document with implementation guidelines.
 
 ## Overview
 
