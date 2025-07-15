@@ -3,13 +3,17 @@
 # Production migration script for Railway deployment
 # Handles existing databases with proper baselining and robust error handling
 
+echo "SCRIPT START: migrate-production.sh is executing"
+echo "SCRIPT START: Current directory: $(pwd)"
+echo "SCRIPT START: Script args: $@"
+
 set -e
 
 # Configuration
 SCHEMA_PATH="./prisma/schema.prisma"
 MIGRATIONS_DIR="./prisma/migrations"
 DRY_RUN=${DRY_RUN:-false}
-VERBOSE=${VERBOSE:-false}
+VERBOSE=${VERBOSE:-true}
 
 # Colors for output
 RED='\033[0;31m'
@@ -53,29 +57,45 @@ trap 'handle_error $LINENO "$BASH_COMMAND"' ERR
 # Validation functions
 validate_environment() {
     log_info "Validating environment..."
+    log_info "Checking schema path: $SCHEMA_PATH"
     
     # Check if required files exist
     if [ ! -f "$SCHEMA_PATH" ]; then
         log_error "Prisma schema not found at $SCHEMA_PATH"
+        log_info "Current directory contents:"
+        ls -la || true
         exit 1
     fi
+    log_info "✓ Schema file exists"
     
+    log_info "Checking migrations directory: $MIGRATIONS_DIR"
     if [ ! -d "$MIGRATIONS_DIR" ]; then
         log_error "Migrations directory not found at $MIGRATIONS_DIR"
+        log_info "Current directory contents:"
+        ls -la || true
         exit 1
     fi
+    log_info "✓ Migrations directory exists"
     
     # Check if DATABASE_URL is set
     if [ -z "$DATABASE_URL" ]; then
         log_error "DATABASE_URL environment variable is not set"
+        log_info "Available environment variables:"
+        env | grep -E "(DATABASE|NODE|RAILWAY)" || true
         exit 1
     fi
+    log_info "✓ DATABASE_URL is set"
     
     # Check if npx is available
     if ! command -v npx &> /dev/null; then
         log_error "npx is not installed or not in PATH"
+        log_info "PATH: $PATH"
+        log_info "Available commands:"
+        which node || true
+        which npm || true
         exit 1
     fi
+    log_info "✓ npx is available"
     
     log_success "Environment validation passed"
 }
@@ -157,6 +177,9 @@ generate_client() {
 # Main migration process
 main() {
     log_info "Starting Puka production database migration..."
+    log_info "Current working directory: $(pwd)"
+    log_info "Script location: $0"
+    log_info "Environment: NODE_ENV=${NODE_ENV:-not set}, DATABASE_URL=${DATABASE_URL:0:50}..."
     
     if [ "$DRY_RUN" = "true" ]; then
         log_warning "Running in DRY RUN mode - no actual changes will be made"
@@ -243,5 +266,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+echo "SCRIPT: Argument parsing completed"
+echo "SCRIPT: DRY_RUN=$DRY_RUN, VERBOSE=$VERBOSE"
+
 # Run main function
+echo "SCRIPT: About to call main() function"
 main
+echo "SCRIPT: main() function completed"
