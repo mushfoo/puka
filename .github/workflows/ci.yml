@@ -5,6 +5,15 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - staging
+        default: "staging"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -23,8 +32,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -40,3 +49,26 @@ jobs:
 
       - name: Build
         run: npm run build
+  deploy-staging:
+    name: Deploy to Staging
+    needs: test
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    uses: ./.github/workflows/railway-deploy.yml
+    with:
+      environment: staging
+    secrets:
+      railway_token: ${{ secrets.RAILWAY_STAGING_TOKEN }}
+      staging_service_id: ${{ secrets.RAILWAY_STAGING_SERVICE_ID }}
+
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    uses: ./.github/workflows/railway-deploy.yml
+    with:
+      environment: production
+    secrets:
+      railway_token: ${{ secrets.RAILWAY_TOKEN }}
+      production_service_id: ${{ secrets.RAILWAY_PRODUCTION_SERVICE_ID }}
