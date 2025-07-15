@@ -88,3 +88,4 @@ temp/
 chrome
 
 /generated/prisma
+logs
