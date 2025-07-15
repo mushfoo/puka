@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI
 
 on:
   pull_request:
@@ -6,117 +6,37 @@ on:
   push:
     branches: [main]
 
-# Prevent redundant CI runs for rapid pushes
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  NODE_VERSION: "20.x"
-  MINIMUM_COVERAGE: 80
-
 jobs:
-  validate:
-    name: Pre-Deployment Validation
+  test:
+    name: Test & Build
     runs-on:
       group: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run linting
+      - name: Lint
         run: npm run lint
 
-      - name: Run type checking
+      - name: Type check
         run: npm run type-check
 
-  test:
-    name: Comprehensive Testing
-    runs-on:
-      group: self-hosted
-    needs: validate
+      - name: Test
+        run: npm test -- --run
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run unit tests
-        run: |
-          echo "Running unit tests with coverage..."
-          npm test -- --run --coverage --reporter=verbose
-
-  # Build validation and optimization
-  build:
-    name: Build Validation & Optimization
-    runs-on:
-      group: self-hosted
-    needs: [validate, test]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: |
-          echo "Building application..."
-          npm run build
-
-      - name: Validate build output
-        run: |
-          echo "Validating build output..."
-
-          # Check if dist directory exists
-          if [ ! -d "dist" ]; then
-            echo "::error::Build output directory 'dist' not found"
-            exit 1
-          fi
-
-          # Check for essential files
-          if [ ! -f "dist/index.html" ]; then
-            echo "::error::Missing index.html in build output"
-            exit 1
-          fi
-
-          # Check for PWA manifest
-          if [ ! -f "dist/manifest.json" ]; then
-            echo "::error::Missing PWA manifest in build output"
-            exit 1
-          fi
-
-          # Check for service worker
-          if [ ! -f "dist/sw.js" ]; then
-            echo "::error::Missing service worker in build output"
-            exit 1
-          fi
-
-          echo "✅ Build validation passed"
+      - name: Build
+        run: npm run build

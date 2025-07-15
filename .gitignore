@@ -86,3 +86,6 @@ tmp/
 temp/
 .claude-trace
 chrome
+
+/generated/prisma
+logs

@@ -16,11 +16,19 @@
     "test:e2e:report": "playwright show-report",
     "type-check": "tsc --noEmit",
     "railway:build": "npm run build",
-    "railway:start": "npm run preview"
+    "railway:start": "npm run preview",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "@supabase/supabase-js": "^2.50.3",
     "@types/react-window": "^1.8.8",
+    "next-auth": "^4.24.0",
     "papaparse": "^5.5.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -45,7 +53,9 @@
     "eslint-plugin-react-refresh": "^0.4.6",
     "jsdom": "^26.1.0",
     "postcss": "^8.4.35",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.2.0",
     "vitest": "^1.4.0"

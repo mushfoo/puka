@@ -1,0 +1,235 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // Reading tracker relationships
+  books         Book[]
+  readingDays   ReadingDay[]
+  settings      UserSettings?
+  streakHistory StreakHistory?
+  
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Reading tracker models
+enum BookStatus {
+  want_to_read
+  currently_reading
+  finished
+}
+
+model Book {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String
+  author      String
+  notes       String?
+  progress    Int        @default(0) // 0-100
+  status      BookStatus @default(want_to_read)
+  
+  // Optional metadata
+  isbn          String?
+  coverUrl      String?   @map("cover_url")
+  tags          String[]  @default([])
+  rating        Int?      // 1-5
+  totalPages    Int?      @map("total_pages")
+  currentPage   Int?      @map("current_page")
+  genre         String?
+  publishedDate String?   @map("published_date")
+  
+  // Date tracking
+  dateStarted   DateTime? @map("date_started") @db.Date
+  dateFinished  DateTime? @map("date_finished") @db.Date
+  
+  // System timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Legacy support
+  legacyId Int? @map("legacy_id")
+  
+  // Sync metadata
+  lastSynced  DateTime? @default(now()) @map("last_synced")
+  syncVersion Int       @default(1) @map("sync_version")
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Indexes
+  @@index([userId])
+  @@index([userId, status])
+  @@index([updatedAt])
+  @@index([legacyId])
+}
+
+enum ReadingDaySource {
+  manual
+  book
+  progress
+}
+
+model ReadingDay {
+  id      String   @id @default(cuid())
+  userId  String   @map("user_id")
+  date    DateTime @db.Date
+  
+  // Reading session data
+  bookIds String[] @default([]) @map("book_ids")
+  notes   String?
+  source  ReadingDaySource @default(manual)
+  
+  // System timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Constraints
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([userId, date])
+  @@index([updatedAt])
+  @@map("reading_days")
+}
+
+enum Theme {
+  light
+  dark
+  system
+}
+
+enum DefaultView {
+  grid
+  list
+}
+
+enum SortBy {
+  dateAdded
+  title
+  author
+  progress
+  dateFinished
+}
+
+enum SortOrder {
+  asc
+  desc
+}
+
+enum BackupFrequency {
+  daily
+  weekly
+  monthly
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  
+  // UI preferences
+  theme       Theme       @default(system)
+  defaultView DefaultView @default(grid) @map("default_view")
+  
+  // Reading preferences
+  dailyReadingGoal Int       @default(1) @map("daily_reading_goal")
+  sortBy           SortBy    @default(dateAdded) @map("sort_by")
+  sortOrder        SortOrder @default(desc) @map("sort_order")
+  
+  // Notification preferences
+  notificationsEnabled Boolean @default(true) @map("notifications_enabled")
+  
+  // Backup preferences
+  autoBackup      Boolean         @default(false) @map("auto_backup")
+  backupFrequency BackupFrequency @default(weekly) @map("backup_frequency")
+  
+  // System timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_settings")
+}
+
+model StreakHistory {
+  id           String @id @default(cuid())
+  userId       String @unique @map("user_id")
+  
+  // Streak data
+  currentStreak Int       @default(0) @map("current_streak")
+  longestStreak Int       @default(0) @map("longest_streak")
+  lastReadDate  DateTime? @map("last_read_date") @db.Date
+  
+  // Enhanced tracking (JSON data for compatibility)
+  readingDaysData Json @default("{}") @map("reading_days_data")
+  bookPeriodsData Json @default("[]") @map("book_periods_data")
+  
+  // Version and sync data
+  dataVersion     Int       @default(1) @map("data_version")
+  lastCalculated  DateTime? @default(now()) @map("last_calculated")
+  lastSynced      DateTime? @default(now()) @map("last_synced")
+  
+  // System timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("streak_history")
+}
