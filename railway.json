@@ -8,7 +8,8 @@
     "startCommand": "npm run railway:start",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
-    "restartPolicyType": "ON_FAILURE"
+    "restartPolicyType": "ON_FAILURE",
+    "preDeployCommand": "npm run db:migrate"
   },
   "environments": {
     "production": {
