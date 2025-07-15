@@ -13,7 +13,8 @@ concurrency:
 jobs:
   test:
     name: Test & Build
-    runs-on: ubuntu-latest
+    runs-on:
+      group: self-hosted
 
     steps:
       - name: Checkout
