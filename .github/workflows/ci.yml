@@ -5,6 +5,15 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        type: choice
+        options:
+          - staging
+        default: "staging"
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -63,4 +72,3 @@ jobs:
     secrets:
       railway_token: ${{ secrets.RAILWAY_TOKEN }}
       production_service_id: ${{ secrets.RAILWAY_PRODUCTION_SERVICE_ID }}
-
