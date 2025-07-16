@@ -2,9 +2,40 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+// Auth API middleware plugin
+const authApiPlugin = () => {
+  return {
+    name: 'auth-api',
+    configureServer(server: any) {
+      server.middlewares.use('/api/auth', async (req: any, res: any, next: any) => {
+        try {
+          const { auth } = await import('./src/lib/auth')
+          const request = new Request(`${req.protocol}://${req.get('host')}${req.url}`, {
+            method: req.method,
+            headers: req.headers,
+            body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+          })
+          
+          const response = await auth.handler(request)
+          
+          res.status(response.status)
+          response.headers.forEach((value, key) => {
+            res.setHeader(key, value)
+          })
+          
+          const body = await response.text()
+          res.end(body)
+        } catch (error) {
+          next(error)
+        }
+      })
+    }
+  }
+}
+
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), authApiPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

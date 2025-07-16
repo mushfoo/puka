@@ -50,7 +50,7 @@ export function AuthModal({
       if (activeTab === 'signup') {
         const { user, error } = await signUp(email, password)
         if (error) {
-          setError(error.message)
+          setError(error.error)
         } else if (user) {
           setMessage('Account created successfully!')
           setTimeout(() => onClose(), 2000)
@@ -58,7 +58,7 @@ export function AuthModal({
       } else if (activeTab === 'signin') {
         const { user, error } = await signIn(email, password)
         if (error) {
-          setError(error.message)
+          setError(error.error)
         } else if (user) {
           onClose()
         }

@@ -812,7 +812,7 @@ export class ImportService {
   static processImportWithStreaks(
     importedBooks: Partial<Book>[],
     _existingBooks: Book[], // Disabled for now - not used without streak import
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     _options: ImportOptions = {
       mergeDuplicates: false,
       overwriteExisting: false,
