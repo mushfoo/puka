@@ -1,24 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { Session, AuthError } from '@supabase/supabase-js'
-import { supabase, AuthUser } from '@/lib/supabase'
+import { AuthUser, AuthSession, AuthError, onAuthStateChange, signUp as authSignUp, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
 
 // Auth context interface
 interface AuthContextType {
   user: AuthUser | null
-  session: Session | null
+  session: AuthSession | null
   loading: boolean
   
   // Authentication methods
   signUp: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
-  signInWithOAuth: (provider: 'google' | 'github') => Promise<{ error: AuthError | null }>
-  signInWithMagicLink: (email: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
-  
-  // Account management
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
-  updatePassword: (password: string) => Promise<{ error: AuthError | null }>
-  deleteAccount: () => Promise<{ error: AuthError | null }>
   
   // Progressive enhancement
   isAuthenticated: boolean
@@ -49,7 +41,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [hasLocalData, setHasLocalData] = useState(false)
   const [showAuthPrompt, setShowAuthPrompt] = useState(false)
@@ -59,52 +51,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true
 
-    async function initializeAuth() {
-      try {
-        // Get initial session
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession()
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChange((user) => {
+      if (mounted) {
+        setUser(user)
+        // Create a simple session object if user exists
+        if (user) {
+          const expires = new Date()
+          expires.setDate(expires.getDate() + 30) // 30 days
+          setSession({
+            user,
+            expires: expires.toISOString(),
+          })
+        } else {
+          setSession(null)
+        }
+        setLoading(false)
         
-        if (mounted) {
-          if (error) {
-            console.error('Error getting session:', error)
-          } else {
-            setSession(initialSession)
-            setUser(initialSession?.user as AuthUser | null)
-          }
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-        if (mounted) {
-          setLoading(false)
+        // Handle auth events
+        if (user) {
+          console.log('User signed in:', user.email)
+          setAuthPromptDismissed(false) // Reset prompt state on sign in
+        } else {
+          console.log('User signed out')
         }
       }
-    }
-
-    initializeAuth()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user as AuthUser | null)
-          setLoading(false)
-          
-          // Handle auth events
-          if (event === 'SIGNED_IN') {
-            console.log('User signed in:', session?.user?.email)
-            setAuthPromptDismissed(false) // Reset prompt state on sign in
-          } else if (event === 'SIGNED_OUT') {
-            console.log('User signed out')
-          }
-        }
-      }
-    )
+    })
 
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      unsubscribe()
     }
   }, [])
 
@@ -122,74 +98,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Auth methods
   const signUp = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    const result = await authSignUp(email, password)
     
-    return { 
-      user: data.user as AuthUser | null, 
-      error 
+    if ('user' in result) {
+      return { user: result.user, error: null }
+    } else {
+      return { user: null, error: result.error }
     }
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const result = await authSignIn(email, password)
     
-    return { 
-      user: data.user as AuthUser | null, 
-      error 
+    if ('user' in result) {
+      return { user: result.user, error: null }
+    } else {
+      return { user: null, error: result.error }
     }
   }, [])
 
-  const signInWithOAuth = useCallback(async (provider: 'google' | 'github') => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-    
-    return { error }
-  }, [])
-
-  const signInWithMagicLink = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-    
-    return { error }
-  }, [])
-
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
-  }, [])
-
-  const resetPassword = useCallback(async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
-    })
-    
-    return { error }
-  }, [])
-
-  const updatePassword = useCallback(async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password })
-    return { error }
-  }, [])
-
-  const deleteAccount = useCallback(async () => {
-    // Note: Account deletion requires additional setup in Supabase
-    // This would need to be implemented as a database function
-    console.warn('Account deletion not yet implemented')
-    return { error: null }
+    try {
+      await authSignOut()
+      return { error: null }
+    } catch (error: any) {
+      return { 
+        error: { 
+          message: error.message || 'Failed to sign out',
+          code: 'signout_error' 
+        } 
+      }
+    }
   }, [])
 
   const dismissAuthPrompt = useCallback(() => {
@@ -216,12 +155,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Auth methods
     signUp,
     signIn,
-    signInWithOAuth,
-    signInWithMagicLink,
     signOut,
-    resetPassword,
-    updatePassword,
-    deleteAccount,
     
     // Progressive enhancement
     isAuthenticated: !!user,

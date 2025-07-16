@@ -9,7 +9,7 @@ interface AuthModalProps {
   subtitle?: string
 }
 
-type AuthTab = 'signin' | 'signup' | 'reset'
+type AuthTab = 'signin' | 'signup'
 
 export function AuthModal({ 
   isOpen, 
@@ -25,7 +25,7 @@ export function AuthModal({
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  const { signUp, signIn, signInWithMagicLink, resetPassword } = useAuth()
+  const { signUp, signIn } = useAuth()
 
   const resetForm = () => {
     setEmail('')
@@ -52,7 +52,7 @@ export function AuthModal({
         if (error) {
           setError(error.message)
         } else if (user) {
-          setMessage('Check your email for a confirmation link!')
+          setMessage('Account created successfully!')
           setTimeout(() => onClose(), 2000)
         }
       } else if (activeTab === 'signin') {
@@ -62,13 +62,6 @@ export function AuthModal({
         } else if (user) {
           onClose()
         }
-      } else if (activeTab === 'reset') {
-        const { error } = await resetPassword(email)
-        if (error) {
-          setError(error.message)
-        } else {
-          setMessage('Check your email for password reset instructions!')
-        }
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
@@ -77,28 +70,6 @@ export function AuthModal({
     }
   }
 
-  const handleMagicLink = async () => {
-    if (!email) {
-      setError('Please enter your email address first')
-      return
-    }
-
-    setError(null)
-    setLoading(true)
-
-    try {
-      const { error } = await signInWithMagicLink(email)
-      if (error) {
-        setError(error.message)
-      } else {
-        setMessage('Check your email for a magic link!')
-      }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (!isOpen) return null
 
@@ -124,30 +95,28 @@ export function AuthModal({
           </div>
 
           {/* Tab Navigation */}
-          {activeTab !== 'reset' && (
-            <div className="flex border-b border-gray-200 mb-6">
-              <button
-                onClick={() => handleTabChange('signin')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'signin'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => handleTabChange('signup')}
-                className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === 'signup'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Sign Up
-              </button>
-            </div>
-          )}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => handleTabChange('signin')}
+              className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'signin'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => handleTabChange('signup')}
+              className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'signup'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
 
           {/* Error/Success Messages */}
           {error && (
@@ -179,23 +148,21 @@ export function AuthModal({
               />
             </div>
 
-            {activeTab !== 'reset' && (
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter your password"
-                />
-              </div>
-            )}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your password"
+              />
+            </div>
 
             <button
               type="submit"
@@ -203,65 +170,19 @@ export function AuthModal({
               className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Loading...' : (
-                activeTab === 'signup' ? 'Create Account' :
-                activeTab === 'signin' ? 'Sign In' :
-                'Reset Password'
+                activeTab === 'signup' ? 'Create Account' : 'Sign In'
               )}
             </button>
           </form>
 
-          {/* Alternative Actions */}
-          {activeTab !== 'reset' && (
-            <div className="mt-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">or</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleMagicLink}
-                disabled={loading || !email}
-                className="w-full mt-4 py-2 px-4 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Send Magic Link
-              </button>
-
-              <div className="mt-4 text-center">
-                {activeTab === 'signin' ? (
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange('reset')}
-                      className="text-sm text-blue-600 hover:text-blue-500"
-                    >
-                      Forgot your password?
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    By creating an account, you agree to sync your reading data securely.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'reset' && (
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => handleTabChange('signin')}
-                className="text-sm text-blue-600 hover:text-blue-500"
-              >
-                Back to Sign In
-              </button>
-            </div>
-          )}
+          {/* Additional Info */}
+          <div className="mt-4 text-center">
+            {activeTab === 'signup' && (
+              <p className="text-sm text-gray-600">
+                By creating an account, you agree to sync your reading data securely.
+              </p>
+            )}
+          </div>
 
           {/* Privacy Notice */}
           <div className="mt-6 p-4 bg-gray-50 rounded-md">

@@ -14,7 +14,6 @@ export {
 
 export { MockStorageService } from './MockStorageService';
 export { FileSystemStorageService } from './FileSystemStorageService';
-export { SupabaseStorageService } from './SupabaseStorageService';
 export { HybridStorageService } from './HybridStorageService';
 
 // Import types for the factory function
@@ -23,7 +22,6 @@ import { HybridStorageService } from './HybridStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
-  // Use hybrid storage service which automatically switches between local and cloud
-  // based on authentication status
+  // Use hybrid storage service which now only uses local file system storage
   return new HybridStorageService();
 }
