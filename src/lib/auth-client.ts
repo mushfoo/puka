@@ -2,6 +2,14 @@ import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
   baseURL: "http://localhost:5173", // Vite dev server
+  fetchOptions: {
+    onError(context) {
+      console.error('Auth client error:', context)
+    },
+    onSuccess(context) {
+      console.log('Auth client success:', context)
+    }
+  }
 });
 
 export type AuthUser = {
@@ -31,11 +39,11 @@ export type AuthError = {
 };
 
 // Convenience functions for common auth operations
-export const signUp = async (email: string, password: string, name?: string) => {
+export const signUp = async (email: string, password: string, name: string) => {
   return await authClient.signUp.email({
     email,
     password,
-    name: name || "",
+    name,
   });
 };
 

@@ -25,6 +25,12 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
+  // Better-auth required fields
+  providerId        String
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
@@ -36,6 +42,14 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Better-auth required fields
+  expiresAt    DateTime
+  token        String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  ipAddress    String?
+  userAgent    String?
 }
 
 model User {
@@ -47,6 +61,10 @@ model User {
   password      String?   // For credentials authentication
   accounts      Account[]
   sessions      Session[]
+  
+  // Better-auth required fields
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   
   // Reading tracker relationships
   books         Book[]

@@ -14,14 +14,14 @@ export {
 
 export { MockStorageService } from './MockStorageService';
 export { FileSystemStorageService } from './FileSystemStorageService';
-export { HybridStorageService } from './HybridStorageService';
+
 
 // Import types for the factory function
 import { type StorageService } from './StorageService';
-import { HybridStorageService } from './HybridStorageService';
+import { FileSystemStorageService } from './FileSystemStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
   // Use hybrid storage service which now only uses local file system storage
-  return new HybridStorageService();
+    return new FileSystemStorageService();
 }

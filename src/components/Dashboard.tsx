@@ -10,6 +10,8 @@ import ExportModal from './modals/ExportModal';
 import ImportModal from './modals/ImportModal';
 import StreakDisplay from './StreakDisplay';
 import { SyncStatusIndicator } from './sync';
+import { useAuth } from '@/contexts/AuthContext';
+import AuthModal from './auth/AuthModal';
 
 interface DashboardProps {
   books: Book[];
@@ -60,6 +62,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [selectedBookIndex, setSelectedBookIndex] = useState(-1);
   const [showBookSwitcher, setShowBookSwitcher] = useState(false);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  
+  const { user, signOut, isAuthenticated } = useAuth();
   
   const searchInputRef = useRef<HTMLInputElement>(null);
   const bookSwitcherRef = useRef<HTMLDivElement>(null);
@@ -375,6 +381,23 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const handleOpenAuthModal = (mode: 'signin' | 'signup') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleCloseAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-background ${className}`}>
       {/* Header */}
@@ -512,6 +535,48 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </svg>
                 <span className="hidden lg:inline">Export</span>
               </button>
+              
+              {/* Authentication Buttons */}
+              {isAuthenticated ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-text-secondary hidden lg:inline">
+                    Welcome, {user?.name || user?.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                    title="Sign out"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="hidden lg:inline">Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleOpenAuthModal('signin')}
+                    className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
+                    title="Sign in"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span className="hidden lg:inline">Sign In</span>
+                  </button>
+                  <button
+                    onClick={() => handleOpenAuthModal('signup')}
+                    className="flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+                    title="Sign up"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    <span className="hidden lg:inline">Sign Up</span>
+                  </button>
+                </div>
+              )}
               
               {/* Sync Status Indicator */}
               <SyncStatusIndicator showDetails={false} />
@@ -785,6 +850,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={handleCloseAuthModal}
+        defaultTab={authModalMode}
+      />
 
       {/* Keyboard Help Button - Desktop only */}
       <button

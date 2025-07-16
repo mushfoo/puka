@@ -10,28 +10,15 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Start with false for simplicity
+    requireEmailVerification: false,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
   },
-  user: {
-    additionalFields: {
-      // Map to existing schema fields
-      name: {
-        type: "string",
-        required: false,
-      },
-      image: {
-        type: "string", 
-        required: false,
-      },
-    },
-  },
   trustedOrigins: [
-    "http://localhost:5173", // Vite dev server
-    "http://localhost:3000", // Alternative port
+    "http://localhost:5173",
+    "http://localhost:3000",
   ],
 });
 

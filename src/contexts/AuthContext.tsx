@@ -104,14 +104,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Auth methods
   const signUp = useCallback(async (email: string, password: string) => {
     const result = await authSignUp(email, password)
+    console.log('SignUp result:', result)
     
     if (result.data?.user) {
       const user: AuthUser = {
         ...result.data.user,
         image: result.data.user.image || null
       }
+      console.log('SignUp success, user:', user)
       return { user, error: null }
     } else {
+      console.log('SignUp failed, error:', result.error)
       return { user: null, error: { error: result.error?.message || 'Registration failed' } }
     }
   }, [])
