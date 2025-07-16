@@ -10,22 +10,38 @@ const authApiPlugin = () => {
       server.middlewares.use('/api/auth', async (req: any, res: any, next: any) => {
         try {
           const { auth } = await import('./src/lib/auth')
-          const request = new Request(`${req.protocol}://${req.get('host')}${req.url}`, {
+          
+          // Get the host from headers
+          const host = req.headers.host || 'localhost:5173'
+          const protocol = req.headers['x-forwarded-proto'] || 'http'
+          
+          // Read the request body if present
+          let body = undefined
+          if (req.method !== 'GET' && req.method !== 'HEAD') {
+            const chunks: Buffer[] = []
+            for await (const chunk of req) {
+              chunks.push(chunk)
+            }
+            body = Buffer.concat(chunks).toString()
+          }
+          
+          const request = new Request(`${protocol}://${host}${req.url}`, {
             method: req.method,
             headers: req.headers,
-            body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+            body: body,
           })
           
           const response = await auth.handler(request)
           
-          res.status(response.status)
+          res.statusCode = response.status
           response.headers.forEach((value, key) => {
             res.setHeader(key, value)
           })
           
-          const body = await response.text()
-          res.end(body)
+          const responseBody = await response.text()
+          res.end(responseBody)
         } catch (error) {
+          console.error('Auth middleware error:', error)
           next(error)
         }
       })
