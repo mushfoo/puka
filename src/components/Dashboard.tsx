@@ -11,7 +11,6 @@ import ImportModal from "./modals/ImportModal";
 import StreakDisplay from "./StreakDisplay";
 import { SyncStatusIndicator } from "./sync";
 import { useAuth } from "@/contexts/AuthContext";
-import AuthModal from "./auth/AuthModal";
 import AuthInlineForm from "./auth/AuthInlineForm";
 
 interface DashboardProps {
@@ -66,10 +65,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [selectedBookIndex, setSelectedBookIndex] = useState(-1);
   const [showBookSwitcher, setShowBookSwitcher] = useState(false);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<"signin" | "signup">(
-    "signin",
-  );
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showLoadingMinimum, setShowLoadingMinimum] = useState(true);
   const [hasSignedOut, setHasSignedOut] = useState(false);
@@ -87,16 +82,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     return () => clearTimeout(timer);
   }, []);
-
-  // Show auth modal automatically for unauthenticated users
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated && (!showLoadingMinimum || hasSignedOut)) {
-      setIsAuthModalOpen(true);
-    } else if (isAuthenticated) {
-      setIsAuthModalOpen(false);
-      setHasSignedOut(false); // Reset sign out flag when user signs back in
-    }
-  }, [isAuthenticated, authLoading, showLoadingMinimum, hasSignedOut]);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -432,7 +417,6 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
@@ -447,51 +431,86 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   // Show loading/auth screen for unauthenticated users
-  if ((authLoading || showLoadingMinimum || !isAuthenticated) && !hasSignedOut) {
-    const showAuthForm = !authLoading && !showLoadingMinimum && !isAuthenticated;
-    
+  if (
+    (authLoading || showLoadingMinimum || !isAuthenticated) &&
+    !hasSignedOut
+  ) {
+    const showAuthForm =
+      !authLoading && !showLoadingMinimum && !isAuthenticated;
+
     return (
-      <div className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}>
+      <div
+        className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}
+      >
         <div className="w-full max-w-md relative">
           {/* Title with smooth position animation */}
-          <div className={`text-center transition-all duration-1000 ease-out ${
-            showAuthForm 
-              ? 'transform -translate-y-8 mb-4' // Move up slightly when auth form appears
-              : 'transform translate-y-0'       // Centered when loading
-          }`}>
-            <div className={`flex items-center gap-3 justify-center transition-all duration-1000 ease-out ${
-              showAuthForm 
-                ? 'text-2xl mb-2' // Smaller when auth form appears
-                : 'text-3xl mb-6' // Larger when loading
-            }`}>
-              <span className={`transition-all duration-1000 ease-out ${
-                showAuthForm ? 'text-3xl' : 'text-4xl'
-              }`} role="img" aria-label="Books">📚</span>
+          <div
+            className={`text-center transition-all duration-1000 ease-out ${
+              showAuthForm
+                ? "transform -translate-y-8 mb-4" // Move up slightly when auth form appears
+                : "transform translate-y-0" // Centered when loading
+            }`}
+          >
+            <div
+              className={`flex items-center gap-3 justify-center transition-all duration-1000 ease-out ${
+                showAuthForm
+                  ? "text-2xl mb-2" // Smaller when auth form appears
+                  : "text-3xl mb-6" // Larger when loading
+              }`}
+            >
+              <span
+                className={`transition-all duration-1000 ease-out ${
+                  showAuthForm ? "text-3xl" : "text-4xl"
+                }`}
+                role="img"
+                aria-label="Books"
+              >
+                📚
+              </span>
               <h1 className="font-bold text-primary">Puka Reading Tracker</h1>
             </div>
           </div>
 
           {/* Loading indicator - fades out */}
-          <div className={`text-center transition-all duration-500 ease-out ${
-            showAuthForm 
-              ? 'opacity-0 transform translate-y-4 pointer-events-none' 
-              : 'opacity-100 transform translate-y-0'
-          }`}>
+          <div
+            className={`text-center transition-all duration-500 ease-out ${
+              showAuthForm
+                ? "opacity-0 transform translate-y-4 pointer-events-none"
+                : "opacity-100 transform translate-y-0"
+            }`}
+          >
             <div className="flex items-center justify-center gap-2 text-text-secondary">
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              <svg
+                className="w-4 h-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
               <span>Loading...</span>
             </div>
           </div>
 
           {/* Auth Form - fades in below title */}
-          <div className={`transition-all duration-700 ease-out delay-300 ${
-            showAuthForm 
-              ? 'opacity-100 transform translate-y-0' 
-              : 'opacity-0 transform translate-y-8 pointer-events-none'
-          }`}>
+          <div
+            className={`transition-all duration-700 ease-out delay-300 ${
+              showAuthForm
+                ? "opacity-100 transform translate-y-0"
+                : "opacity-0 transform translate-y-8 pointer-events-none"
+            }`}
+          >
             <AuthInlineForm />
           </div>
         </div>
@@ -502,12 +521,16 @@ const Dashboard: React.FC<DashboardProps> = ({
   // Show auth screen immediately after sign out
   if (!isAuthenticated) {
     return (
-      <div className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}>
+      <div
+        className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}
+      >
         <div className="w-full max-w-md">
           {/* Title positioned at top for immediate auth */}
           <div className="text-center mb-4 transform -translate-y-8">
             <div className="flex items-center gap-3 justify-center text-2xl mb-2">
-              <span className="text-3xl" role="img" aria-label="Books">📚</span>
+              <span className="text-3xl" role="img" aria-label="Books">
+                📚
+              </span>
               <h1 className="font-bold text-primary">Puka Reading Tracker</h1>
             </div>
           </div>
@@ -874,56 +897,56 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {/* Prominent Streak Card */}
-            <div className="mb-6">
-              <StreakDisplay
-                books={books}
-                streakHistory={streakHistory}
-                onMarkReadingDay={onMarkReadingDay}
-                onStreakUpdate={onStreakUpdate}
-                showDetails={true}
-                compact={false}
-                className="shadow-lg"
-              />
-            </div>
+        {/* Prominent Streak Card */}
+        <div className="mb-6">
+          <StreakDisplay
+            books={books}
+            streakHistory={streakHistory}
+            onMarkReadingDay={onMarkReadingDay}
+            onStreakUpdate={onStreakUpdate}
+            showDetails={true}
+            compact={false}
+            className="shadow-lg"
+          />
+        </div>
 
-            {/* Filter Tabs */}
-            <FilterTabs
-              books={books}
-              activeFilter={activeFilter}
-              onFilterChange={setActiveFilter}
-              className="mb-6"
-            />
+        {/* Filter Tabs */}
+        <FilterTabs
+          books={books}
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          className="mb-6"
+        />
 
-            {/* Search Results Info */}
-            {debouncedSearchQuery && (
-              <div className="mb-4 text-sm text-text-secondary">
-                {filteredBooks.length === 0 ? (
-                  <span>No books found for "{debouncedSearchQuery}"</span>
-                ) : (
-                  <span>
-                    {filteredBooks.length} book
-                    {filteredBooks.length !== 1 ? "s" : ""} found for "
-                    {debouncedSearchQuery}"
-                  </span>
-                )}
-              </div>
+        {/* Search Results Info */}
+        {debouncedSearchQuery && (
+          <div className="mb-4 text-sm text-text-secondary">
+            {filteredBooks.length === 0 ? (
+              <span>No books found for "{debouncedSearchQuery}"</span>
+            ) : (
+              <span>
+                {filteredBooks.length} book
+                {filteredBooks.length !== 1 ? "s" : ""} found for "
+                {debouncedSearchQuery}"
+              </span>
             )}
+          </div>
+        )}
 
-            {/* Book Grid */}
-            <BookGrid
-              books={filteredBooks}
-              onUpdateProgress={onUpdateProgress}
-              onQuickUpdate={onQuickUpdate}
-              onMarkComplete={onMarkComplete}
-              onChangeStatus={onChangeStatus}
-              onEdit={handleEditBook}
-              onDelete={handleDeleteBook}
-              loading={loading}
-              showQuickActions={true}
-              selectedIndex={selectedBookIndex}
-            />
-          </main>
+        {/* Book Grid */}
+        <BookGrid
+          books={filteredBooks}
+          onUpdateProgress={onUpdateProgress}
+          onQuickUpdate={onQuickUpdate}
+          onMarkComplete={onMarkComplete}
+          onChangeStatus={onChangeStatus}
+          onEdit={handleEditBook}
+          onDelete={handleDeleteBook}
+          loading={loading}
+          showQuickActions={true}
+          selectedIndex={selectedBookIndex}
+        />
+      </main>
 
       {/* Floating Action Button */}
       <FloatingActionButton
@@ -1153,7 +1176,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
-
       {/* Keyboard Help Button - Desktop only */}
       <button
         onClick={() => setShowKeyboardHelp(true)}
@@ -1180,4 +1202,3 @@ const Dashboard: React.FC<DashboardProps> = ({
 };
 
 export default Dashboard;
-
