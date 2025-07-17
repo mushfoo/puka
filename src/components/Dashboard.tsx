@@ -12,6 +12,7 @@ import StreakDisplay from "./StreakDisplay";
 import { SyncStatusIndicator } from "./sync";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./auth/AuthModal";
+import AuthInlineForm from "./auth/AuthInlineForm";
 
 interface DashboardProps {
   books: Book[];
@@ -69,11 +70,33 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [authModalMode, setAuthModalMode] = useState<"signin" | "signup">(
     "signin",
   );
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showLoadingMinimum, setShowLoadingMinimum] = useState(true);
+  const [hasSignedOut, setHasSignedOut] = useState(false);
 
-  const { user, signOut, isAuthenticated } = useAuth();
+  const { user, signOut, isAuthenticated, loading: authLoading } = useAuth();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const bookSwitcherRef = useRef<HTMLDivElement>(null);
+
+  // Handle minimum loading time (3 seconds)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoadingMinimum(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show auth modal automatically for unauthenticated users
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated && (!showLoadingMinimum || hasSignedOut)) {
+      setIsAuthModalOpen(true);
+    } else if (isAuthenticated) {
+      setIsAuthModalOpen(false);
+      setHasSignedOut(false); // Reset sign out flag when user signs back in
+    }
+  }, [isAuthenticated, authLoading, showLoadingMinimum, hasSignedOut]);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -409,22 +432,94 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
-  const handleOpenAuthModal = (mode: "signin" | "signup") => {
-    setAuthModalMode(mode);
-    setIsAuthModalOpen(true);
-  };
-
-  const handleCloseAuthModal = () => {
-    setIsAuthModalOpen(false);
-  };
 
   const handleSignOut = async () => {
     try {
+      setIsSigningOut(true);
       await signOut();
+      // Mark that user has signed out to skip loading screen
+      setHasSignedOut(true);
     } catch (error) {
       console.error("Sign out failed:", error);
+    } finally {
+      setIsSigningOut(false);
     }
   };
+
+  // Show loading/auth screen for unauthenticated users
+  if ((authLoading || showLoadingMinimum || !isAuthenticated) && !hasSignedOut) {
+    const showAuthForm = !authLoading && !showLoadingMinimum && !isAuthenticated;
+    
+    return (
+      <div className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}>
+        <div className="w-full max-w-md relative">
+          {/* Title with smooth position animation */}
+          <div className={`text-center transition-all duration-1000 ease-out ${
+            showAuthForm 
+              ? 'transform -translate-y-8 mb-4' // Move up slightly when auth form appears
+              : 'transform translate-y-0'       // Centered when loading
+          }`}>
+            <div className={`flex items-center gap-3 justify-center transition-all duration-1000 ease-out ${
+              showAuthForm 
+                ? 'text-2xl mb-2' // Smaller when auth form appears
+                : 'text-3xl mb-6' // Larger when loading
+            }`}>
+              <span className={`transition-all duration-1000 ease-out ${
+                showAuthForm ? 'text-3xl' : 'text-4xl'
+              }`} role="img" aria-label="Books">📚</span>
+              <h1 className="font-bold text-primary">Puka Reading Tracker</h1>
+            </div>
+          </div>
+
+          {/* Loading indicator - fades out */}
+          <div className={`text-center transition-all duration-500 ease-out ${
+            showAuthForm 
+              ? 'opacity-0 transform translate-y-4 pointer-events-none' 
+              : 'opacity-100 transform translate-y-0'
+          }`}>
+            <div className="flex items-center justify-center gap-2 text-text-secondary">
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+              <span>Loading...</span>
+            </div>
+          </div>
+
+          {/* Auth Form - fades in below title */}
+          <div className={`transition-all duration-700 ease-out delay-300 ${
+            showAuthForm 
+              ? 'opacity-100 transform translate-y-0' 
+              : 'opacity-0 transform translate-y-8 pointer-events-none'
+          }`}>
+            <AuthInlineForm />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth screen immediately after sign out
+  if (!isAuthenticated) {
+    return (
+      <div className={`min-h-screen bg-background ${className} flex items-center justify-center p-4`}>
+        <div className="w-full max-w-md">
+          {/* Title positioned at top for immediate auth */}
+          <div className="text-center mb-4 transform -translate-y-8">
+            <div className="flex items-center gap-3 justify-center text-2xl mb-2">
+              <span className="text-3xl" role="img" aria-label="Books">📚</span>
+              <h1 className="font-bold text-primary">Puka Reading Tracker</h1>
+            </div>
+          </div>
+
+          {/* Auth form immediately visible */}
+          <div>
+            <AuthInlineForm />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-background ${className}`}>
@@ -627,17 +722,38 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <span className="hidden lg:inline">Export</span>
               </button>
 
-              {/* Authentication Buttons */}
-              {isAuthenticated ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-text-secondary hidden lg:inline">
-                    Welcome, {user?.name || user?.email}
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
-                    title="Sign out"
-                  >
+              {/* User Info and Sign Out Button */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-secondary hidden lg:inline">
+                  Welcome, {user?.name || user?.email}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={isSigningOut ? "Signing out..." : "Sign out"}
+                >
+                  {isSigningOut ? (
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                  ) : (
                     <svg
                       className="w-4 h-4"
                       fill="none"
@@ -651,53 +767,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                       />
                     </svg>
-                    <span className="hidden lg:inline">Sign Out</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleOpenAuthModal("signin")}
-                    className="flex items-center gap-2 px-3 py-2 bg-surface hover:bg-border text-text-primary border border-border rounded-lg transition-colors"
-                    title="Sign in"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    <span className="hidden lg:inline">Sign In</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenAuthModal("signup")}
-                    className="flex items-center gap-2 px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
-                    title="Sign up"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                      />
-                    </svg>
-                    <span className="hidden lg:inline">Sign Up</span>
-                  </button>
-                </div>
-              )}
+                  )}
+                  <span className="hidden lg:inline">
+                    {isSigningOut ? "Signing out..." : "Sign Out"}
+                  </span>
+                </button>
+              </div>
 
               {/* Sync Status Indicator */}
               <SyncStatusIndicator showDetails={false} />
@@ -798,9 +873,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       {/* Main Content */}
-      {isAuthenticated && (
-        <>
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             {/* Prominent Streak Card */}
             <div className="mb-6">
               <StreakDisplay
@@ -851,8 +924,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               selectedIndex={selectedBookIndex}
             />
           </main>
-        </>
-      )}
 
       {/* Floating Action Button */}
       <FloatingActionButton
@@ -1082,12 +1153,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={handleCloseAuthModal}
-        defaultTab={authModalMode}
-      />
 
       {/* Keyboard Help Button - Desktop only */}
       <button

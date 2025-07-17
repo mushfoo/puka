@@ -15,14 +15,6 @@ const createAuthPlugin = () => {
         const { Readable } = await import('node:stream');
         const { auth } = await import('./src/lib/auth');
         
-        // Log all requests for debugging
-        server.middlewares.use((req: any, res: any, next: any) => {
-          if (req.url.startsWith('/api/')) {
-            console.log('API request:', req.method, req.url);
-          }
-          next();
-        });
-
         // Handle all auth routes including nested paths
         server.middlewares.use((req: any, res: any, next: any) => {
           if (req.url.startsWith('/api/auth')) {
@@ -34,11 +26,8 @@ const createAuthPlugin = () => {
 
         async function handleAuthRequest(req: any, res: any, next: any) {
           try {
-            console.log('Auth middleware called:', req.method, req.url);
-            console.log('Request headers:', req.headers);
             // Create a URL object from the request
             const url = new URL(req.url, `http://${req.headers.host}`);
-            console.log('Full URL:', url.toString());
 
             // Handle request body for POST/PUT requests
             let body: string | undefined;
@@ -70,7 +59,6 @@ const createAuthPlugin = () => {
             }
 
           } catch (error) {
-            console.error('Auth middleware error:', error);
             res.statusCode = 500;
             res.end('Internal Server Error');
           }
@@ -92,7 +80,18 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: parseInt(process.env.PORT || '5173')
+    port: parseInt(process.env.PORT || '5173'),
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0',
+      // Allow local network access (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
+      /^192\.168\.\d+\.\d+$/,
+      /^10\.\d+\.\d+\.\d+$/,
+      /^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/,
+      // Allow .local domains for mDNS
+      /\.local$/
+    ]
   },
   preview: {
     host: '0.0.0.0',

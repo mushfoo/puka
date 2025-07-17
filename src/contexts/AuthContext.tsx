@@ -75,10 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // Handle auth events
         if (user) {
-          console.log('User signed in:', user.email)
           setAuthPromptDismissed(false) // Reset prompt state on sign in
-        } else {
-          console.log('User signed out')
         }
       }
     })
@@ -106,17 +103,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Use email as name if no name is provided
     const displayName = name || email.split('@')[0]
     const result = await authSignUp(email, password, displayName)
-    console.log('SignUp result:', result)
     
     if (result.data?.user) {
       const user: AuthUser = {
         ...result.data.user,
         image: result.data.user.image || null
       }
-      console.log('SignUp success, user:', user)
       return { user, error: null }
     } else {
-      console.log('SignUp failed, error:', result.error)
       return { user: null, error: { error: result.error?.message || 'Registration failed' } }
     }
   }, [])

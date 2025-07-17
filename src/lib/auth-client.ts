@@ -2,14 +2,6 @@ import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
   baseURL: "http://localhost:5173", // Vite dev server
-  fetchOptions: {
-    onError(context) {
-      console.error('Auth client error:', context)
-    },
-    onSuccess(context) {
-      console.log('Auth client success:', context)
-    }
-  }
 });
 
 export type AuthUser = {
@@ -76,23 +68,26 @@ export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => 
         image: session.data.user.image || null
       } : null;
       
-      if (JSON.stringify(newUser) !== JSON.stringify(currentUser)) {
-        currentUser = newUser;
-        callback(currentUser);
-      }
-    } catch (error) {
-      if (currentUser !== null) {
-        currentUser = null;
+      // Always update on first check, then only on changes
+      if (currentUser === null && newUser === null) {
+        // First check with no user - still call callback to clear loading
         callback(null);
+      } else if (JSON.stringify(newUser) !== JSON.stringify(currentUser)) {
+        callback(newUser);
       }
+      currentUser = newUser;
+    } catch (error) {
+      // On error, ensure we clear loading state by calling callback
+      currentUser = null;
+      callback(null);
     }
   };
   
   // Initial check
   checkSession();
   
-  // Check every 30 seconds
-  const interval = setInterval(checkSession, 30000);
+  // Check every 5 seconds for more responsive auth state updates
+  const interval = setInterval(checkSession, 5000);
   
   // Return unsubscribe function
   return () => {
