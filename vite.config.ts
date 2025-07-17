@@ -13,7 +13,7 @@ const createAuthPlugin = () => {
     configureServer: async (server: any) => {
       try {
         const { Readable } = await import("node:stream");
-        const { auth } = await import("./src/lib/auth");
+        const { auth } = await import("./src/lib/auth-server");
 
         // Handle all auth routes including nested paths
         server.middlewares.use((req: any, res: any, next: any) => {
