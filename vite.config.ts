@@ -15,10 +15,30 @@ const createAuthPlugin = () => {
         const { Readable } = await import('node:stream');
         const { auth } = await import('./src/lib/auth');
         
-        server.middlewares.use('/api/auth', async (req: any, res: any) => {
+        // Log all requests for debugging
+        server.middlewares.use((req: any, res: any, next: any) => {
+          if (req.url.startsWith('/api/')) {
+            console.log('API request:', req.method, req.url);
+          }
+          next();
+        });
+
+        // Handle all auth routes including nested paths
+        server.middlewares.use((req: any, res: any, next: any) => {
+          if (req.url.startsWith('/api/auth')) {
+            handleAuthRequest(req, res, next);
+          } else {
+            next();
+          }
+        });
+
+        async function handleAuthRequest(req: any, res: any, next: any) {
           try {
+            console.log('Auth middleware called:', req.method, req.url);
+            console.log('Request headers:', req.headers);
             // Create a URL object from the request
             const url = new URL(req.url, `http://${req.headers.host}`);
+            console.log('Full URL:', url.toString());
 
             // Handle request body for POST/PUT requests
             let body: string | undefined;
@@ -54,7 +74,7 @@ const createAuthPlugin = () => {
             res.statusCode = 500;
             res.end('Internal Server Error');
           }
-        });
+        }
       } catch (error) {
         console.warn('Auth plugin disabled due to import error:', error);
       }

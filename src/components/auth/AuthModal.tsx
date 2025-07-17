@@ -21,6 +21,7 @@ export function AuthModal({
   const [activeTab, setActiveTab] = useState<AuthTab>(defaultTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -30,6 +31,7 @@ export function AuthModal({
   const resetForm = () => {
     setEmail('')
     setPassword('')
+    setName('')
     setError(null)
     setMessage(null)
     setLoading(false)
@@ -158,6 +160,25 @@ export function AuthModal({
                 placeholder='Enter your email'
               />
             </div>
+
+            {activeTab === 'signup' && (
+              <div>
+                <label
+                  htmlFor='name'
+                  className='block text-sm font-medium text-gray-700 mb-1'>
+                  Name
+                </label>
+                <input
+                  id='name'
+                  type='text'
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className='w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                  placeholder='Enter your name'
+                />
+              </div>
+            )}
 
             <div>
               <label

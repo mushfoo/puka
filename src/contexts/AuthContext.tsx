@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean
   
   // Authentication methods
-  signUp: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
+  signUp: (email: string, password: string, name?: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   
@@ -102,8 +102,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [hasLocalData, user, authPromptDismissed, loading])
 
   // Auth methods
-  const signUp = useCallback(async (email: string, password: string) => {
-    const result = await authSignUp(email, password)
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
+    // Use email as name if no name is provided
+    const displayName = name || email.split('@')[0]
+    const result = await authSignUp(email, password, displayName)
     console.log('SignUp result:', result)
     
     if (result.data?.user) {
