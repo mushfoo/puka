@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { signIn, signUp } from '@/lib/auth-client'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface AuthModalProps {

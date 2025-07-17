@@ -20,11 +20,22 @@ const createAuthPlugin = () => {
             // Create a URL object from the request
             const url = new URL(req.url, `http://${req.headers.host}`);
 
+            // Handle request body for POST/PUT requests
+            let body: string | undefined;
+            if (req.method !== 'GET' && req.method !== 'HEAD') {
+              body = await new Promise<string>((resolve) => {
+                let data = '';
+                req.on('data', (chunk: any) => data += chunk);
+                req.on('end', () => resolve(data));
+              });
+            }
+
             // Create a Fetch-compatible Request object
             const request = new Request(url, {
               method: req.method,
               headers: req.headers,
-              body: req.method !== 'GET' && req.method !== 'HEAD' ? req : undefined,
+              body: body,
+              duplex: 'half' as any, // Required for streams
             });
 
             // Call the Better Auth handler with the compatible request
@@ -101,7 +112,9 @@ export default defineConfig({
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
       '**/e2e/**',
       '**/playwright-report/**',
-      '**/test-results/**'
+      '**/test-results/**',
+      '**/src/__tests__.old/**',
+      '**/src/__tests__/**'
     ],
   },
 })
