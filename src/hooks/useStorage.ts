@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Book, StatusFilter, StreakHistory, EnhancedStreakHistory, EnhancedReadingDayEntry } from '@/types';
 import { createStorageService, StorageService, ExportData } from '@/services/storage';
+import { useOptionalAuth } from '@/contexts/AuthContext';
 
 interface UseStorageResult {
   books: Book[];
@@ -32,6 +33,7 @@ export const useStorage = (): UseStorageResult => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [storageService] = useState<StorageService>(() => createStorageService());
+  const { isAuthenticated, loading: authLoading } = useOptionalAuth();
 
   // Initialize storage and load books
   const initializeStorage = useCallback(async () => {
@@ -40,10 +42,16 @@ export const useStorage = (): UseStorageResult => {
       setError(null);
       
       await storageService.initialize();
-      const [loadedBooks, loadedStreakHistory] = await Promise.all([
-        storageService.getBooks(),
-        storageService.getStreakHistory()
-      ]);
+      const loadedBooks = await storageService.getBooks();
+      
+      // Try to get streak history, but don't fail if not implemented yet
+      let loadedStreakHistory = null;
+      try {
+        loadedStreakHistory = await storageService.getStreakHistory();
+      } catch (error) {
+        // Ignore if method not implemented yet
+        console.log('Streak history not available yet:', error);
+      }
       setBooks(loadedBooks);
       
       // Auto-create streak history if it doesn't exist and we have books with reading periods
@@ -76,10 +84,16 @@ export const useStorage = (): UseStorageResult => {
     }
   }, [storageService]);
 
-  // Load books on mount
+  // Load books only when authenticated
   useEffect(() => {
-    initializeStorage();
-  }, [initializeStorage]);
+    if (isAuthenticated && !authLoading) {
+      initializeStorage();
+    } else if (!authLoading) {
+      // When not authenticated, set loading to false to show auth UI
+      setLoading(false);
+      setError(null);
+    }
+  }, [isAuthenticated, authLoading, initializeStorage]);
 
   // Add a new book
   const addBook = useCallback(async (bookData: Omit<Book, 'id' | 'dateAdded'>): Promise<Book | null> => {
