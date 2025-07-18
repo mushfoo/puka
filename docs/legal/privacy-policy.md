@@ -18,10 +18,10 @@ Puka Reading Tracker ("we," "our," or "us") is committed to protecting your priv
 - Reading streak data and daily activities
 - Personal preferences and settings
 
-This data is stored locally on your device using your browser's File System Access API or localStorage. We do not have access to this information unless you explicitly choose to sync with our cloud service.
+This data can be stored locally on your device using browser storage or synchronized to our secure cloud database when you create an account.
 
-**Cloud Sync Data (Optional):**
-If you choose to create an account and enable cloud synchronization:
+**Account Data:**
+If you choose to create an account:
 
 - Email address (for account creation and authentication)
 - Encrypted reading data (books, progress, streaks)
@@ -44,7 +44,7 @@ If you choose to create an account and enable cloud synchronization:
 - Used to provide reading tracking functionality
 - Never transmitted to our servers unless you enable cloud sync
 
-### Cloud Sync Data
+### Account Data
 
 - Synchronize your reading data across devices
 - Backup your data to prevent loss
@@ -56,7 +56,8 @@ We do not sell, trade, or otherwise transfer your personal information to third 
 
 ### Service Providers
 
-- **Supabase:** Cloud database and authentication services (encrypted data only)
+- **Better-auth:** Authentication services (secure user management)
+- **PostgreSQL:** Cloud database for data persistence (encrypted data only)
 - **Railway:** Hosting platform (no access to user data)
 
 ### Legal Requirements
@@ -78,10 +79,10 @@ In the event of a merger, acquisition, or sale of assets, user data may be trans
 
 ### User Controls
 
-- **Local-First:** Most data never leaves your device
-- **Opt-In Cloud Sync:** Cloud features are entirely optional
+- **Progressive Enhancement:** App works with or without an account
 - **Data Export:** Full data export available at any time
 - **Account Deletion:** Complete data removal upon request
+- **Data Portability:** Export data in standard formats
 
 ## Your Privacy Rights
 
@@ -134,12 +135,12 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 
 ## Third-Party Services
 
-### Supabase (Database & Authentication)
+### Better-auth (Authentication)
 
-- **Data Processing Agreement:** GDPR-compliant data processing
-- **Security:** SOC 2 Type II certified, encryption at rest and in transit
-- **Location:** Data stored in US East region
-- **Privacy Policy:** https://supabase.com/privacy
+- **Security:** Open-source authentication framework with secure defaults
+- **Session Management:** Secure session handling with JWT tokens
+- **Data Processing:** Minimal data collection for authentication purposes
+- **Documentation:** https://better-auth.com/docs
 
 ### Railway (Hosting)
 
@@ -158,7 +159,7 @@ Puka Reading Tracker is hosted in the United States. By using our service, you c
 
 ### Third-Party Cookies
 
-- Supabase may use technical cookies for authentication
+- Better-auth may use technical cookies for authentication
 - No advertising or social media tracking cookies
 
 ## Changes to This Privacy Policy
@@ -167,7 +168,7 @@ We may update this Privacy Policy periodically to reflect changes in our practic
 
 - Post the updated policy on our website
 - Update the "Last Updated" date
-- Notify users of material changes via email (if using cloud sync)
+- Notify users of material changes via email (if using an account)
 - Provide 30 days notice for significant changes
 
 Continued use of the service after changes constitutes acceptance of the updated policy.
