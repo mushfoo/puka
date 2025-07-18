@@ -5,6 +5,10 @@ import {
   type ImportData, 
   type ImportOptions, 
   type ImportResult, 
+<<<<<<< HEAD
+=======
+  type ImportError,
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
   type BookFilter, 
   type BulkReadingDayOperation,
   StorageError, 
@@ -71,7 +75,11 @@ export class DatabaseStorageService implements StorageService {
    */
   private async authenticatedFetch(
     endpoint: string, 
+<<<<<<< HEAD
     options: RequestInit = {}
+=======
+    options: Record<string, any> = {}
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
   ): Promise<Response> {
     if (!this.initialized) {
       throw new StorageError(
@@ -601,7 +609,12 @@ export class DatabaseStorageService implements StorageService {
       }
       
       // Remove readonly fields from updates
+<<<<<<< HEAD
       const { id: _, dateAdded, ...cleanUpdates } = updates;
+=======
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _, dateAdded: __, ...cleanUpdates } = updates;
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
       
       // Map frontend updates to database format
       const dbUpdates = this.mapFrontendBookToDb(cleanUpdates);
@@ -1418,7 +1431,12 @@ export class DatabaseStorageService implements StorageService {
         }
         
         // Save new book (remove id and dateAdded if present)
+<<<<<<< HEAD
         const { id, dateAdded, ...newBookData } = bookData as any;
+=======
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _, dateAdded: __, ...newBookData } = bookData as any;
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
         await this.saveBook(newBookData);
         result.imported++;
         
@@ -2828,20 +2846,35 @@ export class DatabaseStorageService implements StorageService {
           case 'progress':
           case 'rating':
           case 'totalPages':
+<<<<<<< HEAD
           case 'currentPage':
+=======
+          case 'currentPage': {
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
             const numValue = parseInt(value, 10);
             if (!isNaN(numValue)) {
               book[header] = numValue;
             }
             break;
+<<<<<<< HEAD
             
           case 'dateStarted':
           case 'dateFinished':
+=======
+          }
+            
+          case 'dateStarted':
+          case 'dateFinished': {
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
             const dateValue = new Date(value);
             if (!isNaN(dateValue.getTime())) {
               book[header] = dateValue;
             }
             break;
+<<<<<<< HEAD
+=======
+          }
+>>>>>>> b981689ebec0e4bad0d9b5dbeccc0b5f1a9b9c5b
             
           case 'tags':
             book.tags = value.split(';').filter(tag => tag.trim().length > 0);
