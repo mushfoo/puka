@@ -19,7 +19,7 @@ const MigrationToastComponent: React.FC<MigrationToastProps> = ({
   useEffect(() => {
     const showTimer = setTimeout(() => setIsVisible(true), 50)
     
-    let dismissTimer: NodeJS.Timeout | undefined
+    let dismissTimer: ReturnType<typeof setTimeout> | undefined
     if (toast.duration && toast.duration > 0) {
       dismissTimer = setTimeout(() => {
         handleDismiss()

@@ -55,7 +55,7 @@ export const MigrationPromptCard: React.FC<MigrationPromptCardProps> = ({
     setShowExportModal(true)
   }
 
-  const handleExportComplete = (success: boolean, filename?: string) => {
+  const handleExportComplete = (success: boolean, _filename?: string) => {
     if (success) {
       onExportFirst()
     }
@@ -244,6 +244,7 @@ export const MigrationPromptCard: React.FC<MigrationPromptCardProps> = ({
         </div>
       </div>
     </div>
+    </>
   )
 }
 

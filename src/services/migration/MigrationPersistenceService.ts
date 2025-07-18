@@ -235,7 +235,7 @@ class MigrationPersistenceService {
   /**
    * Check if migration should be prompted based on user preferences and history
    */
-  shouldPromptMigration(userId: string): {
+  shouldPromptMigration(_userId: string): {
     shouldPrompt: boolean
     reason?: string
     canPromptAgainAt?: Date

@@ -1,13 +1,11 @@
 import { 
-  StreakHistory, 
   EnhancedStreakHistory, 
   EnhancedReadingDayEntry, 
   ReadingPeriod,
   ReadingDayEntry,
-  ReadingDataSource,
   ReadingDayMap 
 } from '@/types';
-import { formatDateToISO } from './readingPeriodExtractor';
+// import { formatDateToISO } from './readingPeriodExtractor'; // Currently unused
 
 /**
  * Enhanced streak history migration utilities
@@ -579,7 +577,7 @@ export class EnhancedStreakMigration {
     original: LegacyStreakData,
     migrated: EnhancedStreakHistory
   ): MigrationStats {
-    const originalReadingDays = this.extractReadingDays(original.readingDays);
+    // const originalReadingDays = this.extractReadingDays(original.readingDays); // Currently unused
     
     return {
       totalReadingDays: migrated.readingDays.size,

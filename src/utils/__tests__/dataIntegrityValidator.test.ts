@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DataIntegrityValidator } from '../dataIntegrityValidator';
-import { EnhancedStreakHistory, EnhancedReadingDayEntry, Book } from '@/types';
+import { EnhancedStreakHistory, Book } from '@/types';
 
 describe('DataIntegrityValidator', () => {
   let validHistory: EnhancedStreakHistory;

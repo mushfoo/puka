@@ -48,7 +48,8 @@ export function useDataExport() {
         currentStep: 'Calculating export size...'
       }))
 
-      const estimate = await dataExportService.estimateExportSize(options)
+      // Calculate export estimate (result currently unused but may be needed for UI)
+      // const estimate = await dataExportService.estimateExportSize(options)
 
       // Step 3: Export data
       setExportState(prev => ({
@@ -110,7 +111,8 @@ export function useDataExport() {
         currentStep: 'Scanning local data...'
       }))
 
-      const availability = await dataExportService.hasDataToExport()
+      // Check data availability (unused variable but needed for validation)
+      // const availability = await dataExportService.hasDataToExport()
       
       // Step 2: Create backup
       setExportState(prev => ({

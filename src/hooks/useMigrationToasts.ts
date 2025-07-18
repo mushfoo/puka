@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { ToastMessage } from '@/types'
-import { MigrationState } from '@/contexts/AuthContext'
+// import { MigrationState } from '@/contexts/AuthContext' // Currently unused
 
 export interface MigrationToastOptions {
   duration?: number

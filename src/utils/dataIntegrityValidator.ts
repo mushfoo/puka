@@ -1,7 +1,6 @@
 import { 
   EnhancedStreakHistory, 
   EnhancedReadingDayEntry, 
-  ReadingPeriod, 
   Book 
 } from '@/types';
 import { formatDateToISO } from './readingPeriodExtractor';
@@ -267,7 +266,7 @@ export class DataIntegrityValidator {
   private static validateDateFormats(history: EnhancedStreakHistory, result: ValidationResult): void {
     if (!history.readingDayEntries) return;
 
-    const today = formatDateToISO(new Date());
+    // const today = formatDateToISO(new Date()); // Currently unused
     const futureThreshold = new Date();
     futureThreshold.setDate(futureThreshold.getDate() + this.MAX_FUTURE_DAYS);
     const futureThresholdStr = formatDateToISO(futureThreshold);

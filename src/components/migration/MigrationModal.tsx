@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useDataMigration } from '@/hooks/useDataMigration'
-import { useAuth } from '@/contexts/AuthContext'
-import MigrationProgressIndicator, { MigrationProgressData } from './MigrationProgressIndicator'
-import MigrationPromptCard from './MigrationPromptCard'
 
 interface MigrationModalProps {
   isOpen: boolean

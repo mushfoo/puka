@@ -76,11 +76,12 @@ const formatTimeRemaining = (seconds: number): string => {
   return `${minutes}m remaining`
 }
 
-const formatBytes = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
+// Utility function for formatting bytes (currently unused but may be needed)
+// const formatBytes = (bytes: number): string => {
+//   if (bytes < 1024) return `${bytes} B`
+//   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+//   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+// }
 
 export const MigrationProgressIndicator: React.FC<MigrationProgressIndicatorProps> = ({
   progress,
