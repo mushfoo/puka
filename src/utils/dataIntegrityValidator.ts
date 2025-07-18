@@ -70,7 +70,7 @@ export class DataIntegrityValidator {
   private static readonly MAX_FUTURE_DAYS = 1; // Allow 1 day in future for timezone issues
   private static readonly DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   private static readonly MIN_DATE = new Date('2000-01-01');
-  private static readonly MAX_DATE = new Date('2100-12-31');
+  // private static readonly MAX_DATE = new Date('2100-12-31'); // Currently unused
 
   /**
    * Validate enhanced streak history data integrity

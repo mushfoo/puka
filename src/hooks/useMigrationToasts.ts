@@ -147,7 +147,7 @@ export function useMigrationToasts() {
   const showMigrationWarning = useCallback((
     migrationId: string, 
     message: string, 
-    details?: string,
+    _details?: string,
     options?: MigrationToastOptions
   ) => {
     return addToast({

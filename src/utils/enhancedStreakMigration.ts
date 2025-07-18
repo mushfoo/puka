@@ -84,7 +84,7 @@ export interface MigrationStats {
  */
 export class EnhancedStreakMigration {
   private static readonly CURRENT_VERSION = 1;
-  private static readonly MIGRATION_BATCH_SIZE = 100;
+  // private static readonly MIGRATION_BATCH_SIZE = 100; // Currently unused
   
   /**
    * Detect the format of legacy streak data
@@ -209,7 +209,7 @@ export class EnhancedStreakMigration {
 
       if (detection.format === 'enhanced_current') {
         result.success = true;
-        result.migratedHistory = data as EnhancedStreakHistory;
+        result.migratedHistory = data as unknown as EnhancedStreakHistory;
         result.dataPointsMigrated = detection.dataPoints;
         result.warnings.push('Data already in enhanced format');
         return result;

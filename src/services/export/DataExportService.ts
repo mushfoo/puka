@@ -168,8 +168,8 @@ class DataExportService {
       return {
         hasBooks: books.length > 0,
         hasSettings: !!settings,
-        hasStreaks: this.countStreakEntries({ streakHistory: streaks.basic, enhancedStreakHistory: streaks.enhanced }) > 0,
-        totalItems: books.length + (settings ? 1 : 0) + this.countStreakEntries({ streakHistory: streaks.basic, enhancedStreakHistory: streaks.enhanced })
+        hasStreaks: this.countStreakEntries({ streakHistory: streaks.basic || undefined, enhancedStreakHistory: streaks.enhanced || undefined }) > 0,
+        totalItems: books.length + (settings ? 1 : 0) + this.countStreakEntries({ streakHistory: streaks.basic || undefined, enhancedStreakHistory: streaks.enhanced || undefined })
       }
     } catch (error) {
       console.error('Failed to check export data:', error)
@@ -397,7 +397,7 @@ class DataExportService {
   /**
    * JSON replacer to handle special objects like Set
    */
-  private jsonReplacer(key: string, value: any): any {
+  private jsonReplacer(_key: string, value: any): any {
     if (value instanceof Set) {
       return Array.from(value)
     }

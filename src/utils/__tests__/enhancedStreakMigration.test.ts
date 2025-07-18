@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EnhancedStreakMigration } from '../enhancedStreakMigration';
+import { EnhancedStreakMigration, LegacyStreakData } from '../enhancedStreakMigration';
 import { DataIntegrityValidator } from '../dataIntegrityValidator';
 import { EnhancedStreakHistory } from '@/types';
 
@@ -176,15 +176,15 @@ describe('EnhancedStreakMigration', () => {
             bookIds: [1, 2],
             notes: 'Great reading day',
             sources: [
-              { type: 'book_completion', timestamp: new Date('2024-01-10T10:00:00') },
-              { type: 'progress_update', timestamp: new Date('2024-01-10T14:00:00') }
+              { type: 'book_completion' as const, timestamp: new Date('2024-01-10T10:00:00') },
+              { type: 'progress_update' as const, timestamp: new Date('2024-01-10T14:00:00') }
             ]
           },
           {
             date: '2024-01-11',
             bookIds: [2],
             notes: 'Continued reading',
-            sources: [{ type: 'progress_update', timestamp: new Date('2024-01-11T15:00:00') }]
+            sources: [{ type: 'progress_update' as const, timestamp: new Date('2024-01-11T15:00:00') }]
           }
         ],
         bookPeriods: [
@@ -234,13 +234,13 @@ describe('EnhancedStreakMigration', () => {
             date: '2024-01-10',
             bookIds: [1],
             notes: 'Reading session',
-            sources: [{ type: 'manual', timestamp: new Date('2024-01-10T09:00:00') }]
+            sources: [{ type: 'manual' as const, timestamp: new Date('2024-01-10T09:00:00') }]
           },
           '2024-01-11': {
             date: '2024-01-11',
             bookIds: [1, 2],
             notes: 'Another session',
-            sources: [{ type: 'book_completion', timestamp: new Date('2024-01-11T16:00:00') }]
+            sources: [{ type: 'book_completion' as const, timestamp: new Date('2024-01-11T16:00:00') }]
           }
         }
       };
@@ -302,7 +302,8 @@ describe('EnhancedStreakMigration', () => {
         lastSyncDate: new Date('2024-01-15')
       };
 
-      const result = await EnhancedStreakMigration.migrateLegacyStreakData(enhancedData);
+      // This test uses enhanced format data that should be detected as already migrated
+      const result = await EnhancedStreakMigration.migrateLegacyStreakData(enhancedData as unknown as LegacyStreakData);
 
       expect(result.success).toBe(true);
       expect(result.migratedHistory).toBeDefined();
