@@ -14,14 +14,15 @@ export {
 
 export { MockStorageService } from './MockStorageService';
 export { FileSystemStorageService } from './FileSystemStorageService';
+export { DatabaseStorageService } from './DatabaseStorageService';
 
 // Import types for the factory function
 import { type StorageService } from './StorageService';
 import { MockStorageService } from './MockStorageService';
+import { DatabaseStorageService } from './DatabaseStorageService';
 
 // Storage service factory
 export function createStorageService(): StorageService {
-  // TODO: Implement database storage service with Better-auth
-  // For now, use MockStorageService to avoid file system prompts
-  return new MockStorageService();
+  // Use DatabaseStorageService for testing Phase 2 implementation
+  return new DatabaseStorageService();
 }
