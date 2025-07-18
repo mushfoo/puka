@@ -8,7 +8,7 @@ describe('DataMigrationService', () => {
   let migrationService: DataMigrationService;
   let localStorageMock: { [key: string]: string };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Mock localStorage
     localStorageMock = {};
     global.localStorage = {
@@ -28,6 +28,7 @@ describe('DataMigrationService', () => {
 
     // Create mock storage and migration service
     mockStorage = new MockStorageService();
+    await mockStorage.initialize();
     migrationService = new DataMigrationService(mockStorage);
   });
 

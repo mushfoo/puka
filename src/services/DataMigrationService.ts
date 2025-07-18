@@ -1,6 +1,8 @@
 import { Book, StreakHistory, EnhancedStreakHistory } from '@/types';
 import { StorageService, ExportData, ImportOptions } from '@/services/storage';
 import { migrateStreakHistory } from '@/utils/streakMigration';
+import { EnhancedStreakMigration, FormatDetectionResult, MigrationExecutionResult } from '@/utils/enhancedStreakMigration';
+import { DataIntegrityValidator, ValidationResult } from '@/utils/dataIntegrityValidator';
 
 /**
  * Legacy streak history format from localStorage
@@ -43,6 +45,13 @@ export interface MigrationResult {
   errors: string[];
   migratedBooks: Book[];
   migratedStreakHistory: EnhancedStreakHistory | null;
+  // Enhanced migration details
+  streakMigrationDetails?: {
+    formatDetected: FormatDetectionResult;
+    migrationResult: MigrationExecutionResult;
+    validationResult: ValidationResult;
+    dataIntegrityScore: number;
+  };
 }
 
 /**
@@ -224,12 +233,14 @@ export class DataMigrationService {
       // Migrate streak history
       if (data.streakHistory && options.migrateStreaks !== false) {
         const streakResult = await this.migrateStreakHistory(data.streakHistory);
-        if (streakResult) {
-          result.migratedStreakHistory = streakResult;
+        if (streakResult.enhancedHistory) {
+          result.migratedStreakHistory = streakResult.enhancedHistory;
+          result.streakMigrationDetails = streakResult.migrationDetails;
           result.succeeded += 1;
         } else {
           result.failed += 1;
           result.errors.push('Failed to migrate streak history');
+          result.streakMigrationDetails = streakResult.migrationDetails;
         }
       }
 
@@ -447,32 +458,112 @@ export class DataMigrationService {
 
   private async migrateStreakHistory(
     streakHistory: LegacyStreakHistory
-  ): Promise<EnhancedStreakHistory | null> {
+  ): Promise<{ 
+    enhancedHistory: EnhancedStreakHistory | null;
+    migrationDetails: {
+      formatDetected: FormatDetectionResult;
+      migrationResult: MigrationExecutionResult;
+      validationResult: ValidationResult;
+      dataIntegrityScore: number;
+    };
+  }> {
     try {
-      // Convert legacy format to new StreakHistory format
-      const newStreakHistory: StreakHistory = {
-        readingDays: new Set(streakHistory.readingDays || []),
-        bookPeriods: [],
-        lastCalculated: new Date()
+      // Detect format first
+      const formatDetected = EnhancedStreakMigration.detectLegacyFormat(streakHistory);
+      
+      // Perform enhanced migration
+      const migrationResult = await EnhancedStreakMigration.migrateLegacyStreakData(streakHistory);
+      
+      let enhancedHistory: EnhancedStreakHistory | null = null;
+      let validationResult: ValidationResult;
+      let dataIntegrityScore = 0;
+      
+      if (migrationResult.success && migrationResult.migratedHistory) {
+        enhancedHistory = migrationResult.migratedHistory;
+        
+        // Validate the migrated data
+        validationResult = DataIntegrityValidator.validateEnhancedStreakHistory(enhancedHistory);
+        dataIntegrityScore = validationResult.score;
+        
+        // Auto-fix any fixable issues
+        if (validationResult.fixableIssues.length > 0) {
+          const autoFixResult = DataIntegrityValidator.autoFixIssues(enhancedHistory);
+          if (autoFixResult.fixed > 0) {
+            enhancedHistory = autoFixResult.updatedHistory;
+            // Re-validate after auto-fix
+            validationResult = DataIntegrityValidator.validateEnhancedStreakHistory(enhancedHistory);
+            dataIntegrityScore = validationResult.score;
+          }
+        }
+        
+        // Save to storage
+        await this.targetStorage.updateEnhancedStreakHistory(enhancedHistory);
+        
+        // Update progress
+        this.updateStatus({
+          processedItems: this.status.processedItems + 1,
+          progress: ((this.status.processedItems + 1) / this.status.totalItems) * 100
+        });
+      } else {
+        // Fallback to basic migration if enhanced migration fails
+        console.warn('Enhanced migration failed, falling back to basic migration');
+        
+        const newStreakHistory: StreakHistory = {
+          readingDays: new Set(streakHistory.readingDays || []),
+          bookPeriods: [],
+          lastCalculated: new Date()
+        };
+
+        enhancedHistory = migrateStreakHistory(newStreakHistory);
+        validationResult = DataIntegrityValidator.validateEnhancedStreakHistory(enhancedHistory);
+        dataIntegrityScore = validationResult.score;
+        
+        await this.targetStorage.updateEnhancedStreakHistory(enhancedHistory);
+        
+        this.updateStatus({
+          processedItems: this.status.processedItems + 1,
+          progress: ((this.status.processedItems + 1) / this.status.totalItems) * 100
+        });
+      }
+
+      return {
+        enhancedHistory,
+        migrationDetails: {
+          formatDetected,
+          migrationResult,
+          validationResult,
+          dataIntegrityScore
+        }
       };
-
-      // Migrate to enhanced format
-      const enhancedHistory = migrateStreakHistory(newStreakHistory);
-
-      // Save to storage
-      await this.targetStorage.updateEnhancedStreakHistory(enhancedHistory);
-
-      // Update progress
-      this.updateStatus({
-        processedItems: this.status.processedItems + 1,
-        progress: ((this.status.processedItems + 1) / this.status.totalItems) * 100
-      });
-
-      return enhancedHistory;
     } catch (error) {
       console.error('Failed to migrate streak history:', error);
       this.addError('Failed to migrate streak history');
-      return null;
+      
+      // Return empty details for failed migration
+      return {
+        enhancedHistory: null,
+        migrationDetails: {
+          formatDetected: EnhancedStreakMigration.detectLegacyFormat({}),
+          migrationResult: {
+            success: false,
+            migratedHistory: null,
+            dataPointsMigrated: 0,
+            executionTimeMs: 0,
+            issues: ['Migration failed: ' + (error instanceof Error ? error.message : 'Unknown error')],
+            warnings: [],
+            preservedMetadata: {}
+          },
+          validationResult: {
+            isValid: false,
+            score: 0,
+            issues: [],
+            warnings: [],
+            recommendations: [],
+            fixableIssues: []
+          },
+          dataIntegrityScore: 0
+        }
+      };
     }
   }
 

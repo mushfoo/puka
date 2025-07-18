@@ -20,6 +20,7 @@ export { DatabaseStorageService } from './DatabaseStorageService';
 import { type StorageService } from './StorageService';
 import { DatabaseStorageService } from './DatabaseStorageService';
 import { MockStorageService } from './MockStorageService';
+import { getAppBaseUrl } from '@/lib/api/utils';
 
 // Storage service instance cache
 let storageServiceInstance: StorageService | null = null;
@@ -27,7 +28,8 @@ let storageServiceInstance: StorageService | null = null;
 // Storage service health check
 async function checkDatabaseServiceHealth(): Promise<boolean> {
   try {
-    const response = await fetch('/api/health', {
+    const baseUrl = getAppBaseUrl();
+    const response = await fetch(`${baseUrl}/api/health`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
