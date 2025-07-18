@@ -72,7 +72,7 @@ export class DatabaseStorageService implements StorageService {
    */
   private async authenticatedFetch(
     endpoint: string, 
-    options: RequestInit = {}
+    options: globalThis.RequestInit = {}
   ): Promise<Response> {
     if (!this.initialized) {
       throw new StorageError(

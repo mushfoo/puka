@@ -192,8 +192,7 @@ function AppContent() {
           await import("./utils/streakCalculator");
         const { createStorageService } = await import("./services/storage");
 
-        const storageService = createStorageService();
-        await storageService.initialize();
+        const storageService = await createStorageService();
 
         // Get all books including newly imported ones
         const allBooks = await storageService.getBooks();
