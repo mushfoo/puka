@@ -38,7 +38,7 @@ export async function handleSettingsRequest(req: ApiRequest, res: ApiResponse, u
   }
 }
 
-async function handleGetSettings(req: ApiRequest, res: ApiResponse, userId: string) {
+async function handleGetSettings(_req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleGetSettings called for userId:', userId);
   
   // Return mock default settings

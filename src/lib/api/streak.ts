@@ -45,7 +45,7 @@ export async function handleStreakRequest(req: ApiRequest, res: ApiResponse, use
   }
 }
 
-async function handleGetStreak(req: ApiRequest, res: ApiResponse, userId: string) {
+async function handleGetStreak(_req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleGetStreak called for userId:', userId);
   
   // Return mock streak data

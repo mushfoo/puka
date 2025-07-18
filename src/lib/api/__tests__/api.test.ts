@@ -11,10 +11,10 @@ describe('API Endpoints', () => {
   beforeEach(() => {
     // Create mock response
     jsonSpy = vi.fn();
-    statusSpy = vi.fn().mockReturnValue({ json: jsonSpy });
+    statusSpy = vi.fn().mockReturnValue({ json: jsonSpy }) as any;
     
     mockResponse = {
-      status: statusSpy,
+      status: statusSpy as any,
       json: jsonSpy,
       send: vi.fn(),
       setHeader: vi.fn(),

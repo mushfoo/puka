@@ -163,7 +163,7 @@ async function handleCreateBook(req: ApiRequest, res: ApiResponse, userId: strin
   }
 }
 
-async function handleGetBook(req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
+async function handleGetBook(_req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
   
   try {
     const book = await prisma.book.findFirst({
@@ -223,7 +223,7 @@ async function handleUpdateBook(req: ApiRequest, res: ApiResponse, userId: strin
   }
 }
 
-async function handleDeleteBook(req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
+async function handleDeleteBook(_req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
   
   try {
     // Check if book exists and belongs to user

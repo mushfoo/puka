@@ -72,7 +72,7 @@ export class AuthService {
         data: {
           email,
           name: name || null,
-          emailVerified: new Date(),
+          emailVerified: false,
         }
       })
 

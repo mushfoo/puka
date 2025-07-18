@@ -96,7 +96,7 @@ export function allowAnonymous(handler: (req: AuthenticatedRequest, res: ApiResp
   };
 }
 
-export function handleAuthError(error: any, res: Response) {
+export function handleAuthError(error: any, res: ApiResponse) {
   if (error.code === 'UNAUTHORIZED') {
     return res.status(401).json({ 
       error: 'Unauthorized', 
