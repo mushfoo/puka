@@ -32,7 +32,7 @@ export const useStorage = (): UseStorageResult => {
   const [streakHistory, setStreakHistory] = useState<StreakHistory | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [storageService] = useState<StorageService>(() => createStorageService());
+  const [storageService, setStorageService] = useState<StorageService | null>(null);
   const { isAuthenticated, loading: authLoading } = useOptionalAuth();
 
   // Initialize storage and load books
@@ -41,13 +41,19 @@ export const useStorage = (): UseStorageResult => {
       setLoading(true);
       setError(null);
       
-      await storageService.initialize();
-      const loadedBooks = await storageService.getBooks();
+      // Create storage service if not already created
+      let service = storageService;
+      if (!service) {
+        service = await createStorageService();
+        setStorageService(service);
+      }
+      
+      const loadedBooks = await service.getBooks();
       
       // Try to get streak history, but don't fail if not implemented yet
       let loadedStreakHistory = null;
       try {
-        loadedStreakHistory = await storageService.getStreakHistory();
+        loadedStreakHistory = await service.getStreakHistory();
       } catch (error) {
         // Ignore if method not implemented yet
         console.log('Streak history not available yet:', error);
@@ -67,7 +73,7 @@ export const useStorage = (): UseStorageResult => {
           const newStreakHistory = createStreakHistoryFromBooks(loadedBooks);
           
           // Save the new streak history
-          await storageService.saveStreakHistory(newStreakHistory);
+          await service.saveStreakHistory(newStreakHistory);
           
           setStreakHistory(newStreakHistory);
         } else {
@@ -97,6 +103,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Add a new book
   const addBook = useCallback(async (bookData: Omit<Book, 'id' | 'dateAdded'>): Promise<Book | null> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return null;
+    }
     try {
       setError(null);
       const newBook = await storageService.saveBook(bookData);
@@ -111,6 +121,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Update an existing book
   const updateBook = useCallback(async (id: number, updates: Partial<Book>): Promise<boolean> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return false;
+    }
     try {
       setError(null);
       const updatedBook = await storageService.updateBook(id, updates);
@@ -127,6 +141,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Delete a book
   const deleteBook = useCallback(async (id: number): Promise<boolean> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return false;
+    }
     try {
       setError(null);
       const success = await storageService.deleteBook(id);
@@ -188,6 +206,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Search books
   const searchBooks = useCallback(async (query: string): Promise<Book[]> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return [];
+    }
     try {
       return await storageService.searchBooks(query);
     } catch (err) {
@@ -207,6 +229,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Get export data
   const getExportData = useCallback(async (): Promise<ExportData | null> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return null;
+    }
     try {
       setError(null);
       return await storageService.exportData();
@@ -219,6 +245,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Mark today as a reading day
   const markReadingDay = useCallback(async (): Promise<boolean> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      return false;
+    }
     try {
       const updatedHistory = await storageService.markReadingDay();
       setStreakHistory(updatedHistory);
@@ -237,6 +267,10 @@ export const useStorage = (): UseStorageResult => {
 
   // Enhanced streak history methods
   const getEnhancedStreakHistory = useCallback(async (): Promise<EnhancedStreakHistory> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      throw new Error('Storage service not initialized');
+    }
     try {
       setError(null);
       const result = await storageService.getEnhancedStreakHistory();
@@ -254,6 +288,10 @@ export const useStorage = (): UseStorageResult => {
   }, [storageService]);
 
   const updateEnhancedStreakHistory = useCallback(async (updates: Partial<EnhancedStreakHistory>): Promise<void> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      throw new Error('Storage service not initialized');
+    }
     try {
       setError(null);
       await storageService.updateEnhancedStreakHistory(updates);
@@ -265,6 +303,10 @@ export const useStorage = (): UseStorageResult => {
   }, [storageService]);
 
   const addReadingDayEntry = useCallback(async (entry: EnhancedReadingDayEntry): Promise<void> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      throw new Error('Storage service not initialized');
+    }
     try {
       setError(null);
       await storageService.addReadingDayEntry(entry);
@@ -276,6 +318,10 @@ export const useStorage = (): UseStorageResult => {
   }, [storageService]);
 
   const updateReadingDayEntry = useCallback(async (date: string, updates: Partial<EnhancedReadingDayEntry>): Promise<void> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      throw new Error('Storage service not initialized');
+    }
     try {
       setError(null);
       await storageService.updateReadingDayEntry(date, updates);
@@ -287,6 +333,10 @@ export const useStorage = (): UseStorageResult => {
   }, [storageService]);
 
   const removeReadingDayEntry = useCallback(async (date: string): Promise<void> => {
+    if (!storageService) {
+      setError('Storage service not initialized');
+      throw new Error('Storage service not initialized');
+    }
     try {
       setError(null);
       await storageService.removeReadingDayEntry(date);

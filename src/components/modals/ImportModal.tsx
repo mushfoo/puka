@@ -1,8 +1,8 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Papa from 'papaparse';
 import { ImportService, ImportFormat, ImportPreview, ColumnMapping, StreakPreview } from '@/services/importService';
 import { ImportOptions, ImportResult } from '@/services/storage/StorageService';
-import { createStorageService } from '@/services/storage';
+import { createStorageService, type StorageService } from '@/services/storage';
 import { useToast } from '@/hooks/useToast';
 import { logImportPhase } from '@/utils/importDebugger';
 
@@ -34,7 +34,7 @@ const ImportModal: React.FC<ImportModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { addToast } = useToast();
-  const storageService = useMemo(() => createStorageService(), []);
+  const [storageService, setStorageService] = useState<StorageService | null>(null);
 
   const [state, setState] = useState<ImportState>({
     step: 'upload',
@@ -53,6 +53,23 @@ const ImportModal: React.FC<ImportModalProps> = ({
     isProcessing: false,
     error: null
   });
+
+  // Initialize storage service
+  useEffect(() => {
+    const initStorageService = async () => {
+      try {
+        const service = await createStorageService();
+        setStorageService(service);
+      } catch (error) {
+        console.error('Failed to initialize storage service:', error);
+        setState(prev => ({ ...prev, error: 'Failed to initialize storage service' }));
+      }
+    };
+
+    if (isOpen && !storageService) {
+      initStorageService();
+    }
+  }, [isOpen, storageService]);
 
   const resetState = () => {
     setState({
@@ -185,10 +202,15 @@ const ImportModal: React.FC<ImportModalProps> = ({
       logImportPhase('import-start', null, 'Starting import process');
       console.log('Starting import process...');
       
-      // Ensure storage service is initialized
-      console.log('Initializing storage service...');
-      await storageService.initialize();
-      console.log('Storage service initialized successfully');
+      // Ensure storage service is available
+      if (!storageService) {
+        setState(prev => ({
+          ...prev,
+          error: 'Storage service not initialized',
+          isProcessing: false
+        }));
+        return;
+      }
       
       // Use custom mapping if in mapping mode
       const format = state.step === 'mapping' 
