@@ -89,3 +89,4 @@ chrome
 
 /generated/prisma
 logs
+src/__tests__.old/

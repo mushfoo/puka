@@ -1,13 +1,31 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { useAuth } from '@/components/auth'
-import { 
-  DataMigrationService, 
-  MigrationProgress, 
-  MigrationResult, 
-  MigrationOptions 
-} from '@/services/migration/DataMigrationService'
-import { FileSystemStorageService } from '@/services/storage/FileSystemStorageService'
-import { SupabaseStorageService } from '@/services/storage/SupabaseStorageService'
+import { useState, useCallback } from 'react'
+
+export interface MigrationProgress {
+  phase: 'preparing' | 'books' | 'settings' | 'streaks' | 'cleanup' | 'complete' | 'error'
+  totalItems: number
+  completedItems: number
+  currentItem?: string
+  message: string
+  percentage: number
+}
+
+export interface MigrationResult {
+  success: boolean
+  booksImported: number
+  settingsImported: boolean
+  streaksImported: boolean
+  errors: string[]
+  skipped: number
+  duplicates: number
+  duration: number
+}
+
+export interface MigrationOptions {
+  skipDuplicates?: boolean
+  overwriteExisting?: boolean
+  preserveLocalData?: boolean
+  batchSize?: number
+}
 
 export interface MigrationState {
   isAvailable: boolean
@@ -29,13 +47,11 @@ export interface MigrationActions {
 }
 
 /**
- * React hook for managing data migration from local to cloud storage
+ * Simplified hook that no longer provides migration functionality.
+ * Data migration has been removed with Supabase integration.
  */
 export function useDataMigration(): MigrationState & MigrationActions {
-  const { isAuthenticated, canSync } = useAuth()
-  const migrationServiceRef = useRef<DataMigrationService | null>(null)
-  
-  const [state, setState] = useState<MigrationState>({
+  const [state] = useState<MigrationState>({
     isAvailable: false,
     inProgress: false,
     progress: null,
@@ -44,176 +60,56 @@ export function useDataMigration(): MigrationState & MigrationActions {
     lastMigration: null
   })
 
-  // Initialize migration service when needed
-  const getMigrationService = useCallback(() => {
-    if (!migrationServiceRef.current && isAuthenticated) {
-      const localService = new FileSystemStorageService()
-      const cloudService = new SupabaseStorageService()
-      migrationServiceRef.current = new DataMigrationService(localService, cloudService)
+  // No-op actions since migration is no longer available
+  const startMigration = useCallback(async (_options?: MigrationOptions): Promise<MigrationResult> => {
+    console.warn('Data migration is no longer available')
+    return {
+      success: false,
+      booksImported: 0,
+      settingsImported: false,
+      streaksImported: false,
+      errors: ['Migration is no longer available'],
+      skipped: 0,
+      duplicates: 0,
+      duration: 0
     }
-    return migrationServiceRef.current
-  }, [isAuthenticated])
+  }, [])
 
-  // Check if migration is available
-  const checkMigrationAvailability = useCallback(async () => {
-    if (!isAuthenticated || !canSync) {
-      setState(prev => ({ ...prev, isAvailable: false }))
-      return
-    }
-
-    try {
-      const localService = new FileSystemStorageService()
-      await localService.initialize()
-      
-      const localBooks = await localService.getBooks()
-      const hasLocalData = localBooks.length > 0
-      
-      setState(prev => ({ 
-        ...prev, 
-        isAvailable: hasLocalData 
-      }))
-    } catch (error) {
-      console.error('Failed to check migration availability:', error)
-      setState(prev => ({ 
-        ...prev, 
-        isAvailable: false,
-        error: `Failed to check migration availability: ${error}`
-      }))
-    }
-  }, [isAuthenticated, canSync])
-
-  // Check availability when auth state changes
-  useEffect(() => {
-    checkMigrationAvailability()
-  }, [checkMigrationAvailability])
-
-  // Start migration
-  const startMigration = useCallback(async (options: MigrationOptions = {}): Promise<MigrationResult> => {
-    const migrationService = getMigrationService()
-    if (!migrationService) {
-      throw new Error('Migration service not available')
-    }
-
-    setState(prev => ({
-      ...prev,
-      inProgress: true,
-      progress: null,
-      result: null,
-      error: null
-    }))
-
-    try {
-      const result = await migrationService.migrateToCloud(
-        options,
-        (progress) => {
-          setState(prev => ({
-            ...prev,
-            progress
-          }))
-        }
-      )
-
-      setState(prev => ({
-        ...prev,
-        inProgress: false,
-        result,
-        lastMigration: new Date(),
-        isAvailable: !result.success // Only available if migration failed
-      }))
-
-      return result
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      setState(prev => ({
-        ...prev,
-        inProgress: false,
-        error: errorMessage
-      }))
-      throw error
-    }
-  }, [getMigrationService])
-
-  // Cancel migration (not implemented in service yet)
   const cancelMigration = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      inProgress: false,
-      progress: null
-    }))
+    console.warn('Migration cancellation is no longer available')
   }, [])
 
-  // Create backup
   const createBackup = useCallback(async (): Promise<string> => {
-    const migrationService = getMigrationService()
-    if (!migrationService) {
-      throw new Error('Migration service not available')
-    }
-
-    try {
-      return await migrationService.createBackup()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      setState(prev => ({
-        ...prev,
-        error: errorMessage
-      }))
-      throw error
-    }
-  }, [getMigrationService])
-
-  // Estimate migration
-  const estimateMigration = useCallback(async () => {
-    const migrationService = getMigrationService()
-    if (!migrationService) {
-      throw new Error('Migration service not available')
-    }
-
-    try {
-      return await migrationService.estimateMigration()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      setState(prev => ({
-        ...prev,
-        error: errorMessage
-      }))
-      throw error
-    }
-  }, [getMigrationService])
-
-  // Verify migration
-  const verifyMigration = useCallback(async () => {
-    const migrationService = getMigrationService()
-    if (!migrationService) {
-      throw new Error('Migration service not available')
-    }
-
-    try {
-      return await migrationService.verifyMigration()
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      setState(prev => ({
-        ...prev,
-        error: errorMessage
-      }))
-      throw error
-    }
-  }, [getMigrationService])
-
-  // Clear result
-  const clearResult = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      result: null,
-      progress: null
-    }))
+    console.warn('Migration backup is no longer available')
+    return ''
   }, [])
 
-  // Clear error
+  const estimateMigration = useCallback(async () => {
+    console.warn('Migration estimation is no longer available')
+    return {
+      totalBooks: 0,
+      estimatedDuration: 0,
+      estimatedSize: 0
+    }
+  }, [])
+
+  const verifyMigration = useCallback(async () => {
+    console.warn('Migration verification is no longer available')
+    return {
+      success: false,
+      localBooks: 0,
+      cloudBooks: 0,
+      missingBooks: [],
+      extraBooks: []
+    }
+  }, [])
+
+  const clearResult = useCallback(() => {
+    console.warn('Migration result clearing is no longer needed')
+  }, [])
+
   const clearError = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      error: null
-    }))
+    console.warn('Migration error clearing is no longer needed')
   }, [])
 
   return {
@@ -230,16 +126,15 @@ export function useDataMigration(): MigrationState & MigrationActions {
 
 /**
  * Hook for simple migration status checking
+ * Now always returns unavailable status since migration is disabled
  */
 export function useMigrationStatus() {
-  const { isAvailable, inProgress, result, error } = useDataMigration()
-  
   return {
-    isAvailable,
-    inProgress,
-    hasResult: !!result,
-    hasError: !!error,
-    isSuccess: result?.success ?? false,
-    error
+    isAvailable: false,
+    inProgress: false,
+    hasResult: false,
+    hasError: false,
+    isSuccess: false,
+    error: null
   }
 }

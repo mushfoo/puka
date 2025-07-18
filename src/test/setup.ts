@@ -1,40 +1,66 @@
-import '@testing-library/jest-dom'
-import { beforeAll, afterAll, vi } from 'vitest'
+import React from "react";
+import "@testing-library/jest-dom";
+import { beforeAll, afterAll, vi } from "vitest";
 
-// Mock Supabase globally for all tests
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-      onAuthStateChange: vi.fn().mockReturnValue({ 
-        data: { subscription: { unsubscribe: vi.fn() } },
-        unsubscribe: vi.fn() 
-      }),
-      signInWithPassword: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      signUp: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      signInWithOAuth: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      signInWithOtp: vi.fn().mockResolvedValue({ error: null }),
+// Mock timers for faster tests
+vi.useFakeTimers();
+
+// Mock the auth context to always return an authenticated user for tests
+vi.mock("@/contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: {
+      id: "test-user-id",
+      email: "test@example.com",
+      name: "Test User",
+      image: null,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ data: [], error: null }),
-        order: vi.fn().mockReturnValue({
-          limit: vi.fn().mockResolvedValue({ data: [], error: null })
-        })
-      }),
-      insert: vi.fn().mockResolvedValue({ data: [], error: null }),
-      update: vi.fn().mockResolvedValue({ data: [], error: null }),
-      delete: vi.fn().mockResolvedValue({ data: [], error: null }),
-      upsert: vi.fn().mockResolvedValue({ data: [], error: null })
-    }),
-    channel: vi.fn().mockReturnValue({
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
-    }),
-    removeChannel: vi.fn()
-  }
+    session: {
+      user: {
+        id: "test-user-id",
+        email: "test@example.com",
+        name: "Test User",
+        image: null,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      session: {
+        id: "test-session-id",
+        userId: "test-user-id",
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        token: "test-token",
+      },
+    },
+    loading: false,
+    signUp: vi.fn().mockResolvedValue({ user: null, error: null }),
+    signIn: vi.fn().mockResolvedValue({ user: null, error: null }),
+    signOut: vi.fn().mockResolvedValue({ error: null }),
+    isAuthenticated: true,
+    canSync: true,
+    showAuthPrompt: false,
+    dismissAuthPrompt: vi.fn(),
+    hasLocalData: false,
+    setHasLocalData: vi.fn(),
+  }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  withAuth: (Component: React.ComponentType) => Component,
+  useOptionalAuth: () => ({
+    user: {
+      id: "test-user-id",
+      email: "test@example.com",
+      name: "Test User",
+      image: null,
+      emailVerified: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    isAuthenticated: true,
+    shouldPromptAuth: false,
+    syncAvailable: true,
+  }),
 }));
 
 // Suppress console.error during tests to reduce noise from expected error scenarios
@@ -44,14 +70,13 @@ beforeAll(() => {
     // Only suppress certain expected error patterns during tests
     const message = args[0];
     if (
-      typeof message === 'string' && (
-        message.includes('Failed to initialize storage:') ||
-        message.includes('Failed to add book:') ||
-        message.includes('Failed to update book:') ||
-        message.includes('Failed to delete book:') ||
-        message.includes('Search failed:') ||
-        message.includes('Warning: `NaN` is an invalid value')
-      )
+      typeof message === "string" &&
+      (message.includes("Failed to initialize storage:") ||
+        message.includes("Failed to add book:") ||
+        message.includes("Failed to update book:") ||
+        message.includes("Failed to delete book:") ||
+        message.includes("Search failed:") ||
+        message.includes("Warning: `NaN` is an invalid value"))
     ) {
       return; // Suppress expected test errors
     }
