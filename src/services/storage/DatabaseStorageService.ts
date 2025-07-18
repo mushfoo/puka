@@ -5,6 +5,7 @@ import {
   type ImportData, 
   type ImportOptions, 
   type ImportResult, 
+  type ImportError,
   type BookFilter, 
   type BulkReadingDayOperation,
   StorageError, 
@@ -71,7 +72,7 @@ export class DatabaseStorageService implements StorageService {
    */
   private async authenticatedFetch(
     endpoint: string, 
-    options: RequestInit = {}
+    options: Record<string, any> = {}
   ): Promise<Response> {
     if (!this.initialized) {
       throw new StorageError(
@@ -601,7 +602,8 @@ export class DatabaseStorageService implements StorageService {
       }
       
       // Remove readonly fields from updates
-      const { id: _, dateAdded, ...cleanUpdates } = updates;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _, dateAdded: __, ...cleanUpdates } = updates;
       
       // Map frontend updates to database format
       const dbUpdates = this.mapFrontendBookToDb(cleanUpdates);
@@ -1418,7 +1420,8 @@ export class DatabaseStorageService implements StorageService {
         }
         
         // Save new book (remove id and dateAdded if present)
-        const { id, dateAdded, ...newBookData } = bookData as any;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _, dateAdded: __, ...newBookData } = bookData as any;
         await this.saveBook(newBookData);
         result.imported++;
         
@@ -2828,20 +2831,22 @@ export class DatabaseStorageService implements StorageService {
           case 'progress':
           case 'rating':
           case 'totalPages':
-          case 'currentPage':
+          case 'currentPage': {
             const numValue = parseInt(value, 10);
             if (!isNaN(numValue)) {
               book[header] = numValue;
             }
             break;
+          }
             
           case 'dateStarted':
-          case 'dateFinished':
+          case 'dateFinished': {
             const dateValue = new Date(value);
             if (!isNaN(dateValue.getTime())) {
               book[header] = dateValue;
             }
             break;
+          }
             
           case 'tags':
             book.tags = value.split(';').filter(tag => tag.trim().length > 0);
