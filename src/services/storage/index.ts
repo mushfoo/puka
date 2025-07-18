@@ -15,7 +15,6 @@ export {
 export { MockStorageService } from './MockStorageService';
 export { FileSystemStorageService } from './FileSystemStorageService';
 
-
 // Import types for the factory function
 import { type StorageService } from './StorageService';
 import { MockStorageService } from './MockStorageService';

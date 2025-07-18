@@ -2,25 +2,33 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Conditionally import auth for development server only
-const createAuthPlugin = () => {
+// Create API plugin for development server
+const createApiPlugin = () => {
   if (process.env.NODE_ENV === "test") {
     return null;
   }
 
   return {
-    name: "auth-plugin",
+    name: "api-plugin",
     configureServer: async (server: any) => {
       try {
         const { Readable } = await import("node:stream");
         const { auth } = await import("./src/lib/auth-server");
 
-        // Handle all auth routes including nested paths
-        server.middlewares.use((req: any, res: any, next: any) => {
-          if (req.url.startsWith("/api/auth")) {
-            handleAuthRequest(req, res, next);
-          } else {
-            next();
+        // API route handlers
+        server.middlewares.use(async (req: any, res: any, next: any) => {
+          try {
+            if (req.url.startsWith("/api/auth")) {
+              await handleAuthRequest(req, res);
+            } else if (req.url.startsWith("/api/")) {
+              await handleApiRequest(req, res);
+            } else {
+              next();
+            }
+          } catch (error) {
+            console.error("API middleware error:", error);
+            res.statusCode = 500;
+            res.end("Internal Server Error");
           }
         });
 
@@ -61,12 +69,121 @@ const createAuthPlugin = () => {
               res.end();
             }
           } catch (error) {
+            console.error("Auth request error:", error);
             res.statusCode = 500;
             res.end("Internal Server Error");
           }
         };
+
+        const handleApiRequest = async (req: any, res: any) => {
+          try {
+            console.log('=== API Request Start ===');
+            console.log('Method:', req.method);
+            console.log('URL:', req.url);
+            console.log('Headers:', req.headers);
+            
+            // Parse request body for non-GET requests
+            let body: any;
+            if (req.method !== "GET" && req.method !== "HEAD") {
+              console.log('Parsing request body...');
+              const rawBody = await new Promise<string>((resolve) => {
+                let data = "";
+                req.on("data", (chunk: any) => (data += chunk));
+                req.on("end", () => resolve(data));
+              });
+              
+              try {
+                body = rawBody ? JSON.parse(rawBody) : {};
+                console.log('Parsed body:', body);
+              } catch (e) {
+                console.error('Invalid JSON in request body:', e);
+                res.statusCode = 400;
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify({ error: "Invalid JSON in request body" }));
+                return;
+              }
+            }
+
+            // Parse URL and query parameters
+            console.log('Parsing URL and query parameters...');
+            const url = new URL(req.url, `http://${req.headers.host}`);
+            const queryParams = Object.fromEntries(url.searchParams.entries());
+            console.log('Query params:', queryParams);
+
+            // Create Express-like req/res objects
+            console.log('Creating Express-like request/response objects...');
+            const expressReq = {
+              ...req,
+              body,
+              query: queryParams,
+            };
+
+            const expressRes = {
+              status: (code: number) => {
+                console.log('Setting status code:', code);
+                res.statusCode = code;
+                return expressRes;
+              },
+              json: (data: any) => {
+                console.log('Sending JSON response:', data);
+                res.setHeader("Content-Type", "application/json");
+                res.end(JSON.stringify(data));
+              },
+              send: (data?: any) => {
+                console.log('Sending response:', data);
+                if (data) {
+                  res.end(data);
+                } else {
+                  res.end();
+                }
+              },
+              setHeader: (name: string, value: string) => {
+                console.log('Setting header:', name, '=', value);
+                res.setHeader(name, value);
+              },
+            };
+
+            // Import API handlers dynamically
+            const { allowAnonymous, requireAuth } = await import("./src/lib/api/auth");
+            const { handleHealthRequest } = await import("./src/lib/api/health");
+            const { handleBooksRequest, handleBookByIdRequest } = await import("./src/lib/api/books");
+            const { handleStreakRequest } = await import("./src/lib/api/streak");
+            const { handleSettingsRequest } = await import("./src/lib/api/settings");
+
+            // Route to appropriate handler
+            const pathSegments = url.pathname.split('/').filter(Boolean);
+
+            if (pathSegments[1] === 'health') {
+              await allowAnonymous(handleHealthRequest)(expressReq, expressRes); // Health check doesn't need auth
+            } else if (pathSegments[1] === 'books') {
+              if (pathSegments[2]) {
+                // /api/books/[id]
+                const bookId = pathSegments[2];
+                await requireAuth(handleBookByIdRequest)(expressReq, expressRes, bookId);
+              } else {
+                // /api/books
+                await requireAuth(handleBooksRequest)(expressReq, expressRes);
+              }
+            } else if (pathSegments[1] === 'streak') {
+              await requireAuth(handleStreakRequest)(expressReq, expressRes);
+            } else if (pathSegments[1] === 'settings') {
+              await requireAuth(handleSettingsRequest)(expressReq, expressRes);
+            } else {
+              res.statusCode = 404;
+              res.setHeader("Content-Type", "application/json");
+              res.end(JSON.stringify({ error: "API endpoint not found" }));
+            }
+            console.log('=== API Request End ===');
+          } catch (error) {
+            console.error("API request error:", error);
+            console.error("Error stack:", error instanceof Error ? error.stack : String(error));
+            res.statusCode = 500;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "Internal server error", details: error instanceof Error ? error.message : String(error) }));
+          }
+        };
       } catch (error) {
-        console.warn("Auth plugin disabled due to import error:", error);
+        console.warn("API plugin disabled due to import error:", error);
       }
     },
   };
@@ -74,7 +191,7 @@ const createAuthPlugin = () => {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), createAuthPlugin()].filter(Boolean),
+  plugins: [react(), createApiPlugin()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

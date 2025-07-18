@@ -18,7 +18,7 @@ export interface RealtimeSyncActions {
 
 /**
  * Simplified hook that no longer provides real-time sync functionality.
- * Real-time sync has been removed with Supabase integration.
+ * Real-time sync has been removed as part of migrating to Better-auth.
  */
 export function useRealtimeSync(): RealtimeSyncState & RealtimeSyncActions {
   const [state] = useState<RealtimeSyncState>({

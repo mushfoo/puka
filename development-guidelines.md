@@ -194,31 +194,37 @@ Don't solve performance problems that don't exist yet
 
 ### ❌ **Don't Over-Architect**
 
-- **Complex ORM Patterns**: Avoid elaborate abstraction layers for simple file operations
-- **Unnecessary Migrations**: Don't build migration systems for JSON files
-- **Over-Engineered Relationships**: Don't create complex data relationships that aren't needed
-- **Excessive Service Layers**: Don't abstract file operations behind multiple layers
+- **Complex ORM Patterns**: Avoid elaborate abstraction layers for simple database operations
+- **Unnecessary Relationships**: Don't create complex data relationships that aren't needed
+- **Excessive Service Layers**: Don't abstract database operations behind multiple layers
+- **Premature Optimization**: Don't add complex caching or indexing before measuring performance
 
 ### ✅ **Do Keep It Simple**
 
-- **Direct File Operations**: Start with simple file reads/writes with error handling
+- **Direct Database Operations**: Use Prisma client directly with proper error handling
   ```javascript
   // Simple and reliable
-  async function saveUserConfig(userId, config) {
+  async function saveUserBook(userId, bookData) {
     try {
-      const filePath = path.join(DATA_DIR, `${userId}-config.json`);
-      await fs.writeFile(filePath, JSON.stringify(config, null, 2));
-      return { success: true };
+      const book = await prisma.book.create({
+        data: {
+          userId,
+          title: bookData.title,
+          author: bookData.author,
+          // ... other fields
+        }
+      });
+      return { success: true, book };
     } catch (error) {
-      console.error('Failed to save config:', error);
-      return { success: false, error: 'Unable to save configuration' };
+      console.error('Failed to save book:', error);
+      return { success: false, error: 'Unable to save book' };
     }
   }
   ```
 
-- **Test with Real Data**: Actually create/modify files and verify results
-- **Atomic Operations**: Ensure data operations are atomic and recover gracefully
-- **Manual Verification**: Check that files are created correctly on disk
+- **Test with Real Database**: Actually create/modify database records and verify results
+- **Secure User Data**: Ensure all database operations are properly scoped to authenticated users
+- **Manual Verification**: Check that data is persisted correctly in the database
 
 ---
 

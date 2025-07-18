@@ -48,7 +48,7 @@ export interface MigrationActions {
 
 /**
  * Simplified hook that no longer provides migration functionality.
- * Data migration has been removed with Supabase integration.
+ * Data migration has been removed as part of migrating to Better-auth.
  */
 export function useDataMigration(): MigrationState & MigrationActions {
   const [state] = useState<MigrationState>({

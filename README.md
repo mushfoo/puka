@@ -20,7 +20,7 @@ A clean, minimal reading tracker that focuses on essential functionality without
 - **No Social Bloat**: Personal tracking only - no feeds, reviews, or social features
 - **Exceptional Performance**: <50ms UI interactions (exceeds <100ms requirement), <2s page load
 - **Mobile-First Excellence**: Optimized for 375px viewport with one-handed operation and 44x44px touch targets
-- **Privacy-Focused**: Your data stays on your device using File System Access API with localStorage fallback
+- **Privacy-Focused**: Secure user authentication with optional local storage fallback
 - **Production Tested**: 274 passing tests with >90% coverage, comprehensive UX validation
 - **Accessibility Ready**: Full keyboard navigation, screen reader support, and WCAG compliance
 
@@ -28,7 +28,8 @@ A clean, minimal reading tracker that focuses on essential functionality without
 
 ### Prerequisites
 - Node.js 18+ 
-- Chrome/Edge browser (for File System Access API support)
+- PostgreSQL database (for data persistence)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
 
@@ -39,6 +40,9 @@ cd puka
 
 # Install dependencies
 npm install
+
+# Setup database
+npm run db:setup
 
 # Start development server
 npm run dev
@@ -68,7 +72,8 @@ npm run preview
 
 - **Frontend**: React 18+ with TypeScript and strict type checking
 - **Styling**: Tailwind CSS (mobile-first responsive design)
-- **Storage**: File System Access API with localStorage fallback
+- **Database**: PostgreSQL with Prisma ORM for data persistence
+- **Authentication**: Better-auth for secure user management
 - **Build Tool**: Vite for fast development and optimized builds
 - **Testing**: Vitest + React Testing Library (274 tests, >90% coverage)
 - **E2E Testing**: Playwright for comprehensive user workflow validation
@@ -117,6 +122,9 @@ npm run test:e2e     # Run Playwright end-to-end tests
 npm run test:e2e:ui  # Run E2E tests with Playwright UI
 npm run type-check   # TypeScript type checking
 npm run lint         # ESLint code quality checks
+npm run db:setup     # Setup database and run migrations
+npm run db:migrate   # Run database migrations
+npm run db:studio    # Open Prisma Studio for database management
 ```
 
 ### Testing
@@ -156,14 +164,12 @@ The app has been thoroughly tested for performance:
 
 ## Browser Support
 
-### Primary Support
-- **Chrome/Edge**: Full functionality with File System Access API
-- **Mobile Chrome**: Full responsive experience
-
-### Fallback Support
-- **Safari/Firefox**: Full functionality with localStorage fallback
-- **Mobile Safari**: Complete responsive UI with download/upload for data portability
-- **All Modern Browsers**: Core functionality works universally
+### Supported Browsers
+- **Chrome/Edge**: Full functionality with optimal performance
+- **Firefox**: Complete feature support
+- **Safari**: Full functionality including mobile Safari
+- **Mobile Browsers**: Responsive design optimized for mobile devices
+- **All Modern Browsers**: Core functionality works universally with secure authentication
 
 ## Contributing
 
@@ -217,7 +223,7 @@ Puka follows a **minimalist design philosophy**:
 - **Exceptional performance** - all interactions under 50ms
 - **Personal use focus** - no social features, just pure reading tracking
 - **Accessibility first** - usable by everyone, including screen reader users
-- **Privacy by design** - your data stays on your device
+- **Privacy by design** - secure user authentication with encrypted data storage
 - **Gamified motivation** - streak tracking and progress celebration
 
 ## License
