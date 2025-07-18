@@ -144,45 +144,31 @@ const createApiPlugin = () => {
             };
 
             // Import API handlers dynamically
-            console.log('Importing API handlers...');
-            const { allowAnonymous } = await import("./src/lib/api/auth");
-            console.log('✓ Auth imported');
+            const { allowAnonymous, requireAuth } = await import("./src/lib/api/auth");
             const { handleHealthRequest } = await import("./src/lib/api/health");
-            console.log('✓ Health imported');
             const { handleBooksRequest, handleBookByIdRequest } = await import("./src/lib/api/books");
-            console.log('✓ Books imported');
             const { handleStreakRequest } = await import("./src/lib/api/streak");
-            console.log('✓ Streak imported');
             const { handleSettingsRequest } = await import("./src/lib/api/settings");
-            console.log('✓ Settings imported');
 
             // Route to appropriate handler
-            console.log('Routing request...');
             const pathSegments = url.pathname.split('/').filter(Boolean);
-            console.log('Path segments:', pathSegments);
 
             if (pathSegments[1] === 'health') {
-              console.log('Routing to health handler');
-              await allowAnonymous(handleHealthRequest)(expressReq, expressRes);
+              await allowAnonymous(handleHealthRequest)(expressReq, expressRes); // Health check doesn't need auth
             } else if (pathSegments[1] === 'books') {
               if (pathSegments[2]) {
                 // /api/books/[id]
-                console.log('Routing to book by ID handler');
                 const bookId = pathSegments[2];
-                await allowAnonymous(handleBookByIdRequest)(expressReq, expressRes, bookId);
+                await requireAuth(handleBookByIdRequest)(expressReq, expressRes, bookId);
               } else {
                 // /api/books
-                console.log('Routing to books handler');
-                await allowAnonymous(handleBooksRequest)(expressReq, expressRes);
+                await requireAuth(handleBooksRequest)(expressReq, expressRes);
               }
             } else if (pathSegments[1] === 'streak') {
-              console.log('Routing to streak handler');
-              await allowAnonymous(handleStreakRequest)(expressReq, expressRes);
+              await requireAuth(handleStreakRequest)(expressReq, expressRes);
             } else if (pathSegments[1] === 'settings') {
-              console.log('Routing to settings handler');
-              await allowAnonymous(handleSettingsRequest)(expressReq, expressRes);
+              await requireAuth(handleSettingsRequest)(expressReq, expressRes);
             } else {
-              console.log('No handler found, returning 404');
               res.statusCode = 404;
               res.setHeader("Content-Type", "application/json");
               res.end(JSON.stringify({ error: "API endpoint not found" }));

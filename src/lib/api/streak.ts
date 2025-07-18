@@ -1,23 +1,8 @@
-// Temporarily disable Prisma for testing
-// import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from './types';
 
-// Express-like interfaces for our API
-interface Request {
-  method: string;
-  query: Record<string, any>;
-  body: any;
-  headers: Record<string, string>;
-}
-
-interface Response {
-  status(code: number): Response;
-  json(data: any): void;
-  send(data?: any): void;
-  setHeader(name: string, value: string): void;
-}
-
-// const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
 // Zod schemas for validation
 const StreakUpdateSchema = z.object({
@@ -35,7 +20,7 @@ const ReadingDaySchema = z.object({
   source: z.enum(['manual', 'book', 'progress']).default('manual'),
 });
 
-export async function handleStreakRequest(req: Request, res: Response, userId: string | null) {
+export async function handleStreakRequest(req: ApiRequest, res: ApiResponse, userId: string | null) {
   try {
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -58,7 +43,7 @@ export async function handleStreakRequest(req: Request, res: Response, userId: s
   }
 }
 
-async function handleGetStreak(req: Request, res: Response, userId: string) {
+async function handleGetStreak(req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleGetStreak called for userId:', userId);
   
   // Return mock streak data
@@ -73,7 +58,7 @@ async function handleGetStreak(req: Request, res: Response, userId: string) {
   });
 }
 
-async function handleUpdateStreak(req: Request, res: Response, userId: string) {
+async function handleUpdateStreak(req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleUpdateStreak called');
   
   const validationResult = StreakUpdateSchema.safeParse(req.body);

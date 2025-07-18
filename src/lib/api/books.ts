@@ -1,24 +1,10 @@
-// Temporarily comment out Prisma import to test routing
-// import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from './types';
 
-// Express-like interfaces for our API
-interface Request {
-  method: string;
-  query: Record<string, any>;
-  body: any;
-  headers: Record<string, string>;
-}
+// Initialize Prisma Client
+const prisma = new PrismaClient();
 
-interface Response {
-  status(code: number): Response;
-  json(data: any): void;
-  send(data?: any): void;
-  setHeader(name: string, value: string): void;
-}
-
-// Temporarily disable Prisma initialization
-// let prisma: PrismaClient;
 
 // Zod schemas for validation
 const BookCreateSchema = z.object({
@@ -52,24 +38,19 @@ const BookFilterSchema = z.object({
   offset: z.number().non-negative().default(0),
 });
 
-export async function handleBooksRequest(req: Request, res: Response, userId: string | null) {
+export async function handleBooksRequest(req: ApiRequest, res: ApiResponse, userId: string | null) {
   try {
-    console.log('handleBooksRequest called with method:', req.method, 'userId:', userId);
     
     if (!userId) {
-      console.log('No userId provided, returning 401');
       return res.status(401).json({ error: 'Authentication required' });
     }
 
     switch (req.method) {
       case 'GET':
-        console.log('Handling GET request');
         return await handleGetBooks(req, res, userId);
       case 'POST':
-        console.log('Handling POST request');
         return await handleCreateBook(req, res, userId);
       default:
-        console.log('Unsupported method:', req.method);
         res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
@@ -78,7 +59,7 @@ export async function handleBooksRequest(req: Request, res: Response, userId: st
   }
 }
 
-export async function handleBookByIdRequest(req: Request, res: Response, userId: string | null, bookId: string) {
+export async function handleBookByIdRequest(req: ApiRequest, res: ApiResponse, userId: string | null, bookId: string) {
   try {
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -100,85 +81,173 @@ export async function handleBookByIdRequest(req: Request, res: Response, userId:
   }
 }
 
-async function handleGetBooks(req: Request, res: Response, userId: string) {
-  console.log('handleGetBooks called for userId:', userId);
+async function handleGetBooks(req: ApiRequest, res: ApiResponse, userId: string) {
   
   const filterResult = BookFilterSchema.safeParse(req.query);
   if (!filterResult.success) {
     return res.status(400).json({ error: 'Invalid filter parameters', details: filterResult.error });
   }
 
-  const { limit, offset } = filterResult.data;
+  const { status, search, genre, rating, sortBy, sortOrder, limit, offset } = filterResult.data;
 
-  // Return mock data for now
-  const mockBooks = [];
-
-  res.json({
-    books: mockBooks,
-    pagination: {
-      limit,
-      offset,
-      total: 0,
+  try {
+    const where: any = { userId };
+    
+    // Apply filters
+    if (status && status !== 'all') {
+      where.status = status;
     }
-  });
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { author: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (genre) {
+      where.genre = { contains: genre, mode: 'insensitive' };
+    }
+    if (rating) {
+      where.rating = rating;
+    }
+
+    // Count total books for pagination
+    const total = await prisma.book.count({ where });
+
+    // Get books with pagination and sorting
+    const books = await prisma.book.findMany({
+      where,
+      orderBy: {
+        [sortBy === 'dateAdded' ? 'createdAt' : sortBy]: sortOrder,
+      },
+      skip: offset,
+      take: limit,
+    });
+
+    res.json({
+      books,
+      pagination: {
+        limit,
+        offset,
+        total,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching books:', error);
+    res.status(500).json({ error: 'Failed to fetch books' });
+  }
 }
 
-async function handleCreateBook(req: Request, res: Response, userId: string) {
-  console.log('handleCreateBook called');
+async function handleCreateBook(req: ApiRequest, res: ApiResponse, userId: string) {
   
   const validationResult = BookCreateSchema.safeParse(req.body);
   if (!validationResult.success) {
     return res.status(400).json({ error: 'Invalid book data', details: validationResult.error });
   }
 
-  // Return mock created book
-  res.status(201).json({
-    id: 1,
-    title: req.body.title,
-    author: req.body.author,
-    status: 'want_to_read',
-    progress: 0,
-    dateAdded: new Date().toISOString()
-  });
-}
-
-async function handleGetBook(req: Request, res: Response, userId: string, bookId: string) {
-  console.log('handleGetBook called for bookId:', bookId);
+  const bookData = validationResult.data;
   
-  // Return mock book
-  res.json({
-    id: parseInt(bookId),
-    title: 'Mock Book',
-    author: 'Mock Author',
-    status: 'want_to_read',
-    progress: 0,
-    dateAdded: new Date().toISOString()
-  });
+  try {
+    const book = await prisma.book.create({
+      data: {
+        ...bookData,
+        userId,
+        dateStarted: bookData.dateStarted ? new Date(bookData.dateStarted) : null,
+        dateFinished: bookData.dateFinished ? new Date(bookData.dateFinished) : null,
+      },
+    });
+
+    res.status(201).json(book);
+  } catch (error) {
+    console.error('Error creating book:', error);
+    res.status(500).json({ error: 'Failed to create book' });
+  }
 }
 
-async function handleUpdateBook(req: Request, res: Response, userId: string, bookId: string) {
-  console.log('handleUpdateBook called for bookId:', bookId);
+async function handleGetBook(req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
+  
+  try {
+    const book = await prisma.book.findFirst({
+      where: {
+        id: bookId,
+        userId,
+      },
+    });
+
+    if (!book) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    res.json(book);
+  } catch (error) {
+    console.error('Error fetching book:', error);
+    res.status(500).json({ error: 'Failed to fetch book' });
+  }
+}
+
+async function handleUpdateBook(req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
   
   const validationResult = BookUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
     return res.status(400).json({ error: 'Invalid book data', details: validationResult.error });
   }
 
-  // Return mock updated book
-  res.json({
-    id: parseInt(bookId),
-    title: req.body.title || 'Mock Book',
-    author: req.body.author || 'Mock Author',
-    status: req.body.status || 'want_to_read',
-    progress: req.body.progress || 0,
-    dateAdded: new Date().toISOString()
-  });
+  const updateData = validationResult.data;
+  
+  try {
+    // Check if book exists and belongs to user
+    const existingBook = await prisma.book.findFirst({
+      where: {
+        id: bookId,
+        userId,
+      },
+    });
+
+    if (!existingBook) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    // Update the book
+    const updatedBook = await prisma.book.update({
+      where: { id: bookId },
+      data: {
+        ...updateData,
+        dateStarted: updateData.dateStarted ? new Date(updateData.dateStarted) : undefined,
+        dateFinished: updateData.dateFinished ? new Date(updateData.dateFinished) : undefined,
+      },
+    });
+
+    res.json(updatedBook);
+  } catch (error) {
+    console.error('Error updating book:', error);
+    res.status(500).json({ error: 'Failed to update book' });
+  }
 }
 
-async function handleDeleteBook(req: Request, res: Response, userId: string, bookId: string) {
-  console.log('handleDeleteBook called for bookId:', bookId);
+async function handleDeleteBook(req: ApiRequest, res: ApiResponse, userId: string, bookId: string) {
   
-  res.status(204).send();
+  try {
+    // Check if book exists and belongs to user
+    const existingBook = await prisma.book.findFirst({
+      where: {
+        id: bookId,
+        userId,
+      },
+    });
+
+    if (!existingBook) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    // Delete the book
+    await prisma.book.delete({
+      where: { id: bookId },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    res.status(500).json({ error: 'Failed to delete book' });
+  }
 }
 
 // Data mapping utilities (temporarily disabled)

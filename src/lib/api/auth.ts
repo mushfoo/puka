@@ -1,25 +1,9 @@
 import { auth } from '../auth-server';
+import { getAppBaseUrl } from './utils';
 
-// Express-like interfaces for our API
-interface Request {
-  method: string;
-  query: Record<string, any>;
-  body: any;
-  headers: Record<string, string>;
-}
+import type { ApiRequest, ApiResponse, AuthenticatedRequest } from './types';
 
-interface Response {
-  status(code: number): Response;
-  json(data: any): void;
-  send(data?: any): void;
-  setHeader(name: string, value: string): void;
-}
-
-export interface AuthenticatedRequest extends Request {
-  userId?: string;
-}
-
-export async function authenticateUser(req: AuthenticatedRequest): Promise<string | null> {
+export async function authenticateUser(req: ApiRequest): Promise<string | null> {
   try {
     // Extract session token from cookies
     let sessionToken: string | undefined;
@@ -48,7 +32,8 @@ export async function authenticateUser(req: AuthenticatedRequest): Promise<strin
     }
 
     // Create a Request object that better-auth expects
-    const url = new URL('http://localhost:5173/api/auth/get-session');
+    const baseUrl = getAppBaseUrl();
+    const url = new URL(`${baseUrl}/api/auth/get-session`);
     const authRequest = new Request(url, {
       method: 'GET',
       headers: {
@@ -77,8 +62,8 @@ export async function authenticateUser(req: AuthenticatedRequest): Promise<strin
   }
 }
 
-export function requireAuth(handler: (req: AuthenticatedRequest, res: Response, userId: string, ...args: any[]) => Promise<void>) {
-  return async (req: AuthenticatedRequest, res: Response, ...args: any[]) => {
+export function requireAuth(handler: (req: AuthenticatedRequest, res: ApiResponse, userId: string, ...args: any[]) => Promise<void>) {
+  return async (req: AuthenticatedRequest, res: ApiResponse, ...args: any[]) => {
     try {
       const userId = await authenticateUser(req);
       
@@ -99,8 +84,8 @@ export function requireAuth(handler: (req: AuthenticatedRequest, res: Response, 
 }
 
 // For testing without authentication (development only)
-export function allowAnonymous(handler: (req: AuthenticatedRequest, res: Response, userId: string | null, ...args: any[]) => Promise<void>) {
-  return async (req: AuthenticatedRequest, res: Response, ...args: any[]) => {
+export function allowAnonymous(handler: (req: AuthenticatedRequest, res: ApiResponse, userId: string | null, ...args: any[]) => Promise<void>) {
+  return async (req: AuthenticatedRequest, res: ApiResponse, ...args: any[]) => {
     try {
       const userId = await authenticateUser(req);
       await handler(req, res, userId, ...args);

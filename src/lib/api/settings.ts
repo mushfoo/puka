@@ -1,23 +1,8 @@
-// Temporarily disable Prisma for testing
-// import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import type { ApiRequest, ApiResponse } from './types';
 
-// Express-like interfaces for our API
-interface Request {
-  method: string;
-  query: Record<string, any>;
-  body: any;
-  headers: Record<string, string>;
-}
-
-interface Response {
-  status(code: number): Response;
-  json(data: any): void;
-  send(data?: any): void;
-  setHeader(name: string, value: string): void;
-}
-
-// const prisma = new PrismaClient();
+const prisma = new PrismaClient();
 
 // Zod schemas for validation
 const SettingsUpdateSchema = z.object({
@@ -31,7 +16,7 @@ const SettingsUpdateSchema = z.object({
   backupFrequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
 });
 
-export async function handleSettingsRequest(req: Request, res: Response, userId: string | null) {
+export async function handleSettingsRequest(req: ApiRequest, res: ApiResponse, userId: string | null) {
   try {
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -51,7 +36,7 @@ export async function handleSettingsRequest(req: Request, res: Response, userId:
   }
 }
 
-async function handleGetSettings(req: Request, res: Response, userId: string) {
+async function handleGetSettings(req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleGetSettings called for userId:', userId);
   
   // Return mock default settings
@@ -67,7 +52,7 @@ async function handleGetSettings(req: Request, res: Response, userId: string) {
   });
 }
 
-async function handleUpdateSettings(req: Request, res: Response, userId: string) {
+async function handleUpdateSettings(req: ApiRequest, res: ApiResponse, userId: string) {
   console.log('handleUpdateSettings called');
   
   const validationResult = SettingsUpdateSchema.safeParse(req.body);
