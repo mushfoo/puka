@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { AuthUser, AuthSession, AuthError, onAuthStateChange, signUp as authSignUp, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth'
+import { AuthUser, AuthSession, AuthError, onAuthStateChange, signUp as authSignUp, signIn as authSignIn, signOut as authSignOut } from '@/lib/auth-client'
 
 // Auth context interface
 interface AuthContextType {
@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean
   
   // Authentication methods
-  signUp: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
+  signUp: (email: string, password: string, name?: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ user: AuthUser | null; error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   
@@ -61,7 +61,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
           expires.setDate(expires.getDate() + 30) // 30 days
           setSession({
             user,
-            expires: expires.toISOString(),
+            session: {
+              id: `session_${user.id}`,
+              userId: user.id,
+              expiresAt: expires,
+              token: 'session_token', // This would be managed by Better-auth
+            }
           })
         } else {
           setSession(null)
@@ -70,10 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         // Handle auth events
         if (user) {
-          console.log('User signed in:', user.email)
           setAuthPromptDismissed(false) // Reset prompt state on sign in
-        } else {
-          console.log('User signed out')
         }
       }
     })
@@ -97,23 +99,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [hasLocalData, user, authPromptDismissed, loading])
 
   // Auth methods
-  const signUp = useCallback(async (email: string, password: string) => {
-    const result = await authSignUp(email, password)
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
+    // Use email as name if no name is provided
+    const displayName = name || email.split('@')[0]
+    const result = await authSignUp(email, password, displayName)
     
-    if ('user' in result) {
-      return { user: result.user, error: null }
+    if (result.data?.user) {
+      const user: AuthUser = {
+        ...result.data.user,
+        image: result.data.user.image || null
+      }
+      return { user, error: null }
     } else {
-      return { user: null, error: result.error }
+      return { user: null, error: { error: result.error?.message || 'Registration failed' } }
     }
   }, [])
 
   const signIn = useCallback(async (email: string, password: string) => {
     const result = await authSignIn(email, password)
     
-    if ('user' in result) {
-      return { user: result.user, error: null }
+    if (result.data?.user) {
+      const user: AuthUser = {
+        ...result.data.user,
+        image: result.data.user.image || null
+      }
+      return { user, error: null }
     } else {
-      return { user: null, error: result.error }
+      return { user: null, error: { error: result.error?.message || 'Sign in failed' } }
     }
   }, [])
 
@@ -124,8 +136,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error: any) {
       return { 
         error: { 
-          message: error.message || 'Failed to sign out',
-          code: 'signout_error' 
+          error: error.message || 'Failed to sign out'
         } 
       }
     }

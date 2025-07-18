@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
 import { AuthProvider } from '@/components/auth';
@@ -91,13 +91,18 @@ describe('Dashboard Book Switcher', () => {
   });
 
   describe('Book Switcher Visibility', () => {
-    it('shows book switcher when multiple books are currently reading', () => {
+    it('shows book switcher when multiple books are currently reading', async () => {
       renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      // Advance timers to skip the 3-second loading delay
+      await act(async () => {
+        vi.advanceTimersByTime(3000);
+      });
 
       // Should show the switcher button (now visible on both mobile and desktop)
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
