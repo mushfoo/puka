@@ -136,9 +136,6 @@ export default defineConfig({
       "**/e2e/**",
       "**/playwright-report/**",
       "**/test-results/**",
-      "**/src/__tests__.old/**",
-      "**/src/__tests__/**",
     ],
   },
 });
-
