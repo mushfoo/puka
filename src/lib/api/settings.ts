@@ -1,8 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+// Temporarily disabled while using mock data
+// import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import type { ApiRequest, ApiResponse } from './types';
 
-const prisma = new PrismaClient();
+// Temporarily disabled while using mock data
+// const prisma = new PrismaClient();
 
 // Zod schemas for validation
 const SettingsUpdateSchema = z.object({
@@ -52,7 +54,7 @@ async function handleGetSettings(req: ApiRequest, res: ApiResponse, userId: stri
   });
 }
 
-async function handleUpdateSettings(req: ApiRequest, res: ApiResponse, userId: string) {
+async function handleUpdateSettings(req: ApiRequest, res: ApiResponse, _userId: string) {
   console.log('handleUpdateSettings called');
   
   const validationResult = SettingsUpdateSchema.safeParse(req.body);

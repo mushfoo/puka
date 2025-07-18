@@ -18,7 +18,7 @@ const BookCreateSchema = z.object({
   tags: z.array(z.string()).default([]),
   rating: z.number().min(1).max(5).optional(),
   totalPages: z.number().positive().optional(),
-  currentPage: z.number().non-negative().optional(),
+  currentPage: z.number().nonnegative().optional(),
   genre: z.string().optional(),
   publishedDate: z.string().optional(),
   dateStarted: z.string().datetime().optional(),
@@ -35,7 +35,7 @@ const BookFilterSchema = z.object({
   sortBy: z.enum(['dateAdded', 'title', 'author', 'progress', 'dateFinished']).default('dateAdded'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   limit: z.number().positive().max(100).default(50),
-  offset: z.number().non-negative().default(0),
+  offset: z.number().nonnegative().default(0),
 });
 
 export async function handleBooksRequest(req: ApiRequest, res: ApiResponse, userId: string | null) {

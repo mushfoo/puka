@@ -1,13 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+// Temporarily disabled while using mock data
+// import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import type { ApiRequest, ApiResponse } from './types';
 
-const prisma = new PrismaClient();
+// Temporarily disabled while using mock data
+// const prisma = new PrismaClient();
 
 // Zod schemas for validation
 const StreakUpdateSchema = z.object({
-  currentStreak: z.number().non-negative().optional(),
-  longestStreak: z.number().non-negative().optional(),
+  currentStreak: z.number().nonnegative().optional(),
+  longestStreak: z.number().nonnegative().optional(),
   lastReadDate: z.string().datetime().optional(),
   readingDaysData: z.record(z.any()).optional(),
   bookPeriodsData: z.array(z.any()).optional(),
@@ -58,7 +60,7 @@ async function handleGetStreak(req: ApiRequest, res: ApiResponse, userId: string
   });
 }
 
-async function handleUpdateStreak(req: ApiRequest, res: ApiResponse, userId: string) {
+async function handleUpdateStreak(req: ApiRequest, res: ApiResponse, _userId: string) {
   console.log('handleUpdateStreak called');
   
   const validationResult = StreakUpdateSchema.safeParse(req.body);
@@ -78,7 +80,7 @@ async function handleUpdateStreak(req: ApiRequest, res: ApiResponse, userId: str
   });
 }
 
-async function handleMarkReadingDay(req: Request, res: Response, userId: string) {
+async function handleMarkReadingDay(req: ApiRequest, res: ApiResponse, _userId: string) {
   console.log('handleMarkReadingDay called');
   
   const validationResult = ReadingDaySchema.safeParse(req.body);
