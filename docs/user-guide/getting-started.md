@@ -10,17 +10,27 @@ Puka is a clean, minimal reading tracker designed for heavy readers who want sim
 - **Progress Tracking**: Track reading progress with visual progress bars
 - **Reading Streaks**: Stay motivated with daily reading streak tracking
 - **Data Portability**: Import/export your data anytime
-- **Offline Support**: Works completely offline on your device
+- **Cloud Sync**: Secure cloud storage with offline fallback mode
 
 ## Quick Start
 
 ### 1. First Time Setup
 
-When you first open Puka, you'll see an empty dashboard. This is your starting point!
+When you first open Puka, you may need to sign in for cloud sync or use local storage mode.
 
-**What you'll see:**
+**Sign In (Recommended):**
+- Create an account for cloud sync across devices
+- Your data will be securely stored and backed up
+- Access your books from any device
+
+**Local Mode:**
+- Continue without signing in
+- Data stored only on this device
+- Manual backup/export required
+
+**What you'll see after setup:**
 - A clean interface with tabs for different book statuses
-- A "Reading Streak" section at the top
+- A "Reading Streak" section at the top  
 - An "Add Book" button to get started
 
 ### 2. Adding Your First Book

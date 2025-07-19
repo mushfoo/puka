@@ -14,14 +14,15 @@ A clean, minimal reading tracker that focuses on essential functionality without
 - **Smart Progress Calculation**: Automatic page counting and daily reading goal tracking
 - **Data Portability**: Import/export via CSV with multiple format support (Goodreads, Puka native)
 - **Search & Filter**: Real-time search and filtering across all book statuses
-- **PWA Support**: Installable as mobile app with full offline functionality
+- **PWA Support**: Installable as mobile app with intelligent offline fallback
+- **Cloud Sync**: Secure database storage with automatic fallback to local storage when offline
 
 ### 🎯 Key Benefits
 - **No Social Bloat**: Personal tracking only - no feeds, reviews, or social features
 - **Exceptional Performance**: <50ms UI interactions (exceeds <100ms requirement), <2s page load
 - **Mobile-First Excellence**: Optimized for 375px viewport with one-handed operation and 44x44px touch targets
-- **Privacy-Focused**: Secure user authentication with optional local storage fallback
-- **Production Tested**: 274 passing tests with >90% coverage, comprehensive UX validation
+- **Privacy-Focused**: Secure user authentication with encrypted cloud storage and intelligent offline mode
+- **Production Tested**: 300+ passing tests with >90% coverage, comprehensive UX validation
 - **Accessibility Ready**: Full keyboard navigation, screen reader support, and WCAG compliance
 
 ## Quick Start
@@ -41,8 +42,9 @@ cd puka
 # Install dependencies
 npm install
 
-# Setup database
+# Setup database (required for cloud sync)
 npm run db:setup
+npm run db:migrate
 
 # Start development server
 npm run dev
@@ -56,7 +58,7 @@ The app can be installed as a Progressive Web App:
 
 1. **Desktop**: Click the install button in your browser's address bar
 2. **Mobile**: Add to Home Screen from your browser menu
-3. **Offline**: Full functionality works without internet connection
+3. **Offline Mode**: Intelligent fallback to local storage when database unavailable
 
 ### Building for Production
 
@@ -122,9 +124,10 @@ npm run test:e2e     # Run Playwright end-to-end tests
 npm run test:e2e:ui  # Run E2E tests with Playwright UI
 npm run type-check   # TypeScript type checking
 npm run lint         # ESLint code quality checks
-npm run db:setup     # Setup database and run migrations
+npm run db:setup     # Setup database and run migrations  
 npm run db:migrate   # Run database migrations
 npm run db:studio    # Open Prisma Studio for database management
+npm run db:seed      # Seed database with sample data
 ```
 
 ### Testing
@@ -145,7 +148,7 @@ npm run test:e2e
 npm run test:e2e:ui
 ```
 
-**Test Coverage:** 274 tests across components, hooks, services, and user workflows
+**Test Coverage:** 300+ tests across components, hooks, services, and user workflows including database migration validation
 
 ### Performance Validation
 

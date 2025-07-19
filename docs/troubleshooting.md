@@ -1,6 +1,108 @@
-# Troubleshooting Guide
+# Puka Reading Tracker Troubleshooting Guide
 
-Solutions to common issues with Puka Reading Tracker.
+## Common Issues and Solutions
+
+This guide covers the most common problems users encounter and their solutions.
+
+## Connection and Sync Issues
+
+### Database Connection Failed
+**Problem**: Can't connect to cloud database, seeing "offline mode" indicator
+
+**Solutions:**
+1. **Check Internet Connection**
+   ```
+   ✅ Verify you have an active internet connection
+   ✅ Try accessing other websites to confirm connectivity
+   ✅ Restart your router/modem if needed
+   ```
+
+2. **Clear Browser Cache**
+   ```bash
+   # Chrome/Edge: Ctrl+Shift+Delete (Windows) or Cmd+Shift+Delete (Mac)
+   # Firefox: Ctrl+Shift+Delete (Windows) or Cmd+Shift+Delete (Mac)
+   # Safari: Develop > Empty Caches
+   ```
+
+3. **Try Incognito/Private Mode**
+   - Open Puka in a private browser window
+   - Sign in and test functionality
+   - If it works, clear cookies for the regular window
+
+4. **Check Service Status**
+   - Database might be temporarily unavailable
+   - App will automatically fallback to local storage
+   - Try again in a few minutes
+
+### Data Not Syncing Across Devices
+**Problem**: Changes on one device don't appear on another
+
+**Solutions:**
+1. **Force Refresh Both Devices**
+   ```
+   ✅ Press Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)
+   ✅ Wait a few seconds for sync to complete
+   ✅ Check if data appears
+   ```
+
+2. **Verify Same Account**
+   ```
+   ✅ Ensure you're signed in with the same credentials
+   ✅ Check account settings on both devices
+   ✅ Sign out and back in if needed
+   ```
+
+3. **Check Network Connection**
+   ```
+   ✅ Both devices need internet access for sync
+   ✅ Try manually refreshing on each device
+   ✅ Changes may take 30-60 seconds to propagate
+   ```
+
+## Authentication Problems
+
+### Can't Sign In
+**Problem**: Login fails with correct credentials
+
+**Solutions:**
+1. **Reset Password**
+   ```
+   ✅ Click "Forgot Password" link
+   ✅ Check email for reset instructions
+   ✅ Create new strong password
+   ```
+
+2. **Clear Auth Data**
+   ```
+   ✅ Clear browser cookies and site data
+   ✅ Close and reopen browser
+   ✅ Try signing in again
+   ```
+
+3. **Check Email Format**
+   ```
+   ✅ Ensure email address is valid format
+   ✅ No extra spaces before/after email
+   ✅ Try typing instead of copy/paste
+   ```
+
+### Session Expired
+**Problem**: Getting logged out frequently
+
+**Solutions:**
+1. **Browser Settings**
+   ```
+   ✅ Allow cookies for the site
+   ✅ Don't use "Always clear cookies" mode
+   ✅ Add site to exceptions if using ad blockers
+   ```
+
+2. **Update Browser**
+   ```
+   ✅ Ensure browser is up to date
+   ✅ Clear old cache and data
+   ✅ Restart browser after updates
+   ```
 
 ## Quick Fixes
 

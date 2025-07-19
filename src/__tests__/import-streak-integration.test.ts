@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ImportService } from '@/services/importService';
-import { FileSystemStorageService } from '@/services/storage/FileSystemStorageService';
+import { MockStorageService } from '@/services/storage/MockStorageService';
 
 describe('Import with Streak Integration Test', () => {
-  let storageService: FileSystemStorageService;
+  let storageService: MockStorageService;
 
   beforeEach(() => {
     // Mock localStorage for testing
@@ -18,7 +18,7 @@ describe('Import with Streak Integration Test', () => {
       writable: true
     });
 
-    storageService = new FileSystemStorageService();
+    storageService = new MockStorageService();
   });
 
   it('should import books and calculate streak impact', async () => {

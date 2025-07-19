@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MockStorageService } from '@/services/storage/MockStorageService';
-import { FileSystemStorageService } from '@/services/storage/FileSystemStorageService';
 import { StorageError, BulkReadingDayOperation } from '@/services/storage/StorageService';
 import { StreakHistory } from '@/types';
 import { createEmptyEnhancedStreakHistory, CURRENT_STREAK_HISTORY_VERSION } from '@/utils/streakMigration';
@@ -656,29 +655,7 @@ describe('Enhanced Storage Integration Tests', () => {
     });
   });
 
-  // NOTE: FileSystemStorageService tests would be similar but require
-  // special handling for the File System Access API which isn't available
-  // in the test environment. In a real implementation, you would either:
-  // 1. Mock the File System Access API
-  // 2. Use a test-specific localStorage-only mode
-  // 3. Create integration tests that run in a real browser environment
-  
-  describe('FileSystemStorageService Enhanced Features', () => {
-    it('should have the same interface as MockStorageService', () => {
-      // This test ensures the FileSystemStorageService implements
-      // all the same methods as MockStorageService
-      const fsService = new FileSystemStorageService();
-
-      // Check that all enhanced methods exist
-      expect(typeof fsService.getEnhancedStreakHistory).toBe('function');
-      expect(typeof fsService.saveEnhancedStreakHistory).toBe('function');
-      expect(typeof fsService.updateEnhancedStreakHistory).toBe('function');
-      expect(typeof fsService.addReadingDayEntry).toBe('function');
-      expect(typeof fsService.updateReadingDayEntry).toBe('function');
-      expect(typeof fsService.removeReadingDayEntry).toBe('function');
-      expect(typeof fsService.getReadingDayEntriesInRange).toBe('function');
-      expect(typeof fsService.migrateToEnhancedStreakHistory).toBe('function');
-      expect(typeof fsService.bulkUpdateReadingDayEntries).toBe('function');
-    });
-  });
+  // NOTE: DatabaseStorageService tests are covered in the E2E test suite
+  // since they require a live database connection and authentication
+  // which is better tested in the Playwright environment.
 });
