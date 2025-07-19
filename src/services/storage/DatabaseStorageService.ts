@@ -23,19 +23,22 @@ interface DbBook {
   id: string;
   title: string;
   author: string;
-  status: 'unread' | 'reading' | 'completed' | 'dnf';
+  status: 'want_to_read' | 'currently_reading' | 'finished';
   progress: number;
-  rating?: number;
-  genre?: string;
-  totalPages?: number;
-  currentPage?: number;
-  notes?: string;
+  rating?: number | null;
+  genre?: string | null;
+  totalPages?: number | null;
+  currentPage?: number | null;
+  notes?: string | null;
   dateAdded: string;
-  dateStarted?: string;
-  dateFinished?: string;
-  tags?: string[];
-  isbn?: string;
-  publishedDate?: string;
+  dateStarted?: string | null;
+  dateFinished?: string | null;
+  tags?: string[] | null;
+  isbn?: string | null;
+  publishedDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  coverUrl?: string | null;
 }
 
 interface DbStreakHistory {
@@ -59,7 +62,7 @@ interface DbEnhancedStreakHistory {
 
 interface DbReadingDayEntry {
   date: string;
-  source: 'manual' | 'book' | 'page_update';
+  source: 'manual' | 'book' | 'progress';
   bookIds?: number[];
   notes?: string;
   createdAt: string;
@@ -339,7 +342,7 @@ export class DatabaseStorageService implements StorageService {
           method: 'POST',
           body: JSON.stringify({ transactionId })
         });
-        this.logResponse('/api/transaction/rollback', { transactionId, error: error.message });
+        this.logResponse('/api/transaction/rollback', { transactionId, error: error instanceof Error ? error.message : String(error) });
       } catch (rollbackError) {
         console.error('Failed to rollback transaction:', rollbackError);
       }
@@ -405,7 +408,7 @@ export class DatabaseStorageService implements StorageService {
         throw new StorageError(
           `Batch processing failed after ${DatabaseStorageService.MAX_RETRY_ATTEMPTS} attempts: ${lastError?.message}`,
           StorageErrorCode.BATCH_PROCESSING_FAILED,
-          lastError
+          lastError || undefined
         );
       }
     }
@@ -449,8 +452,8 @@ export class DatabaseStorageService implements StorageService {
       status: dbBook.status,
       progress: dbBook.progress,
       notes: dbBook.notes || undefined,
-      dateAdded: new Date(dbBook.createdAt),
-      dateModified: new Date(dbBook.updatedAt),
+      dateAdded: dbBook.createdAt ? new Date(dbBook.createdAt) : new Date(),
+      dateModified: dbBook.updatedAt ? new Date(dbBook.updatedAt) : new Date(),
       dateStarted: dbBook.dateStarted ? new Date(dbBook.dateStarted) : undefined,
       dateFinished: dbBook.dateFinished ? new Date(dbBook.dateFinished) : undefined,
       isbn: dbBook.isbn || undefined,
@@ -483,8 +486,8 @@ export class DatabaseStorageService implements StorageService {
       currentPage: frontendBook.currentPage || null,
       genre: frontendBook.genre || null,
       publishedDate: frontendBook.publishedDate || null,
-      dateStarted: frontendBook.dateStarted ? new Date(frontendBook.dateStarted) : null,
-      dateFinished: frontendBook.dateFinished ? new Date(frontendBook.dateFinished) : null,
+      dateStarted: frontendBook.dateStarted ? frontendBook.dateStarted.toISOString() : null,
+      dateFinished: frontendBook.dateFinished ? frontendBook.dateFinished.toISOString() : null,
     };
 
     // Remove undefined values
@@ -623,7 +626,7 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('getBooks', {});
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && Array.isArray(cachedResult)) {
         this.logResponse('/api/books', { count: cachedResult.length, cached: true });
         return cachedResult;
       }
@@ -941,8 +944,12 @@ export class DatabaseStorageService implements StorageService {
    */
   private mapDbStreakHistoryToFrontend(dbStreakHistory: DbStreakHistory): StreakHistory {
     return {
-      readingDays: new Set(dbStreakHistory.readingDays || []),
-      bookPeriods: dbStreakHistory.bookPeriods || [],
+      readingDays: new Set(Array.isArray(dbStreakHistory.readingDays) ? dbStreakHistory.readingDays : Object.values(dbStreakHistory.readingDays || {})),
+      bookPeriods: (dbStreakHistory.bookPeriods || []).map(period => ({
+        ...period,
+        startDate: new Date(period.startDate),
+        endDate: new Date(period.endDate)
+      })),
       lastCalculated: new Date(dbStreakHistory.lastCalculated || Date.now())
     };
   }
@@ -956,7 +963,11 @@ export class DatabaseStorageService implements StorageService {
       readingDays: Array.from(streakHistory.readingDays),
       currentStreak: 0, // Will be calculated by the backend
       longestStreak: 0, // Will be calculated by the backend  
-      bookPeriods: streakHistory.bookPeriods,
+      bookPeriods: streakHistory.bookPeriods.map(period => ({
+        ...period,
+        startDate: period.startDate.toISOString(),
+        endDate: period.endDate.toISOString()
+      })),
       lastCalculated: streakHistory.lastCalculated.toISOString(),
       totalDaysRead: streakHistory.readingDays.size
     };
@@ -968,8 +979,12 @@ export class DatabaseStorageService implements StorageService {
    */
   private mapDbEnhancedStreakHistoryToFrontend(dbEnhancedHistory: DbEnhancedStreakHistory): EnhancedStreakHistory {
     return {
-      readingDays: new Set(dbEnhancedHistory.readingDays || []),
-      bookPeriods: dbEnhancedHistory.bookPeriods || [],
+      readingDays: new Set(Array.isArray(dbEnhancedHistory.readingDays) ? dbEnhancedHistory.readingDays : Object.values(dbEnhancedHistory.readingDays || {})),
+      bookPeriods: (dbEnhancedHistory.bookPeriods || []).map(period => ({
+        ...period,
+        startDate: new Date(period.startDate),
+        endDate: new Date(period.endDate)
+      })),
       lastCalculated: new Date(dbEnhancedHistory.lastCalculated || Date.now()),
       readingDayEntries: (dbEnhancedHistory.readingDayEntries || []).map((entry: DbReadingDayEntry) => ({
         date: entry.date,
@@ -1073,9 +1088,9 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('getSettings', {});
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && typeof cachedResult === 'object' && 'theme' in cachedResult) {
         this.logResponse('/api/settings', { cached: true });
-        return cachedResult;
+        return cachedResult as UserSettings;
       }
       
       const response = await this.authenticatedFetch('/api/settings');
@@ -1383,7 +1398,7 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('searchBooks', { query: query.trim() });
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && Array.isArray(cachedResult)) {
         this.logResponse('/api/books (search)', { 
           query,
           count: cachedResult.length,
@@ -1461,7 +1476,7 @@ export class DatabaseStorageService implements StorageService {
       
       let mappedBooks: Book[];
       
-      if (cachedResult && !filter.dateRange) {
+      if (cachedResult && Array.isArray(cachedResult) && !filter.dateRange) {
         // Use cached result if no date range filtering needed
         mappedBooks = cachedResult;
         this.logResponse('/api/books (filtered)', { 
@@ -1594,12 +1609,12 @@ export class DatabaseStorageService implements StorageService {
     result: ImportResult
   ): Promise<void> {
     for (let i = 0; i < books.length; i++) {
-      const bookData = books[i];
+      const book = books[i];
       
       try {
         // Validate required fields
         if (options.validateData) {
-          const validation = this.validateBookData(bookData, i);
+          const validation = this.validateBookData(book, i);
           if (!validation.valid) {
             result.errors.push(...validation.errors);
             if (!options.skipInvalid) {
@@ -1614,10 +1629,10 @@ export class DatabaseStorageService implements StorageService {
         }
         
         // Check for duplicates by title and author
-        const existingBooks = await this.searchBooks(`${bookData.title} ${bookData.author}`);
+        const existingBooks = await this.searchBooks(`${book.title} ${book.author}`);
         const isDuplicate = existingBooks.some(book => 
-          book.title.toLowerCase() === bookData.title.toLowerCase() && 
-          book.author.toLowerCase() === bookData.author.toLowerCase()
+          book.title.toLowerCase() === book.title.toLowerCase() && 
+          book.author.toLowerCase() === book.author.toLowerCase()
         );
         
         if (isDuplicate) {
@@ -1631,12 +1646,12 @@ export class DatabaseStorageService implements StorageService {
           if (options.overwriteExisting) {
             // Find and update existing book
             const existingBook = existingBooks.find(book => 
-              book.title.toLowerCase() === bookData.title.toLowerCase() && 
-              book.author.toLowerCase() === bookData.author.toLowerCase()
+              book.title.toLowerCase() === book.title.toLowerCase() && 
+              book.author.toLowerCase() === book.author.toLowerCase()
             );
             
             if (existingBook) {
-              await this.updateBook(existingBook.id, bookData);
+              await this.updateBook(existingBook.id, book);
               result.imported++;
               continue;
             }
@@ -1645,7 +1660,7 @@ export class DatabaseStorageService implements StorageService {
         
         // Save new book (remove id and dateAdded if present)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id: _, dateAdded: __, ...newBookData } = bookData as any;
+        const { id: _, dateAdded: __, ...newBookData } = book as any;
         await this.saveBook(newBookData);
         result.imported++;
         
@@ -1655,7 +1670,7 @@ export class DatabaseStorageService implements StorageService {
           row: i,
           field: 'book',
           message: errorMessage,
-          data: bookData
+          data: book
         });
         
         if (!options.skipInvalid) {
@@ -1716,7 +1731,7 @@ export class DatabaseStorageService implements StorageService {
   
   /**
    * Validate book data for import
-   * @param bookData - Book data to validate
+   * @param book - Book data to validate
    * @param rowIndex - Row index for error reporting
    * @returns Validation result
    * @private
@@ -1727,125 +1742,138 @@ export class DatabaseStorageService implements StorageService {
   } {
     const errors: ImportError[] = [];
     
+    // Check if bookData is an object
+    if (!bookData || typeof bookData !== 'object') {
+      errors.push({
+        row: rowIndex,
+        field: 'data',
+        message: 'Book data must be an object',
+        data: bookData
+      });
+      return { valid: false, errors };
+    }
+    
+    const book = bookData as Record<string, unknown>;
+    
     // Check required fields
-    if (!bookData.title || typeof bookData.title !== 'string' || bookData.title.trim() === '') {
+    if (!book.title || typeof book.title !== 'string' || book.title.trim() === '') {
       errors.push({
         row: rowIndex,
         field: 'title',
         message: 'Title is required and must be a non-empty string',
-        data: bookData.title
+        data: book.title
       });
     }
     
-    if (!bookData.author || typeof bookData.author !== 'string' || bookData.author.trim() === '') {
+    if (!book.author || typeof book.author !== 'string' || book.author.trim() === '') {
       errors.push({
         row: rowIndex,
         field: 'author',
         message: 'Author is required and must be a non-empty string',
-        data: bookData.author
+        data: book.author
       });
     }
     
     // Validate status
-    if (bookData.status && !['unread', 'reading', 'completed', 'abandoned'].includes(bookData.status)) {
+    if (book.status && typeof book.status === 'string' && !['unread', 'reading', 'completed', 'abandoned'].includes(book.status)) {
       errors.push({
         row: rowIndex,
         field: 'status',
         message: 'Status must be one of: unread, reading, completed, abandoned',
-        data: bookData.status
+        data: book.status
       });
     }
     
     // Validate progress
-    if (bookData.progress !== undefined && (typeof bookData.progress !== 'number' || bookData.progress < 0 || bookData.progress > 100)) {
+    if (book.progress !== undefined && (typeof book.progress !== 'number' || book.progress < 0 || book.progress > 100)) {
       errors.push({
         row: rowIndex,
         field: 'progress',
         message: 'Progress must be a number between 0 and 100',
-        data: bookData.progress
+        data: book.progress
       });
     }
     
     // Validate rating
-    if (bookData.rating !== undefined && (typeof bookData.rating !== 'number' || bookData.rating < 1 || bookData.rating > 5)) {
+    if (book.rating !== undefined && (typeof book.rating !== 'number' || book.rating < 1 || book.rating > 5)) {
       errors.push({
         row: rowIndex,
         field: 'rating',
         message: 'Rating must be a number between 1 and 5',
-        data: bookData.rating
+        data: book.rating
       });
     }
     
     // Validate pages
-    if (bookData.totalPages !== undefined && (typeof bookData.totalPages !== 'number' || bookData.totalPages < 1)) {
+    if (book.totalPages !== undefined && (typeof book.totalPages !== 'number' || book.totalPages < 1)) {
       errors.push({
         row: rowIndex,
         field: 'totalPages',
         message: 'Total pages must be a positive number',
-        data: bookData.totalPages
+        data: book.totalPages
       });
     }
     
-    if (bookData.currentPage !== undefined && (typeof bookData.currentPage !== 'number' || bookData.currentPage < 0)) {
+    if (book.currentPage !== undefined && (typeof book.currentPage !== 'number' || book.currentPage < 0)) {
       errors.push({
         row: rowIndex,
         field: 'currentPage',
         message: 'Current page must be a non-negative number',
-        data: bookData.currentPage
+        data: book.currentPage
       });
     }
     
     // Validate page consistency
-    if (bookData.totalPages && bookData.currentPage && bookData.currentPage > bookData.totalPages) {
+    if (book.totalPages && book.currentPage && book.currentPage > book.totalPages) {
       errors.push({
         row: rowIndex,
         field: 'currentPage',
         message: 'Current page cannot exceed total pages',
-        data: { currentPage: bookData.currentPage, totalPages: bookData.totalPages }
+        data: { currentPage: book.currentPage, totalPages: book.totalPages }
       });
     }
     
     // Validate dates
-    if (bookData.dateStarted && !this.isValidDate(bookData.dateStarted)) {
+    if (book.dateStarted && !this.isValidDate(book.dateStarted)) {
       errors.push({
         row: rowIndex,
         field: 'dateStarted',
         message: 'Date started must be a valid date',
-        data: bookData.dateStarted
+        data: book.dateStarted
       });
     }
     
-    if (bookData.dateFinished && !this.isValidDate(bookData.dateFinished)) {
+    if (book.dateFinished && !this.isValidDate(book.dateFinished)) {
       errors.push({
         row: rowIndex,
         field: 'dateFinished',
         message: 'Date finished must be a valid date',
-        data: bookData.dateFinished
+        data: book.dateFinished
       });
     }
     
     // Validate date logic
-    if (bookData.dateStarted && bookData.dateFinished) {
-      const startDate = new Date(bookData.dateStarted);
-      const finishDate = new Date(bookData.dateFinished);
+    if (book.dateStarted && book.dateFinished && this.isValidDate(book.dateStarted) && this.isValidDate(book.dateFinished)) {
+      const startDate = new Date(book.dateStarted as string | number | Date);
+      const finishDate = new Date(book.dateFinished as string | number | Date);
       
       if (startDate > finishDate) {
         errors.push({
           row: rowIndex,
           field: 'dateFinished',
           message: 'Date finished cannot be before date started',
-          data: { dateStarted: bookData.dateStarted, dateFinished: bookData.dateFinished }
+          data: { dateStarted: book.dateStarted, dateFinished: book.dateFinished }
         });
       }
     }
     
     // Validate arrays
-    if (bookData.tags && !Array.isArray(bookData.tags)) {
+    if (book.tags && !Array.isArray(book.tags)) {
       errors.push({
         row: rowIndex,
         field: 'tags',
         message: 'Tags must be an array',
-        data: bookData.tags
+        data: book.tags
       });
     }
     
@@ -2030,9 +2058,9 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('getStreakHistory', {});
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && typeof cachedResult === 'object' && 'readingDays' in cachedResult) {
         this.logResponse('/api/streak', { found: true, cached: true });
-        return cachedResult;
+        return cachedResult as StreakHistory;
       }
       
       const response = await this.authenticatedFetch('/api/streak');
@@ -2297,9 +2325,9 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('getEnhancedStreakHistory', {});
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && typeof cachedResult === 'object' && 'readingDayEntries' in cachedResult) {
         this.logResponse('/api/streak/enhanced', { found: true, cached: true });
-        return cachedResult;
+        return cachedResult as EnhancedStreakHistory;
       }
       
       const response = await this.authenticatedFetch('/api/streak/enhanced');
@@ -2751,7 +2779,7 @@ export class DatabaseStorageService implements StorageService {
       // Check cache first
       const cacheKey = this.getCacheKey('getReadingDayEntriesInRange', { startDate, endDate });
       const cachedResult = this.getCachedResult(cacheKey);
-      if (cachedResult) {
+      if (cachedResult && Array.isArray(cachedResult)) {
         this.logResponse(`/api/streak/entries (range)`, { 
           count: cachedResult.length,
           cached: true,

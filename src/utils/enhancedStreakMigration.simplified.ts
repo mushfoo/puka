@@ -64,19 +64,6 @@ export interface MigrationResult {
 }
 
 /**
- * Migration execution result (for compatibility)
- */
-export interface MigrationExecutionResult {
-  success: boolean;
-  migratedHistory: EnhancedStreakHistory | null;
-  dataPointsMigrated: number;
-  executionTimeMs: number;
-  issues: string[];
-  warnings: string[];
-  preservedMetadata: Record<string, unknown>;
-}
-
-/**
  * Simplified Enhanced Streak Migration utility
  */
 export class EnhancedStreakMigration {

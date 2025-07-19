@@ -1,7 +1,7 @@
 import { Book, StreakHistory, EnhancedStreakHistory } from '@/types';
 import { StorageService, ExportData, ImportOptions } from '@/services/storage';
 import { migrateStreakHistory } from '@/utils/streakMigration';
-import { EnhancedStreakMigration, FormatDetectionResult, MigrationExecutionResult } from '@/utils/enhancedStreakMigration';
+import { EnhancedStreakMigration, FormatDetectionResult, MigrationResult as EnhancedMigrationResult } from '@/utils/enhancedStreakMigration';
 import { DataIntegrityValidator, ValidationResult } from '@/utils/dataIntegrityValidator';
 
 /**
@@ -48,7 +48,7 @@ export interface MigrationResult {
   // Enhanced migration details
   streakMigrationDetails?: {
     formatDetected: FormatDetectionResult;
-    migrationResult: MigrationExecutionResult;
+    migrationResult: EnhancedMigrationResult;
     validationResult: ValidationResult;
     dataIntegrityScore: number;
   };
@@ -462,7 +462,7 @@ export class DataMigrationService {
     enhancedHistory: EnhancedStreakHistory | null;
     migrationDetails: {
       formatDetected: FormatDetectionResult;
-      migrationResult: MigrationExecutionResult;
+      migrationResult: EnhancedMigrationResult;
       validationResult: ValidationResult;
       dataIntegrityScore: number;
     };
@@ -548,7 +548,6 @@ export class DataMigrationService {
             success: false,
             migratedHistory: null,
             dataPointsMigrated: 0,
-            executionTimeMs: 0,
             issues: ['Migration failed: ' + (error instanceof Error ? error.message : 'Unknown error')],
             warnings: [],
             preservedMetadata: {}
