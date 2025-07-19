@@ -290,6 +290,26 @@ export interface BookFilter {
   offset?: number;
 }
 
+/**
+ * Transaction context for database operations
+ */
+export interface TransactionContext {
+  id: string;
+  executeInTransaction: (endpoint: string, options?: globalThis.RequestInit) => Promise<Response>;
+}
+
+/**
+ * Batch processing result
+ */
+export interface BatchResult<T> {
+  batchIndex: number;
+  processed: number;
+  succeeded: number;
+  failed: number;
+  results: T[];
+  errors: Error[];
+}
+
 export class StorageError extends Error {
   constructor(
     message: string,
@@ -312,6 +332,8 @@ export enum StorageErrorCode {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
   BACKUP_FAILED = 'BACKUP_FAILED',
+  TRANSACTION_FAILED = 'TRANSACTION_FAILED',
+  BATCH_PROCESSING_FAILED = 'BATCH_PROCESSING_FAILED',
   RESTORE_FAILED = 'RESTORE_FAILED'
 }
 
