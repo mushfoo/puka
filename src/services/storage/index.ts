@@ -13,7 +13,6 @@ export {
 } from './StorageService';
 
 export { MockStorageService } from './MockStorageService';
-export { FileSystemStorageService } from './FileSystemStorageService';
 export { DatabaseStorageService } from './DatabaseStorageService';
 
 // Import types for the factory function
