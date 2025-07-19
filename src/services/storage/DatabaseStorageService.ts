@@ -9,7 +9,6 @@ import {
   type BookFilter, 
   type BulkReadingDayOperation,
   type TransactionContext,
-  type BatchResult,
   StorageError, 
   StorageErrorCode 
 } from './StorageService';
@@ -303,7 +302,7 @@ export class DatabaseStorageService implements StorageService {
 
       const context: TransactionContext = {
         id: transactionId,
-        executeInTransaction: async (endpoint: string, options: RequestInit = {}) => {
+        executeInTransaction: async (endpoint: string, options: globalThis.RequestInit = {}) => {
           return this.authenticatedFetch(endpoint, {
             ...options,
             headers: {
@@ -1259,7 +1258,7 @@ export class DatabaseStorageService implements StorageService {
     this.logRequest('POST', '/api/import', { booksCount: data.books?.length || 0 });
     
     // Use transaction to ensure data consistency
-    return this.withTransaction(async (tx) => {
+    return this.withTransaction(async (_tx) => {
       // Validate input data
       if (!data || typeof data !== 'object') {
         throw new StorageError(

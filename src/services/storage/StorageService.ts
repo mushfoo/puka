@@ -295,7 +295,7 @@ export interface BookFilter {
  */
 export interface TransactionContext {
   id: string;
-  executeInTransaction: (endpoint: string, options?: RequestInit) => Promise<Response>;
+  executeInTransaction: (endpoint: string, options?: globalThis.RequestInit) => Promise<Response>;
 }
 
 /**
