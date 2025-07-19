@@ -8,12 +8,73 @@ import {
   type ImportError,
   type BookFilter, 
   type BulkReadingDayOperation,
+  type TransactionContext,
+  type BatchResult,
   StorageError, 
   StorageErrorCode 
 } from './StorageService';
 import { type Book, type StreakHistory, type EnhancedStreakHistory, type EnhancedReadingDayEntry } from '@/types';
 import { getAppBaseUrl } from '@/lib/api/utils';
 import { getSession } from '@/lib/auth-client';
+
+/**
+ * Database representation interfaces for type safety
+ */
+interface DbBook {
+  id: string;
+  title: string;
+  author: string;
+  status: 'unread' | 'reading' | 'completed' | 'dnf';
+  progress: number;
+  rating?: number;
+  genre?: string;
+  totalPages?: number;
+  currentPage?: number;
+  notes?: string;
+  dateAdded: string;
+  dateStarted?: string;
+  dateFinished?: string;
+  tags?: string[];
+  isbn?: string;
+  publishedDate?: string;
+}
+
+interface DbStreakHistory {
+  readingDays: string[] | { [key: string]: string };
+  currentStreak: number;
+  longestStreak: number;
+  lastReadDate?: string;
+  totalDaysRead?: number;
+  lastCalculated?: string;
+  bookPeriods?: DbBookPeriod[];
+}
+
+interface DbEnhancedStreakHistory {
+  readingDayEntries: DbReadingDayEntry[];
+  readingDays: string[] | { [key: string]: string };
+  bookPeriods: DbBookPeriod[];
+  lastCalculated: string;
+  lastSyncDate: string;
+  version: number;
+}
+
+interface DbReadingDayEntry {
+  date: string;
+  source: 'manual' | 'book' | 'page_update';
+  bookIds?: number[];
+  notes?: string;
+  createdAt: string;
+  modifiedAt: string;
+}
+
+interface DbBookPeriod {
+  bookId: number;
+  title: string;
+  author: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+}
 
 /**
  * DatabaseStorageService - Implements StorageService interface using API calls
@@ -23,6 +84,11 @@ export class DatabaseStorageService implements StorageService {
   private baseUrl: string;
   private initialized = false;
   private sessionRefreshPromise: Promise<void> | null = null;
+  
+  // Transaction and batch processing constants
+  private static readonly DEFAULT_BATCH_SIZE = 100;
+  private static readonly MAX_BATCH_SIZE = 1000;
+  private static readonly MAX_RETRY_ATTEMPTS = 3;
 
   constructor() {
     this.baseUrl = getAppBaseUrl();
@@ -207,11 +273,152 @@ export class DatabaseStorageService implements StorageService {
     }
   }
 
+  // =================================================================
+  // TRANSACTION AND BATCH PROCESSING SUPPORT
+  // =================================================================
+
+  /**
+   * Execute operations within a database transaction
+   * @param operations - Function that performs operations
+   * @returns Promise resolving to the result
+   * @throws {StorageError} When transaction fails
+   */
+  async withTransaction<T>(operations: (tx: TransactionContext) => Promise<T>): Promise<T> {
+    const transactionId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.logRequest('POST', '/api/transaction/begin', { transactionId });
+
+    try {
+      // Begin transaction
+      const beginResponse = await this.authenticatedFetch('/api/transaction/begin', {
+        method: 'POST',
+        body: JSON.stringify({ transactionId })
+      });
+
+      if (!beginResponse.ok) {
+        throw new StorageError(
+          'Failed to begin database transaction',
+          StorageErrorCode.TRANSACTION_FAILED
+        );
+      }
+
+      const context: TransactionContext = {
+        id: transactionId,
+        executeInTransaction: async (endpoint: string, options: RequestInit = {}) => {
+          return this.authenticatedFetch(endpoint, {
+            ...options,
+            headers: {
+              ...options.headers,
+              'X-Transaction-Id': transactionId
+            }
+          });
+        }
+      };
+
+      // Execute operations within transaction
+      const result = await operations(context);
+
+      // Commit transaction
+      const commitResponse = await this.authenticatedFetch('/api/transaction/commit', {
+        method: 'POST',
+        body: JSON.stringify({ transactionId })
+      });
+
+      if (!commitResponse.ok) {
+        throw new StorageError(
+          'Failed to commit database transaction',
+          StorageErrorCode.TRANSACTION_FAILED
+        );
+      }
+
+      this.logResponse('/api/transaction/commit', { transactionId, success: true });
+      return result;
+
+    } catch (error) {
+      // Rollback transaction on error
+      try {
+        await this.authenticatedFetch('/api/transaction/rollback', {
+          method: 'POST',
+          body: JSON.stringify({ transactionId })
+        });
+        this.logResponse('/api/transaction/rollback', { transactionId, error: error.message });
+      } catch (rollbackError) {
+        console.error('Failed to rollback transaction:', rollbackError);
+      }
+
+      if (error instanceof StorageError) {
+        throw error;
+      }
+
+      throw new StorageError(
+        `Transaction failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        StorageErrorCode.TRANSACTION_FAILED,
+        error as Error
+      );
+    }
+  }
+
+  /**
+   * Process items in batches with retry logic
+   * @param items - Array of items to process
+   * @param processor - Function to process each batch
+   * @param batchSize - Size of each batch (default: 100)
+   * @returns Promise resolving to array of results
+   */
+  async processBatches<T, R>(
+    items: T[],
+    processor: (batch: T[], batchIndex: number) => Promise<R>,
+    batchSize: number = DatabaseStorageService.DEFAULT_BATCH_SIZE
+  ): Promise<R[]> {
+    const effectiveBatchSize = Math.min(batchSize, DatabaseStorageService.MAX_BATCH_SIZE);
+    const batches: T[][] = [];
+    
+    // Split items into batches
+    for (let i = 0; i < items.length; i += effectiveBatchSize) {
+      batches.push(items.slice(i, i + effectiveBatchSize));
+    }
+
+    const results: R[] = [];
+
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      let attempts = 0;
+      let lastError: Error | null = null;
+
+      while (attempts < DatabaseStorageService.MAX_RETRY_ATTEMPTS) {
+        try {
+          const result = await processor(batch, i);
+          results.push(result);
+          break; // Success, move to next batch
+        } catch (error) {
+          attempts++;
+          lastError = error as Error;
+          
+          if (attempts < DatabaseStorageService.MAX_RETRY_ATTEMPTS) {
+            // Wait before retry (exponential backoff)
+            const delay = Math.pow(2, attempts) * 1000;
+            await new Promise(resolve => setTimeout(resolve, delay));
+            console.warn(`Batch ${i + 1} failed, retrying in ${delay}ms (attempt ${attempts})`);
+          }
+        }
+      }
+
+      if (attempts >= DatabaseStorageService.MAX_RETRY_ATTEMPTS) {
+        throw new StorageError(
+          `Batch processing failed after ${DatabaseStorageService.MAX_RETRY_ATTEMPTS} attempts: ${lastError?.message}`,
+          StorageErrorCode.BATCH_PROCESSING_FAILED,
+          lastError
+        );
+      }
+    }
+
+    return results;
+  }
+
   /**
    * Log API requests and responses for debugging
    * @private
    */
-  private logRequest(method: string, endpoint: string, data?: any): void {
+  private logRequest(method: string, endpoint: string, data?: unknown): void {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DatabaseStorageService] ${method} ${endpoint}`, data ? { data } : '');
     }
@@ -221,7 +428,7 @@ export class DatabaseStorageService implements StorageService {
    * Log API responses for debugging
    * @private
    */
-  private logResponse(endpoint: string, response: any): void {
+  private logResponse(endpoint: string, response: unknown): void {
     if (process.env.NODE_ENV === 'development') {
       console.log(`[DatabaseStorageService] Response ${endpoint}:`, response);
     }
@@ -235,7 +442,7 @@ export class DatabaseStorageService implements StorageService {
    * Map database book (CUID) to frontend book format (numeric ID)
    * @private
    */
-  private mapDbBookToFrontend(dbBook: any): Book {
+  private mapDbBookToFrontend(dbBook: DbBook): Book {
     return {
       id: this.cuidToNumber(dbBook.id),
       title: dbBook.title,
@@ -262,8 +469,8 @@ export class DatabaseStorageService implements StorageService {
    * Map frontend book data to database format
    * @private
    */
-  private mapFrontendBookToDb(frontendBook: Partial<Book>): any {
-    const dbBook: any = {
+  private mapFrontendBookToDb(frontendBook: Partial<Book>): Partial<DbBook> {
+    const dbBook: Partial<DbBook> = {
       title: frontendBook.title,
       author: frontendBook.author,
       status: frontendBook.status,
@@ -329,7 +536,7 @@ export class DatabaseStorageService implements StorageService {
    * Query cache for performance optimization
    * @private
    */
-  private queryCache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  private queryCache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
   
   /**
    * Default cache TTL (Time To Live) in milliseconds
@@ -341,7 +548,7 @@ export class DatabaseStorageService implements StorageService {
    * Generate cache key for queries
    * @private
    */
-  private getCacheKey(method: string, params: any): string {
+  private getCacheKey(method: string, params: unknown): string {
     return `${method}:${JSON.stringify(params)}`;
   }
 
@@ -349,7 +556,7 @@ export class DatabaseStorageService implements StorageService {
    * Get cached query result if valid
    * @private
    */
-  private getCachedResult(cacheKey: string): any | null {
+  private getCachedResult(cacheKey: string): unknown | null {
     const cached = this.queryCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < cached.ttl) {
       return cached.data;
@@ -367,7 +574,7 @@ export class DatabaseStorageService implements StorageService {
    * Cache query result
    * @private
    */
-  private setCachedResult(cacheKey: string, data: any, ttl: number = this.DEFAULT_CACHE_TTL): void {
+  private setCachedResult(cacheKey: string, data: unknown, ttl: number = this.DEFAULT_CACHE_TTL): void {
     this.queryCache.set(cacheKey, {
       data,
       timestamp: Date.now(),
@@ -733,7 +940,7 @@ export class DatabaseStorageService implements StorageService {
    * Map database streak history to frontend format
    * @private
    */
-  private mapDbStreakHistoryToFrontend(dbStreakHistory: any): StreakHistory {
+  private mapDbStreakHistoryToFrontend(dbStreakHistory: DbStreakHistory): StreakHistory {
     return {
       readingDays: new Set(dbStreakHistory.readingDays || []),
       bookPeriods: dbStreakHistory.bookPeriods || [],
@@ -745,11 +952,14 @@ export class DatabaseStorageService implements StorageService {
    * Map frontend streak history to database format
    * @private
    */
-  private mapFrontendStreakHistoryToDb(streakHistory: StreakHistory): any {
+  private mapFrontendStreakHistoryToDb(streakHistory: StreakHistory): DbStreakHistory {
     return {
       readingDays: Array.from(streakHistory.readingDays),
+      currentStreak: 0, // Will be calculated by the backend
+      longestStreak: 0, // Will be calculated by the backend  
       bookPeriods: streakHistory.bookPeriods,
-      lastCalculated: streakHistory.lastCalculated
+      lastCalculated: streakHistory.lastCalculated.toISOString(),
+      totalDaysRead: streakHistory.readingDays.size
     };
   }
   
@@ -757,12 +967,12 @@ export class DatabaseStorageService implements StorageService {
    * Map database enhanced streak history to frontend format
    * @private
    */
-  private mapDbEnhancedStreakHistoryToFrontend(dbEnhancedHistory: any): EnhancedStreakHistory {
+  private mapDbEnhancedStreakHistoryToFrontend(dbEnhancedHistory: DbEnhancedStreakHistory): EnhancedStreakHistory {
     return {
       readingDays: new Set(dbEnhancedHistory.readingDays || []),
       bookPeriods: dbEnhancedHistory.bookPeriods || [],
       lastCalculated: new Date(dbEnhancedHistory.lastCalculated || Date.now()),
-      readingDayEntries: (dbEnhancedHistory.readingDayEntries || []).map((entry: any) => ({
+      readingDayEntries: (dbEnhancedHistory.readingDayEntries || []).map((entry: DbReadingDayEntry) => ({
         date: entry.date,
         source: entry.source,
         bookIds: entry.bookIds || [],
@@ -779,20 +989,27 @@ export class DatabaseStorageService implements StorageService {
    * Map frontend enhanced streak history to database format
    * @private
    */
-  private mapFrontendEnhancedStreakHistoryToDb(enhancedHistory: EnhancedStreakHistory): any {
+  private mapFrontendEnhancedStreakHistoryToDb(enhancedHistory: EnhancedStreakHistory): DbEnhancedStreakHistory {
     return {
       readingDays: Array.from(enhancedHistory.readingDays),
-      bookPeriods: enhancedHistory.bookPeriods,
-      lastCalculated: enhancedHistory.lastCalculated,
+      bookPeriods: enhancedHistory.bookPeriods.map(period => ({
+        bookId: period.bookId,
+        title: period.title,
+        author: period.author,
+        startDate: period.startDate.toISOString(),
+        endDate: period.endDate.toISOString(),
+        totalDays: period.totalDays
+      })),
+      lastCalculated: enhancedHistory.lastCalculated.toISOString(),
       readingDayEntries: enhancedHistory.readingDayEntries.map(entry => ({
         date: entry.date,
         source: entry.source,
         bookIds: entry.bookIds,
         notes: entry.notes,
-        createdAt: entry.createdAt,
-        modifiedAt: entry.modifiedAt
+        createdAt: entry.createdAt.toISOString(),
+        modifiedAt: entry.modifiedAt.toISOString()
       })),
-      lastSyncDate: enhancedHistory.lastSyncDate,
+      lastSyncDate: enhancedHistory.lastSyncDate.toISOString(),
       version: enhancedHistory.version
     };
   }
@@ -823,16 +1040,21 @@ export class DatabaseStorageService implements StorageService {
    * Validate reading day entry format
    * @private
    */
-  private validateReadingDayEntry(entry: any): entry is EnhancedReadingDayEntry {
+  private validateReadingDayEntry(entry: unknown): entry is EnhancedReadingDayEntry {
     return (
       typeof entry === 'object' &&
-      typeof entry.date === 'string' &&
-      /^\d{4}-\d{2}-\d{2}$/.test(entry.date) &&
-      ['manual', 'book', 'progress'].includes(entry.source) &&
-      (entry.bookIds === undefined || Array.isArray(entry.bookIds)) &&
-      (entry.notes === undefined || typeof entry.notes === 'string') &&
-      entry.createdAt instanceof Date &&
-      entry.modifiedAt instanceof Date
+      entry !== null &&
+      'date' in entry &&
+      'source' in entry &&
+      'createdAt' in entry &&
+      'modifiedAt' in entry &&
+      typeof (entry as Record<string, unknown>).date === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/.test((entry as Record<string, unknown>).date as string) &&
+      ['manual', 'book', 'progress'].includes((entry as Record<string, unknown>).source as string) &&
+      ((entry as Record<string, unknown>).bookIds === undefined || Array.isArray((entry as Record<string, unknown>).bookIds)) &&
+      ((entry as Record<string, unknown>).notes === undefined || typeof (entry as Record<string, unknown>).notes === 'string') &&
+      (entry as Record<string, unknown>).createdAt instanceof Date &&
+      (entry as Record<string, unknown>).modifiedAt instanceof Date
     );
   }
   
@@ -1027,7 +1249,7 @@ export class DatabaseStorageService implements StorageService {
   }
 
   /**
-   * Import data from backup/migration
+   * Import data from backup/migration with transaction support and batch processing
    * @param data - Import data
    * @param options - Import options
    * @returns Promise resolving to import result
@@ -1036,7 +1258,8 @@ export class DatabaseStorageService implements StorageService {
   async importData(data: ImportData, options?: ImportOptions): Promise<ImportResult> {
     this.logRequest('POST', '/api/import', { booksCount: data.books?.length || 0 });
     
-    try {
+    // Use transaction to ensure data consistency
+    return this.withTransaction(async (tx) => {
       // Validate input data
       if (!data || typeof data !== 'object') {
         throw new StorageError(
@@ -1063,10 +1286,11 @@ export class DatabaseStorageService implements StorageService {
         duplicates: 0
       };
       
-      // Import books if provided
-      if (data.books && Array.isArray(data.books) && data.books.length > 0) {
-        await this.importBooks(data.books, importOptions, result);
-      }
+      try {
+        // Import books if provided (using batch processing)
+        if (data.books && Array.isArray(data.books) && data.books.length > 0) {
+          await this.importBooksInBatches(data.books, importOptions, result);
+        }
       
       // Import settings if provided
       if (data.settings && typeof data.settings === 'object') {
@@ -1127,18 +1351,19 @@ export class DatabaseStorageService implements StorageService {
       
       return result;
       
-    } catch (error) {
-      if (error instanceof StorageError) {
-        throw error;
+      } catch (error) {
+        if (error instanceof StorageError) {
+          throw error;
+        }
+        
+        console.error('Error importing data:', error);
+        throw new StorageError(
+          'Failed to import data',
+          StorageErrorCode.UNKNOWN_ERROR,
+          error as Error
+        );
       }
-      
-      console.error('Error importing data:', error);
-      throw new StorageError(
-        'Failed to import data',
-        StorageErrorCode.UNKNOWN_ERROR,
-        error as Error
-      );
-    }
+    });
   }
 
   /**
@@ -1442,6 +1667,53 @@ export class DatabaseStorageService implements StorageService {
       }
     }
   }
+
+  /**
+   * Import books using batch processing for better performance
+   * @param books - Array of books to import
+   * @param options - Import options
+   * @param result - Import result to update
+   * @private
+   */
+  private async importBooksInBatches(
+    books: (Omit<Book, 'id' | 'dateAdded'> | Book)[],
+    options: ImportOptions,
+    result: ImportResult
+  ): Promise<void> {
+    this.logRequest('POST', '/api/books/batch', { count: books.length });
+
+    // Process books in batches for better performance
+    await this.processBatches(
+      books,
+      async (batch: typeof books, batchIndex: number) => {
+        // Use existing importBooks method for each batch
+        const batchResult: ImportResult = {
+          success: true,
+          imported: 0,
+          skipped: 0,
+          errors: [],
+          duplicates: 0
+        };
+
+        // Import this batch
+        await this.importBooks(batch, options, batchResult);
+
+        // Merge batch result into overall result
+        result.imported += batchResult.imported;
+        result.skipped += batchResult.skipped;
+        result.duplicates += batchResult.duplicates;
+        result.errors.push(...batchResult.errors);
+
+        this.logResponse(`/api/books/batch (${batchIndex + 1})`, {
+          imported: batchResult.imported,
+          skipped: batchResult.skipped,
+          errors: batchResult.errors.length
+        });
+
+        return batchResult;
+      }
+    );
+  }
   
   /**
    * Validate book data for import
@@ -1450,7 +1722,7 @@ export class DatabaseStorageService implements StorageService {
    * @returns Validation result
    * @private
    */
-  private validateBookData(bookData: any, rowIndex: number): {
+  private validateBookData(bookData: unknown, rowIndex: number): {
     valid: boolean;
     errors: ImportError[];
   } {

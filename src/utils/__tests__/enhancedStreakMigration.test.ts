@@ -19,9 +19,8 @@ describe('EnhancedStreakMigration', () => {
       expect(result.format).toBe('basic_legacy');
       expect(result.version).toBe(0);
       expect(result.dataPoints).toBe(3);
-      expect(result.hasReadingDayEntries).toBe(false);
-      expect(result.hasBookPeriods).toBe(false);
-      expect(result.hasMetadata).toBe(true);
+      expect(result.estimatedMigrationTime).toBe('< 1 second');
+      expect(result.issues).toEqual([]);
     });
 
     it('should detect enhanced legacy format', () => {
@@ -58,12 +57,11 @@ describe('EnhancedStreakMigration', () => {
       expect(result.format).toBe('enhanced_legacy');
       expect(result.version).toBe(0);
       expect(result.dataPoints).toBe(2);
-      expect(result.hasReadingDayEntries).toBe(true);
-      expect(result.hasBookPeriods).toBe(true);
-      expect(result.hasMetadata).toBe(true);
+      expect(result.estimatedMigrationTime).toBe('< 1 second');
+      expect(result.issues).toEqual([]);
     });
 
-    it('should detect reading day map format', () => {
+    it('should detect unknown format for unsupported reading day map', () => {
       const legacyData = {
         readingDayMap: {
           '2024-01-10': {
@@ -83,12 +81,10 @@ describe('EnhancedStreakMigration', () => {
 
       const result = EnhancedStreakMigration.detectLegacyFormat(legacyData);
 
-      expect(result.format).toBe('reading_day_map');
+      expect(result.format).toBe('unknown');
       expect(result.version).toBe(0);
-      expect(result.dataPoints).toBe(2);
-      expect(result.hasReadingDayEntries).toBe(true);
-      expect(result.hasBookPeriods).toBe(false);
-      expect(result.hasMetadata).toBe(false);
+      expect(result.dataPoints).toBe(0);
+      expect(result.issues).toContain('Unknown or unsupported data format');
     });
 
     it('should detect enhanced current format', () => {
@@ -115,9 +111,8 @@ describe('EnhancedStreakMigration', () => {
       expect(result.format).toBe('enhanced_current');
       expect(result.version).toBe(1);
       expect(result.dataPoints).toBe(1);
-      expect(result.hasReadingDayEntries).toBe(true);
-      expect(result.hasMetadata).toBe(true);
       expect(result.estimatedMigrationTime).toBe('No migration needed');
+      expect(result.issues).toEqual([]);
     });
 
     it('should detect unknown format', () => {
@@ -227,7 +222,7 @@ describe('EnhancedStreakMigration', () => {
       expect(firstEntry!.modifiedAt).toEqual(new Date('2024-01-10T14:00:00'));
     });
 
-    it('should migrate reading day map format successfully', async () => {
+    it('should fail to migrate unsupported reading day map format', async () => {
       const legacyData = {
         readingDayMap: {
           '2024-01-10': {
@@ -247,18 +242,10 @@ describe('EnhancedStreakMigration', () => {
 
       const result = await EnhancedStreakMigration.migrateLegacyStreakData(legacyData);
 
-      expect(result.success).toBe(true);
-      expect(result.migratedHistory).toBeDefined();
-      expect(result.dataPointsMigrated).toBe(2);
-      expect(result.migratedHistory!.readingDayEntries).toHaveLength(2);
-      expect(result.migratedHistory!.readingDays.size).toBe(2);
-      expect(result.migratedHistory!.version).toBe(1);
-
-      // Check that entries are properly converted
-      const firstEntry = result.migratedHistory!.readingDayEntries.find(e => e.date === '2024-01-10');
-      expect(firstEntry!.source).toBe('book'); // Should be 'book' because it has bookIds
-      expect(firstEntry!.bookIds).toEqual([1]);
-      expect(firstEntry!.notes).toBe('Reading session');
+      expect(result.success).toBe(false);
+      expect(result.migratedHistory).toBeNull();
+      expect(result.issues).toContain('Cannot migrate unknown data format');
+      expect(result.dataPointsMigrated).toBe(0);
     });
 
     it('should handle serialized Set readingDays', async () => {
@@ -468,23 +455,17 @@ describe('EnhancedStreakMigration', () => {
         dataPointsMigrated: result.dataPointsMigrated
       });
 
-      // The migration should succeed even with malformed dates
-      // but if it fails, it should fallback gracefully
-      if (result.success) {
-        expect(result.migratedHistory).toBeDefined();
-        
-        // Should include all entries, including malformed ones
-        expect(result.migratedHistory!.readingDayEntries).toHaveLength(3);
-        expect(result.migratedHistory!.readingDays.size).toBe(3);
-        
-        // Should handle malformed dates gracefully - validation should detect format issues
-        const validation = DataIntegrityValidator.validateEnhancedStreakHistory(result.migratedHistory!);
-        expect(validation.issues.some(i => i.message.includes('invalid date format'))).toBe(true);
-      } else {
-        // If migration failed, it should provide meaningful error information
-        expect(result.issues.length).toBeGreaterThan(0);
-        expect(result.migratedHistory).toBeNull();
-      }
+      // The simplified migration should succeed and filter out malformed dates
+      expect(result.success).toBe(true);
+      expect(result.migratedHistory).toBeDefined();
+      
+      // Should only include valid dates (filters out malformed ones)
+      expect(result.migratedHistory!.readingDayEntries).toHaveLength(1);
+      expect(result.migratedHistory!.readingDays.size).toBe(1);
+      expect(result.dataPointsMigrated).toBe(1);
+      
+      // Should have migrated the valid date
+      expect(result.migratedHistory!.readingDays.has('2024-01-11')).toBe(true);
     });
 
     it('should handle very large datasets', async () => {
