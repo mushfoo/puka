@@ -1775,11 +1775,11 @@ export class DatabaseStorageService implements StorageService {
     }
     
     // Validate status
-    if (book.status && typeof book.status === 'string' && !['unread', 'reading', 'completed', 'abandoned'].includes(book.status)) {
+    if (book.status && typeof book.status === 'string' && !['want_to_read', 'currently_reading', 'finished'].includes(book.status)) {
       errors.push({
         row: rowIndex,
         field: 'status',
-        message: 'Status must be one of: unread, reading, completed, abandoned',
+        message: 'Status must be one of: want_to_read, currently_reading, finished',
         data: book.status
       });
     }
