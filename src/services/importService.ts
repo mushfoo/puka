@@ -728,8 +728,12 @@ export class ImportService {
     const cleaned: Partial<Book> = {};
     
     for (const [key, value] of Object.entries(book)) {
-      // Convert null to undefined for all fields
-      cleaned[key as keyof Book] = value === null ? undefined : value;
+      // Convert null, empty strings, and invalid values to undefined
+      if (value === null || value === "" || value === "null" || value === "NULL") {
+        cleaned[key as keyof Book] = undefined;
+      } else {
+        cleaned[key as keyof Book] = value;
+      }
     }
     
     return cleaned;
