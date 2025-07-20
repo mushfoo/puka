@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
-  baseURL: "http://localhost:5173", // Vite dev server
+  baseURL: import.meta.env.VITE_AUTH_URL || "http://localhost:5173", // Use env var in production
 });
 
 export type AuthUser = {
