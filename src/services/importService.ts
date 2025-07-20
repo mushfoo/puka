@@ -358,6 +358,8 @@ export class ImportService {
                 );
               }
               book.rating = ratingValue;
+            } else {
+              book.rating = undefined;
             }
             break;
           }
@@ -367,6 +369,8 @@ export class ImportService {
             const numValue = Number(value);
             if (!isNaN(numValue) && numValue >= 0) {
               book[bookField] = numValue;
+            } else {
+              book[bookField] = undefined;
             }
             break;
           }
@@ -683,6 +687,8 @@ export class ImportService {
       }
     });
 
+    console.log("Processed books:", books);
+
     return {
       books,
       errors,
@@ -726,16 +732,22 @@ export class ImportService {
    */
   private static cleanNullValues(book: Partial<Book>): Partial<Book> {
     const cleaned: Partial<Book> = {};
-    
+
     for (const [key, value] of Object.entries(book)) {
       // Convert null, empty strings, and invalid values to undefined
-      if (value === null || value === "" || value === "null" || value === "NULL") {
+      if (
+        value === null ||
+        value === "" ||
+        value === "null" ||
+        value === "NULL"
+      ) {
         cleaned[key as keyof Book] = undefined;
       } else {
         cleaned[key as keyof Book] = value;
       }
     }
-    
+
+    console.log("Cleaned book data:", cleaned);
     return cleaned;
   }
 
@@ -832,7 +844,7 @@ export class ImportService {
   static processImportWithStreaks(
     importedBooks: Partial<Book>[],
     _existingBooks: Book[], // Disabled for now - not used without streak import
-     
+
     _options: ImportOptions = {
       mergeDuplicates: false,
       overwriteExisting: false,
@@ -885,4 +897,3 @@ export class ImportService {
     return { importData, streakResult };
   }
 }
-
