@@ -289,6 +289,11 @@ const ImportModal: React.FC<ImportModalProps> = ({
           message: `Successfully imported ${result.imported} books`
         });
         onImportComplete(result);
+        
+        // Refresh the page after a short delay to show the updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
         addToast({
           type: 'error',
