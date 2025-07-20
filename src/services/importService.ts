@@ -666,7 +666,8 @@ export class ImportService {
         }
 
         const book = this.convertRowToBook(row, format);
-        books.push(book);
+        const cleanedBook = this.cleanNullValues(book);
+        books.push(cleanedBook);
         validRows++;
       } catch (error) {
         errors.push({
@@ -717,6 +718,21 @@ export class ImportService {
         throw new Error("Rating must be a number between 0 and 5");
       }
     }
+  }
+
+  /**
+   * Clean null values from book object, converting them to undefined
+   * This allows Zod defaults and optional fields to work properly
+   */
+  private static cleanNullValues(book: Partial<Book>): Partial<Book> {
+    const cleaned: Partial<Book> = {};
+    
+    for (const [key, value] of Object.entries(book)) {
+      // Convert null to undefined for all fields
+      cleaned[key as keyof Book] = value === null ? undefined : value;
+    }
+    
+    return cleaned;
   }
 
   /**
