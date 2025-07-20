@@ -743,7 +743,7 @@ export class ImportService {
       ) {
         cleaned[key as keyof Book] = undefined;
       } else {
-        cleaned[key as keyof Book] = value;
+        (cleaned as any)[key] = value;
       }
     }
 

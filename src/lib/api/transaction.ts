@@ -30,7 +30,7 @@ export async function handleTransactionRequest(
   }
 }
 
-async function handleBeginTransaction(req: ApiRequest, res: ApiResponse) {
+async function handleBeginTransaction(req: ApiRequest, res: ApiResponse, _userId: string) {
   const { transactionId } = req.body || {};
 
   if (!transactionId) {
@@ -50,7 +50,7 @@ async function handleBeginTransaction(req: ApiRequest, res: ApiResponse) {
   });
 }
 
-async function handleCommitTransaction(req: ApiRequest, res: ApiResponse) {
+async function handleCommitTransaction(req: ApiRequest, res: ApiResponse, _userId: string) {
   const { transactionId } = req.body || {};
 
   if (!transactionId) {
@@ -71,7 +71,7 @@ async function handleCommitTransaction(req: ApiRequest, res: ApiResponse) {
   });
 }
 
-async function handleRollbackTransaction(req: ApiRequest, res: ApiResponse) {
+async function handleRollbackTransaction(req: ApiRequest, res: ApiResponse, _userId: string) {
   const { transactionId } = req.body || {};
 
   if (!transactionId) {

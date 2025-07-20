@@ -44,7 +44,7 @@ export async function handleSettingsRequest(
   }
 }
 
-async function handleGetSettings(_req: ApiRequest, res: ApiResponse) {
+async function handleGetSettings(_req: ApiRequest, res: ApiResponse, _userId: string) {
   // Return mock default settings
   res.json({
     theme: "system",
@@ -67,12 +67,10 @@ async function handleUpdateSettings(
 
   const validationResult = SettingsUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
-    return res
-      .status(400)
-      .json({
-        error: "Invalid settings data",
-        details: validationResult.error,
-      });
+    return res.status(400).json({
+      error: "Invalid settings data",
+      details: validationResult.error,
+    });
   }
 
   // Return mock updated settings
@@ -87,4 +85,3 @@ async function handleUpdateSettings(
     backupFrequency: req.body.backupFrequency || "weekly",
   });
 }
-
