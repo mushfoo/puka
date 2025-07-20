@@ -36,12 +36,6 @@ interface AuthContextType {
   // Progressive enhancement
   isAuthenticated: boolean
   canSync: boolean
-  showAuthPrompt: boolean
-  dismissAuthPrompt: () => void
-  
-  // Local data migration
-  hasLocalData: boolean
-  setHasLocalData: (hasData: boolean) => void
   
   // Migration state and prompts
   migrationState: MigrationState
@@ -73,9 +67,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [session, setSession] = useState<AuthSession | null>(null)
   const [loading, setLoading] = useState(true)
-  const [hasLocalData, setHasLocalData] = useState(false)
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
-  const [authPromptDismissed, setAuthPromptDismissed] = useState(false)
   
   // Migration state
   const [migrationState, setMigrationState] = useState<MigrationState>({
@@ -112,10 +103,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
         setLoading(false)
         
-        // Handle auth events
-        if (user) {
-          setAuthPromptDismissed(false) // Reset prompt state on sign in
-        }
       }
     })
 
@@ -125,17 +112,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  // Progressive enhancement logic
-  useEffect(() => {
-    // Show auth prompt if user has local data but isn't authenticated
-    if (hasLocalData && !user && !authPromptDismissed && !loading) {
-      const timer = setTimeout(() => {
-        setShowAuthPrompt(true)
-      }, 2000) // Show after 2 seconds of usage
-      
-      return () => clearTimeout(timer)
-    }
-  }, [hasLocalData, user, authPromptDismissed, loading])
 
   // Auth methods
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
@@ -181,13 +157,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  const dismissAuthPrompt = useCallback(() => {
-    setShowAuthPrompt(false)
-    setAuthPromptDismissed(true)
-    
-    // Store dismissal in localStorage to persist across sessions
-    localStorage.setItem('puka_auth_prompt_dismissed', 'true')
-  }, [])
 
   // Check for local data that can be migrated
   const checkForLocalData = useCallback(async (): Promise<MigrationPromptData | null> => {
@@ -331,13 +300,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setMigrationPromptData(null)
   }, [])
 
-  // Check localStorage for dismissed state and migration state on load
+  // Check localStorage for migration state on load
   useEffect(() => {
-    // Auth prompt dismissal
-    const dismissed = localStorage.getItem('puka_auth_prompt_dismissed')
-    if (dismissed === 'true') {
-      setAuthPromptDismissed(true)
-    }
 
     // Load migration state from persistence service
     try {
@@ -428,12 +392,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Progressive enhancement
     isAuthenticated: !!user,
     canSync: !!user && !!session,
-    showAuthPrompt,
-    dismissAuthPrompt,
-    
-    // Local data migration
-    hasLocalData,
-    setHasLocalData,
     
     // Migration state and prompts
     migrationState,
@@ -478,7 +436,7 @@ export function useOptionalAuth() {
   return {
     ...auth,
     // Helper to check if user should be prompted for auth
-    shouldPromptAuth: auth.hasLocalData && !auth.isAuthenticated && !auth.loading,
+    shouldPromptAuth: false, // Auth prompting removed as authentication is now required
     
     // Helper to check if sync is available
     syncAvailable: auth.canSync,
