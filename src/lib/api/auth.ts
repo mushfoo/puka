@@ -8,7 +8,8 @@ export async function authenticateUser(req: ApiRequest): Promise<string | null> 
     // Extract session token from cookies
     let sessionToken: string | undefined;
 
-    if (req.headers.cookie) {
+    // Ensure headers exist
+    if (req.headers && req.headers.cookie) {
       const cookies = req.headers.cookie.split(';').reduce((acc, cookie) => {
         const [name, value] = cookie.trim().split('=');
         acc[name] = value;
@@ -20,7 +21,7 @@ export async function authenticateUser(req: ApiRequest): Promise<string | null> 
     }
 
     // Also check for authorization header
-    if (!sessionToken && req.headers.authorization) {
+    if (!sessionToken && req.headers && req.headers.authorization) {
       const authHeader = req.headers.authorization;
       if (authHeader.startsWith('Bearer ')) {
         sessionToken = authHeader.substring(7);
@@ -37,8 +38,8 @@ export async function authenticateUser(req: ApiRequest): Promise<string | null> 
     const authRequest = new Request(url, {
       method: 'GET',
       headers: {
-        cookie: req.headers.cookie || '',
-        'user-agent': req.headers['user-agent'] || '',
+        cookie: req.headers?.cookie || '',
+        'user-agent': req.headers?.['user-agent'] || '',
       },
     });
 

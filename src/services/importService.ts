@@ -358,6 +358,8 @@ export class ImportService {
                 );
               }
               book.rating = ratingValue;
+            } else {
+              book.rating = undefined;
             }
             break;
           }
@@ -367,6 +369,8 @@ export class ImportService {
             const numValue = Number(value);
             if (!isNaN(numValue) && numValue >= 0) {
               book[bookField] = numValue;
+            } else {
+              book[bookField] = undefined;
             }
             break;
           }
@@ -666,7 +670,8 @@ export class ImportService {
         }
 
         const book = this.convertRowToBook(row, format);
-        books.push(book);
+        const cleanedBook = this.cleanNullValues(book);
+        books.push(cleanedBook);
         validRows++;
       } catch (error) {
         errors.push({
@@ -681,6 +686,8 @@ export class ImportService {
         }
       }
     });
+
+    console.log("Processed books:", books);
 
     return {
       books,
@@ -717,6 +724,31 @@ export class ImportService {
         throw new Error("Rating must be a number between 0 and 5");
       }
     }
+  }
+
+  /**
+   * Clean null values from book object, converting them to undefined
+   * This allows Zod defaults and optional fields to work properly
+   */
+  private static cleanNullValues(book: Partial<Book>): Partial<Book> {
+    const cleaned: Partial<Book> = {};
+
+    for (const [key, value] of Object.entries(book)) {
+      // Convert null, empty strings, and invalid values to undefined
+      if (
+        value === null ||
+        value === "" ||
+        value === "null" ||
+        value === "NULL"
+      ) {
+        cleaned[key as keyof Book] = undefined;
+      } else {
+        (cleaned as any)[key] = value;
+      }
+    }
+
+    console.log("Cleaned book data:", cleaned);
+    return cleaned;
   }
 
   /**
@@ -812,7 +844,7 @@ export class ImportService {
   static processImportWithStreaks(
     importedBooks: Partial<Book>[],
     _existingBooks: Book[], // Disabled for now - not used without streak import
-     
+
     _options: ImportOptions = {
       mergeDuplicates: false,
       overwriteExisting: false,
@@ -865,4 +897,3 @@ export class ImportService {
     return { importData, streakResult };
   }
 }
-

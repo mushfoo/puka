@@ -1630,9 +1630,9 @@ export class DatabaseStorageService implements StorageService {
         
         // Check for duplicates by title and author
         const existingBooks = await this.searchBooks(`${book.title} ${book.author}`);
-        const isDuplicate = existingBooks.some(book => 
-          book.title.toLowerCase() === book.title.toLowerCase() && 
-          book.author.toLowerCase() === book.author.toLowerCase()
+        const isDuplicate = existingBooks.some(existingBook => 
+          existingBook.title.toLowerCase() === book.title.toLowerCase() && 
+          existingBook.author.toLowerCase() === book.author.toLowerCase()
         );
         
         if (isDuplicate) {
@@ -1645,9 +1645,9 @@ export class DatabaseStorageService implements StorageService {
           
           if (options.overwriteExisting) {
             // Find and update existing book
-            const existingBook = existingBooks.find(book => 
-              book.title.toLowerCase() === book.title.toLowerCase() && 
-              book.author.toLowerCase() === book.author.toLowerCase()
+            const existingBook = existingBooks.find(existingBook => 
+              existingBook.title.toLowerCase() === book.title.toLowerCase() && 
+              existingBook.author.toLowerCase() === book.author.toLowerCase()
             );
             
             if (existingBook) {
@@ -1775,11 +1775,11 @@ export class DatabaseStorageService implements StorageService {
     }
     
     // Validate status
-    if (book.status && typeof book.status === 'string' && !['unread', 'reading', 'completed', 'abandoned'].includes(book.status)) {
+    if (book.status && typeof book.status === 'string' && !['want_to_read', 'currently_reading', 'finished'].includes(book.status)) {
       errors.push({
         row: rowIndex,
         field: 'status',
-        message: 'Status must be one of: unread, reading, completed, abandoned',
+        message: 'Status must be one of: want_to_read, currently_reading, finished',
         data: book.status
       });
     }

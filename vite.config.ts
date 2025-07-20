@@ -77,15 +77,14 @@ const createApiPlugin = () => {
 
         const handleApiRequest = async (req: any, res: any) => {
           try {
-            console.log('=== API Request Start ===');
-            console.log('Method:', req.method);
-            console.log('URL:', req.url);
-            console.log('Headers:', req.headers);
+            // Log only essential info in development
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`API: ${req.method} ${req.url}`);
+            }
             
             // Parse request body for non-GET requests
             let body: any;
             if (req.method !== "GET" && req.method !== "HEAD") {
-              console.log('Parsing request body...');
               const rawBody = await new Promise<string>((resolve) => {
                 let data = "";
                 req.on("data", (chunk: any) => (data += chunk));
@@ -94,7 +93,6 @@ const createApiPlugin = () => {
               
               try {
                 body = rawBody ? JSON.parse(rawBody) : {};
-                console.log('Parsed body:', body);
               } catch (e) {
                 console.error('Invalid JSON in request body:', e);
                 res.statusCode = 400;
@@ -105,32 +103,27 @@ const createApiPlugin = () => {
             }
 
             // Parse URL and query parameters
-            console.log('Parsing URL and query parameters...');
             const url = new URL(req.url, `http://${req.headers.host}`);
             const queryParams = Object.fromEntries(url.searchParams.entries());
-            console.log('Query params:', queryParams);
 
             // Create Express-like req/res objects
-            console.log('Creating Express-like request/response objects...');
             const expressReq = {
               ...req,
               body,
               query: queryParams,
+              headers: req.headers || {}, // Ensure headers is always defined
             };
 
             const expressRes = {
               status: (code: number) => {
-                console.log('Setting status code:', code);
                 res.statusCode = code;
                 return expressRes;
               },
               json: (data: any) => {
-                console.log('Sending JSON response:', data);
                 res.setHeader("Content-Type", "application/json");
                 res.end(JSON.stringify(data));
               },
               send: (data?: any) => {
-                console.log('Sending response:', data);
                 if (data) {
                   res.end(data);
                 } else {
@@ -138,7 +131,6 @@ const createApiPlugin = () => {
                 }
               },
               setHeader: (name: string, value: string) => {
-                console.log('Setting header:', name, '=', value);
                 res.setHeader(name, value);
               },
             };
@@ -149,6 +141,7 @@ const createApiPlugin = () => {
             const { handleBooksRequest, handleBookByIdRequest } = await import("./src/lib/api/books");
             const { handleStreakRequest } = await import("./src/lib/api/streak");
             const { handleSettingsRequest } = await import("./src/lib/api/settings");
+            const { handleTransactionRequest } = await import("./src/lib/api/transaction");
 
             // Route to appropriate handler
             const pathSegments = url.pathname.split('/').filter(Boolean);
@@ -168,12 +161,15 @@ const createApiPlugin = () => {
               await requireAuth(handleStreakRequest)(expressReq, expressRes);
             } else if (pathSegments[1] === 'settings') {
               await requireAuth(handleSettingsRequest)(expressReq, expressRes);
+            } else if (pathSegments[1] === 'transaction') {
+              // /api/transaction/[action]
+              const action = pathSegments[2];
+              await requireAuth(handleTransactionRequest)(expressReq, expressRes, action);
             } else {
               res.statusCode = 404;
               res.setHeader("Content-Type", "application/json");
               res.end(JSON.stringify({ error: "API endpoint not found" }));
             }
-            console.log('=== API Request End ===');
           } catch (error) {
             console.error("API request error:", error);
             console.error("Error stack:", error instanceof Error ? error.stack : String(error));

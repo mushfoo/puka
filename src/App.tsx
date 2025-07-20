@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Dashboard from "./components/Dashboard";
 import ToastContainer from "./components/ToastContainer";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { AuthProvider, AuthPrompt, useOptionalAuth } from "./components/auth";
+import { AuthProvider } from "./components/auth";
 import { useStorage } from "./hooks/useStorage";
 import { useToast } from "./hooks/useToast";
 import { Book } from "./types";
@@ -26,17 +26,7 @@ function AppContent() {
   } = useStorage();
 
   const [exportData, setExportData] = useState<ExportData | null>(null);
-  const { setHasLocalData } = useOptionalAuth();
   const { toasts, removeToast, success, error: showError, info } = useToast();
-
-  // Detect when user has local data for auth prompt
-  useEffect(() => {
-    if (!loading && books.length > 0) {
-      setHasLocalData(true);
-    } else if (!loading && books.length === 0) {
-      setHasLocalData(false);
-    }
-  }, [books.length, loading, setHasLocalData]);
 
   // Fetch export data when books change
   useEffect(() => {
@@ -188,76 +178,81 @@ function AppContent() {
 
       // Process streak history from imported books
       if (result.imported > 0) {
-        const { createStreakHistoryFromBooks, processStreakImport } =
-          await import("./utils/streakCalculator");
-        const { createStorageService } = await import("./services/storage");
+        try {
+          const { createStreakHistoryFromBooks, processStreakImport } =
+            await import("./utils/streakCalculator");
+          const { createStorageService } = await import("./services/storage");
 
-        const storageService = await createStorageService();
+          const storageService = await createStorageService();
 
-        // Get all books including newly imported ones
-        const allBooks = await storageService.getBooks();
-        const existingStreakHistory = await storageService.getStreakHistory();
+          // Get all books including newly imported ones
+          const allBooks = await storageService.getBooks();
+          const existingStreakHistory = await storageService.getStreakHistory();
 
-        // Get only the imported books (assumes last N books are the imported ones)
-        const importedBooks = allBooks.slice(-result.imported);
-        const booksWithReadingPeriods = importedBooks.filter(
-          (book) => book.dateStarted && book.dateFinished,
-        );
-
-        if (booksWithReadingPeriods.length > 0) {
-          console.log(
-            `Processing streak history for ${booksWithReadingPeriods.length} books with reading periods`,
+          // Get only the imported books (assumes last N books are the imported ones)
+          const importedBooks = allBooks.slice(-result.imported);
+          const booksWithReadingPeriods = importedBooks.filter(
+            (book) => book.dateStarted && book.dateFinished,
           );
 
-          // Create or update streak history
-          let updatedHistory;
-          if (existingStreakHistory) {
-            // Process import with existing history
-            const streakResult = processStreakImport(
-              booksWithReadingPeriods,
-              allBooks.slice(0, -result.imported), // existing books
-              existingStreakHistory,
-            );
-            console.log("Streak import result:", streakResult);
-
-            // Create updated history from the result
-            const { extractReadingPeriods, generateReadingDays } = await import(
-              "./utils/readingPeriodExtractor"
-            );
-            const importedPeriods = extractReadingPeriods(
-              booksWithReadingPeriods,
-            );
-            const importedReadingDays = generateReadingDays(importedPeriods);
-
-            updatedHistory = {
-              readingDays: new Set([
-                ...(existingStreakHistory.readingDays || []),
-                ...importedReadingDays,
-              ]),
-              bookPeriods: [
-                ...(existingStreakHistory.bookPeriods || []),
-                ...importedPeriods,
-              ],
-              lastCalculated: new Date(),
-            };
-
-            result.streakResult = streakResult;
-          } else {
-            // Create new streak history from all books
-            updatedHistory = createStreakHistoryFromBooks(allBooks);
+          if (booksWithReadingPeriods.length > 0) {
             console.log(
-              "Created new streak history with",
-              updatedHistory.readingDays.size,
-              "reading days",
+              `Processing streak history for ${booksWithReadingPeriods.length} books with reading periods`,
             );
+
+            // Create or update streak history
+            let updatedHistory;
+            if (existingStreakHistory) {
+              // Process import with existing history
+              const streakResult = processStreakImport(
+                booksWithReadingPeriods,
+                allBooks.slice(0, -result.imported), // existing books
+                existingStreakHistory,
+              );
+              console.log("Streak import result:", streakResult);
+
+              // Create updated history from the result
+              const { extractReadingPeriods, generateReadingDays } = await import(
+                "./utils/readingPeriodExtractor"
+              );
+              const importedPeriods = extractReadingPeriods(
+                booksWithReadingPeriods,
+              );
+              const importedReadingDays = generateReadingDays(importedPeriods);
+
+              updatedHistory = {
+                readingDays: new Set([
+                  ...(existingStreakHistory.readingDays || []),
+                  ...importedReadingDays,
+                ]),
+                bookPeriods: [
+                  ...(existingStreakHistory.bookPeriods || []),
+                  ...importedPeriods,
+                ],
+                lastCalculated: new Date(),
+              };
+
+              result.streakResult = streakResult;
+            } else {
+              // Create new streak history from all books
+              updatedHistory = createStreakHistoryFromBooks(allBooks);
+              console.log(
+                "Created new streak history with",
+                updatedHistory.readingDays.size,
+                "reading days",
+              );
+            }
+
+            // Save the updated streak history
+            await storageService.saveStreakHistory(updatedHistory);
+            console.log("Streak history saved successfully");
+
+            // Refresh the data again to load the new streak history
+            await refresh();
           }
-
-          // Save the updated streak history
-          await storageService.saveStreakHistory(updatedHistory);
-          console.log("Streak history saved successfully");
-
-          // Refresh the data again to load the new streak history
-          await refresh();
+        } catch (streakError) {
+          console.warn("Streak processing failed, but import succeeded:", streakError);
+          // Don't throw - let the import complete successfully even if streak processing fails
         }
       }
 
@@ -338,7 +333,6 @@ function AppContent() {
         loading={loading}
       />
 
-      <AuthPrompt />
 
       <ToastContainer
         toasts={toasts}
