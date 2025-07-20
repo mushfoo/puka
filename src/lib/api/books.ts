@@ -10,19 +10,19 @@ const prisma = new PrismaClient();
 const BookCreateSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   author: z.string().min(1, 'Author is required'),
-  notes: z.string().optional(),
+  notes: z.union([z.string(), z.null()]).optional().transform(val => val === null ? undefined : val),
   progress: z.number().min(0).max(100).default(0),
   status: z.enum(['want_to_read', 'currently_reading', 'finished']).default('want_to_read'),
-  isbn: z.string().optional(),
-  coverUrl: z.string().url().optional(),
+  isbn: z.union([z.string(), z.null()]).optional().transform(val => val === null ? undefined : val),
+  coverUrl: z.union([z.string().url(), z.null()]).optional().transform(val => val === null ? undefined : val),
   tags: z.array(z.string()).default([]),
   rating: z.number().min(1).max(5).optional(),
   totalPages: z.number().positive().optional(),
   currentPage: z.number().nonnegative().optional(),
-  genre: z.string().optional(),
-  publishedDate: z.string().optional(),
-  dateStarted: z.string().datetime().optional(),
-  dateFinished: z.string().datetime().optional(),
+  genre: z.union([z.string(), z.null()]).optional().transform(val => val === null ? undefined : val),
+  publishedDate: z.union([z.string(), z.null()]).optional().transform(val => val === null ? undefined : val),
+  dateStarted: z.union([z.string().datetime(), z.null()]).optional().transform(val => val === null ? undefined : val),
+  dateFinished: z.union([z.string().datetime(), z.null()]).optional().transform(val => val === null ? undefined : val),
 });
 
 const BookUpdateSchema = BookCreateSchema.partial();
