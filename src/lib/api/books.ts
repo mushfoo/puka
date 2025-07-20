@@ -31,12 +31,19 @@ const BookFilterSchema = z.object({
   status: z.enum(['want_to_read', 'currently_reading', 'finished', 'all']).optional(),
   search: z.string().optional(),
   genre: z.string().optional(),
-  rating: z.number().min(1).max(5).optional(),
+  rating: z.union([z.number(), z.string().transform(val => parseInt(val, 10))]).optional().refine(val => val === undefined || (typeof val === 'number' && val >= 1 && val <= 5), {
+    message: 'Rating must be between 1 and 5'
+  }),
   sortBy: z.enum(['dateAdded', 'title', 'author', 'progress', 'dateFinished']).default('dateAdded'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-  limit: z.number().positive().max(100).default(50),
-  offset: z.number().nonnegative().default(0),
-});
+  limit: z.union([z.number(), z.string().transform(val => parseInt(val, 10))]).default(50).refine(val => val > 0 && val <= 100, {
+    message: 'Limit must be between 1 and 100'
+  }),
+  offset: z.union([z.number(), z.string().transform(val => parseInt(val, 10))]).default(0).refine(val => val >= 0, {
+    message: 'Offset must be non-negative'
+  }),
+  // Ignore unknown fields to handle malformed requests gracefully
+}).passthrough();
 
 export async function handleBooksRequest(req: ApiRequest, res: ApiResponse, userId: string | null) {
   try {
