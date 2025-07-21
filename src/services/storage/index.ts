@@ -28,14 +28,20 @@ let storageServiceInstance: StorageService | null = null
 async function checkDatabaseServiceHealth(): Promise<boolean> {
   try {
     const baseUrl = getAppBaseUrl()
+
+    // Create AbortController for timeout (better browser support than AbortSignal.timeout)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
     const response = await fetch(`${baseUrl}/api/health`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Add timeout to prevent hanging
-      signal: AbortSignal.timeout(5000),
+      signal: controller.signal,
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       console.error(`Health check failed with status: ${response.status}`)
