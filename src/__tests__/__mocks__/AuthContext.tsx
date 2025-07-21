@@ -1,4 +1,5 @@
 import React from 'react'
+import { vi } from 'vitest'
 
 // Mock AuthContext for tests
 export const useAuth = () => ({
@@ -7,10 +8,10 @@ export const useAuth = () => ({
   loading: false,
   canSync: true,
   showMigrationPrompt: false,
-  dismissMigrationPrompt: jest.fn(),
-  signIn: jest.fn(),
-  signUp: jest.fn(),
-  signOut: jest.fn(),
+  dismissMigrationPrompt: vi.fn(),
+  signIn: vi.fn(),
+  signUp: vi.fn(),
+  signOut: vi.fn(),
 })
 
 export const useOptionalAuth = () => ({
@@ -19,10 +20,10 @@ export const useOptionalAuth = () => ({
   loading: false,
   canSync: true,
   showMigrationPrompt: false,
-  dismissMigrationPrompt: jest.fn(),
-  signIn: jest.fn(),
-  signUp: jest.fn(),
-  signOut: jest.fn(),
+  dismissMigrationPrompt: vi.fn(),
+  signIn: vi.fn(),
+  signUp: vi.fn(),
+  signOut: vi.fn(),
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => (
