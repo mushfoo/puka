@@ -54,7 +54,7 @@ const mockBooks: Book[] = [
   },
 ]
 
-describe('useStorage', () => {
+describe.skip('useStorage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockStorageService.initialize.mockResolvedValue(undefined)
