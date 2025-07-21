@@ -342,9 +342,10 @@ function AppContent() {
       <MigrationModal
         isOpen={showMigrationPrompt}
         onClose={dismissMigrationPrompt}
-        onComplete={(migrationSuccess) => {
+        onComplete={(isSuccess) => {
           dismissMigrationPrompt()
-          if (migrationSuccess) {
+          if (isSuccess) {
+            // Show success toast
             success('Your books have been successfully synced to the cloud!', {
               title: 'Cloud Sync Complete',
               duration: 5000,
