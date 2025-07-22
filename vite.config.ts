@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Create API plugin for development and production preview
+// Create API plugin for development only
 const createApiPlugin = () => {
   if (process.env.NODE_ENV === "test") {
     return null;
@@ -11,9 +11,6 @@ const createApiPlugin = () => {
   return {
     name: "api-plugin",
     configureServer: async (server: any) => {
-      await configureMiddleware(server);
-    },
-    configurePreviewServer: async (server: any) => {
       await configureMiddleware(server);
     }
   };
