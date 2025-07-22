@@ -16,7 +16,7 @@
     "test:e2e:report": "playwright show-report",
     "type-check": "tsc --noEmit",
     "railway:build": "npm run build",
-    "railway:start": "node server.js",
+    "railway:start": "tsx server.ts",
     "db:setup": "./scripts/setup-db.sh",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -29,6 +29,8 @@
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "express": "^4.19.2",
+    "@types/express": "^4.17.21",
+    "tsx": "^4.0.0",
     "@types/react-window": "^1.8.8",
     "better-auth": "^1.2.12",
     "papaparse": "^5.5.3",

@@ -2,7 +2,7 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { auth } from './src/lib/auth-server.ts';
+import { auth } from './src/lib/auth-server';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 5173;
@@ -11,17 +11,31 @@ const isProduction = process.env.NODE_ENV === 'production';
 async function createServer() {
   const app = express();
 
+  // Add JSON parsing middleware for all routes
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
   if (isProduction) {
     // In production, serve built files
     app.use(express.static(path.join(__dirname, 'dist')));
     
     // Handle auth routes in production
-    app.use('/api/auth/*', async (req, res) => {
+    app.all('/api/auth/*', async (req, res) => {
       try {
+        // Get raw body for non-JSON requests
+        let body: string | undefined;
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          if (req.is('application/json')) {
+            body = JSON.stringify(req.body);
+          } else if (req.is('application/x-www-form-urlencoded')) {
+            body = new URLSearchParams(req.body).toString();
+          }
+        }
+
         const authRequest = new Request(`${req.protocol}://${req.get('host')}${req.originalUrl}`, {
           method: req.method,
-          headers: req.headers,
-          body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+          headers: req.headers as Record<string, string>,
+          body,
         });
         
         const authResponse = await auth.handler(authRequest);
@@ -35,15 +49,16 @@ async function createServer() {
         
         if (authResponse.body) {
           const reader = authResponse.body.getReader();
-          const pump = () => reader.read().then(({ done, value }) => {
+          const pump = async (): Promise<void> => {
+            const { done, value } = await reader.read();
             if (done) {
               res.end();
               return;
             }
             res.write(Buffer.from(value));
             return pump();
-          });
-          pump();
+          };
+          await pump();
         } else {
           res.end();
         }
