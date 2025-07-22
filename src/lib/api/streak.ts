@@ -10,8 +10,8 @@ import type { ApiRequest, ApiResponse } from "./types";
 const StreakUpdateSchema = z.object({
   currentStreak: z.number().nonnegative().optional(),
   longestStreak: z.number().nonnegative().optional(),
-  lastReadDate: z.string().datetime().optional(),
-  readingDaysData: z.record(z.any()).optional(),
+  lastReadDate: z.string().date().optional(),
+  readingDaysData: z.record(z.string(), z.any()).optional(),
   bookPeriodsData: z.array(z.any()).optional(),
 });
 
@@ -51,7 +51,11 @@ export async function handleStreakRequest(
   }
 }
 
-async function handleGetStreak(_req: ApiRequest, res: ApiResponse, _userId: string) {
+async function handleGetStreak(
+  _req: ApiRequest,
+  res: ApiResponse,
+  _userId: string,
+) {
   // Return mock streak data
   res.json({
     currentStreak: 0,
@@ -99,12 +103,10 @@ async function handleMarkReadingDay(
 
   const validationResult = ReadingDaySchema.safeParse(req.body);
   if (!validationResult.success) {
-    return res
-      .status(400)
-      .json({
-        error: "Invalid reading day data",
-        details: validationResult.error,
-      });
+    return res.status(400).json({
+      error: "Invalid reading day data",
+      details: validationResult.error,
+    });
   }
 
   const { date, bookIds, notes, source } = validationResult.data;
@@ -124,4 +126,3 @@ async function handleMarkReadingDay(
     },
   });
 }
-
