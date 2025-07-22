@@ -14,8 +14,8 @@ RUN npm run build
 # Production stage with Node.js and Caddy
 FROM node:18-alpine
 
-# Install Caddy from GitHub releases
-RUN apk add --no-cache curl tar && \
+# Install Caddy and bash (needed for migration script)
+RUN apk add --no-cache curl tar bash && \
     curl -L "https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz" | tar -xz -C /usr/local/bin/ caddy && \
     chmod +x /usr/local/bin/caddy
 
@@ -35,6 +35,7 @@ COPY --from=builder /app/dist ./dist
 COPY server.js ./
 COPY Caddyfile ./
 COPY src ./src
+COPY scripts ./scripts
 
 # Create startup script
 RUN printf '#!/bin/sh\nnpx tsx server.js &\ncaddy run --config Caddyfile --adapter caddyfile\n' > /start.sh && chmod +x /start.sh
