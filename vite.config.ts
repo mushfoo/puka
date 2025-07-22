@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-// Create API plugin for development server
+// Create API plugin for development only
 const createApiPlugin = () => {
   if (process.env.NODE_ENV === "test") {
     return null;
@@ -11,140 +11,192 @@ const createApiPlugin = () => {
   return {
     name: "api-plugin",
     configureServer: async (server: any) => {
-      try {
-        const { Readable } = await import("node:stream");
-        const { auth } = await import("./src/lib/auth-server");
+      await configureMiddleware(server);
+    }
+  };
+};
 
-        // API route handlers
-        server.middlewares.use(async (req: any, res: any, next: any) => {
-          try {
-            if (req.url.startsWith("/api/auth")) {
-              await handleAuthRequest(req, res);
-            } else if (req.url.startsWith("/api/")) {
-              await handleApiRequest(req, res);
-            } else {
-              next();
-            }
-          } catch (error) {
-            console.error("API middleware error:", error);
-            res.statusCode = 500;
-            res.end("Internal Server Error");
+const configureMiddleware = async (server: any) => {
+  try {
+    const { Readable } = await import("node:stream");
+    const { auth } = await import("./src/lib/auth-server");
+
+    // API route handlers
+    server.middlewares.use(async (req: any, res: any, next: any) => {
+      try {
+        if (req.url.startsWith("/api/auth")) {
+          await handleAuthRequest(req, res);
+        } else if (req.url.startsWith("/api/")) {
+          await handleApiRequest(req, res);
+        } else {
+          next();
+        }
+      } catch (error) {
+        console.error("API middleware error:", error);
+        res.statusCode = 500;
+        res.end("Internal Server Error");
+      }
+    });
+
+    const handleAuthRequest = async (req: any, res: any) => {
+      try {
+        // Input validation - sanitize host header
+        const host = req.headers.host;
+        if (!host || typeof host !== 'string' || !/^[a-zA-Z0-9\-.:]+$/.test(host)) {
+          res.statusCode = 400;
+          res.end("Invalid host header");
+          return;
+        }
+
+        // Validate HTTP method
+        const allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
+        if (!allowedMethods.includes(req.method)) {
+          res.statusCode = 405;
+          res.end("Method not allowed");
+          return;
+        }
+
+        // Create a URL object from the request
+        const url = new URL(req.url, `http://${host}`);
+
+        // Handle request body for POST/PUT requests with size limit
+        let body: string | undefined;
+        if (req.method !== "GET" && req.method !== "HEAD") {
+          body = await new Promise<string>((resolve, reject) => {
+            let data = "";
+            let totalSize = 0;
+            const maxSize = 1024 * 1024; // 1MB limit
+            
+            req.on("data", (chunk: any) => {
+              totalSize += chunk.length;
+              if (totalSize > maxSize) {
+                reject(new Error("Request body too large"));
+                return;
+              }
+              data += chunk;
+            });
+            req.on("end", () => resolve(data));
+            req.on("error", reject);
+          });
+        }
+
+        // Sanitize headers - only pass through safe headers
+        const sanitizedHeaders: Record<string, string> = {};
+        const allowedHeaders = [
+          'content-type', 'authorization', 'accept', 'user-agent',
+          'origin', 'referer', 'x-requested-with', 'cookie'
+        ];
+        
+        for (const [key, value] of Object.entries(req.headers)) {
+          if (allowedHeaders.includes(key.toLowerCase()) && typeof value === 'string') {
+            sanitizedHeaders[key] = value;
           }
+        }
+
+        // Create a Fetch-compatible Request object
+        const request = new Request(url, {
+          method: req.method,
+          headers: sanitizedHeaders,
+          body: body,
+          duplex: "half" as any, // Required for streams
         });
 
-        const handleAuthRequest = async (req: any, res: any) => {
+        // Call the Better Auth handler with the compatible request
+        const response = await auth.handler(request);
+
+        // Pipe the response back to the client
+        res.writeHead(
+          response.status,
+          Object.fromEntries(response.headers.entries()),
+        );
+        if (response.body) {
+          Readable.fromWeb(response.body as any).pipe(res);
+        } else {
+          res.end();
+        }
+      } catch (error) {
+        // Log detailed error for debugging, but don't expose to client
+        console.error("Auth request error:", error);
+        if (error instanceof Error && error.message === "Request body too large") {
+          res.statusCode = 413;
+          res.end("Request body too large");
+        } else {
+          res.statusCode = 500;
+          res.end("Internal Server Error");
+        }
+      }
+    };
+
+    const handleApiRequest = async (req: any, res: any) => {
+      try {
+        // Log only essential info in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`API: ${req.method} ${req.url}`);
+        }
+        
+        // Parse request body for non-GET requests
+        let body: any;
+        if (req.method !== "GET" && req.method !== "HEAD") {
+          const rawBody = await new Promise<string>((resolve) => {
+            let data = "";
+            req.on("data", (chunk: any) => (data += chunk));
+            req.on("end", () => resolve(data));
+          });
+          
           try {
-            // Create a URL object from the request
-            const url = new URL(req.url, `http://${req.headers.host}`);
+            body = rawBody ? JSON.parse(rawBody) : {};
+          } catch (e) {
+            console.error('Invalid JSON in request body:', e);
+            res.statusCode = 400;
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify({ error: "Invalid JSON in request body" }));
+            return;
+          }
+        }
 
-            // Handle request body for POST/PUT requests
-            let body: string | undefined;
-            if (req.method !== "GET" && req.method !== "HEAD") {
-              body = await new Promise<string>((resolve) => {
-                let data = "";
-                req.on("data", (chunk: any) => (data += chunk));
-                req.on("end", () => resolve(data));
-              });
-            }
+        // Parse URL and query parameters
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const queryParams = Object.fromEntries(url.searchParams.entries());
 
-            // Create a Fetch-compatible Request object
-            const request = new Request(url, {
-              method: req.method,
-              headers: req.headers,
-              body: body,
-              duplex: "half" as any, // Required for streams
-            });
+        // Create Express-like req/res objects
+        const expressReq = {
+          ...req,
+          body,
+          query: queryParams,
+          headers: req.headers || {}, // Ensure headers is always defined
+        };
 
-            // Call the Better Auth handler with the compatible request
-            const response = await auth.handler(request);
-
-            // Pipe the response back to the client
-            res.writeHead(
-              response.status,
-              Object.fromEntries(response.headers.entries()),
-            );
-            if (response.body) {
-              Readable.fromWeb(response.body as any).pipe(res);
+        const expressRes = {
+          status: (code: number) => {
+            res.statusCode = code;
+            return expressRes;
+          },
+          json: (data: any) => {
+            res.setHeader("Content-Type", "application/json");
+            res.end(JSON.stringify(data));
+          },
+          send: (data?: any) => {
+            if (data) {
+              res.end(data);
             } else {
               res.end();
             }
-          } catch (error) {
-            console.error("Auth request error:", error);
-            res.statusCode = 500;
-            res.end("Internal Server Error");
-          }
+          },
+          setHeader: (name: string, value: string) => {
+            res.setHeader(name, value);
+          },
         };
 
-        const handleApiRequest = async (req: any, res: any) => {
-          try {
-            // Log only essential info in development
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`API: ${req.method} ${req.url}`);
-            }
-            
-            // Parse request body for non-GET requests
-            let body: any;
-            if (req.method !== "GET" && req.method !== "HEAD") {
-              const rawBody = await new Promise<string>((resolve) => {
-                let data = "";
-                req.on("data", (chunk: any) => (data += chunk));
-                req.on("end", () => resolve(data));
-              });
-              
-              try {
-                body = rawBody ? JSON.parse(rawBody) : {};
-              } catch (e) {
-                console.error('Invalid JSON in request body:', e);
-                res.statusCode = 400;
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify({ error: "Invalid JSON in request body" }));
-                return;
-              }
-            }
+        // Import API handlers dynamically
+        const { allowAnonymous, requireAuth } = await import("./src/lib/api/auth");
+        const { handleHealthRequest } = await import("./src/lib/api/health");
+        const { handleBooksRequest, handleBookByIdRequest } = await import("./src/lib/api/books");
+        const { handleStreakRequest } = await import("./src/lib/api/streak");
+        const { handleSettingsRequest } = await import("./src/lib/api/settings");
+        const { handleTransactionRequest } = await import("./src/lib/api/transaction");
 
-            // Parse URL and query parameters
-            const url = new URL(req.url, `http://${req.headers.host}`);
-            const queryParams = Object.fromEntries(url.searchParams.entries());
-
-            // Create Express-like req/res objects
-            const expressReq = {
-              ...req,
-              body,
-              query: queryParams,
-              headers: req.headers || {}, // Ensure headers is always defined
-            };
-
-            const expressRes = {
-              status: (code: number) => {
-                res.statusCode = code;
-                return expressRes;
-              },
-              json: (data: any) => {
-                res.setHeader("Content-Type", "application/json");
-                res.end(JSON.stringify(data));
-              },
-              send: (data?: any) => {
-                if (data) {
-                  res.end(data);
-                } else {
-                  res.end();
-                }
-              },
-              setHeader: (name: string, value: string) => {
-                res.setHeader(name, value);
-              },
-            };
-
-            // Import API handlers dynamically
-            const { allowAnonymous, requireAuth } = await import("./src/lib/api/auth");
-            const { handleHealthRequest } = await import("./src/lib/api/health");
-            const { handleBooksRequest, handleBookByIdRequest } = await import("./src/lib/api/books");
-            const { handleStreakRequest } = await import("./src/lib/api/streak");
-            const { handleSettingsRequest } = await import("./src/lib/api/settings");
-            const { handleTransactionRequest } = await import("./src/lib/api/transaction");
-
-            // Route to appropriate handler
-            const pathSegments = url.pathname.split('/').filter(Boolean);
+        // Route to appropriate handler
+        const pathSegments = url.pathname.split('/').filter(Boolean);
 
             if (pathSegments[1] === 'health') {
               await allowAnonymous(handleHealthRequest)(expressReq, expressRes); // Health check doesn't need auth
@@ -171,18 +223,23 @@ const createApiPlugin = () => {
               res.end(JSON.stringify({ error: "API endpoint not found" }));
             }
           } catch (error) {
+            // Log detailed error for debugging, but limit client exposure
             console.error("API request error:", error);
-            console.error("Error stack:", error instanceof Error ? error.stack : String(error));
+            if (process.env.NODE_ENV === 'development') {
+              console.error("Error stack:", error instanceof Error ? error.stack : String(error));
+            }
             res.statusCode = 500;
             res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ error: "Internal server error", details: error instanceof Error ? error.message : String(error) }));
+            // Only include error details in development mode
+            const errorResponse = process.env.NODE_ENV === 'development' 
+              ? { error: "Internal server error", details: error instanceof Error ? error.message : String(error) }
+              : { error: "Internal server error" };
+            res.end(JSON.stringify(errorResponse));
           }
         };
-      } catch (error) {
-        console.warn("API plugin disabled due to import error:", error);
-      }
-    },
-  };
+  } catch (error) {
+    console.warn("API plugin disabled due to import error:", error);
+  }
 };
 
 // https://vitejs.dev/config/

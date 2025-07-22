@@ -1,0 +1,44 @@
+# Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source code and build
+COPY . .
+RUN npm run build
+
+# Production stage with Node.js and Caddy
+FROM node:18-alpine
+
+# Install Caddy
+RUN wget -O - https://caddyserver.com/api/download\?os\=linux\&arch\=amd64 | tar -xz -C /usr/local/bin/
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files and install production dependencies only
+COPY package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy built assets and server files
+COPY --from=builder /app/dist ./dist
+COPY server.js ./
+COPY Caddyfile ./
+COPY src ./src
+
+# Create startup script
+RUN echo '#!/bin/sh\nnpx tsx server.js &\ncaddy run --config Caddyfile --adapter caddyfile\n' > /start.sh && chmod +x /start.sh
+
+# Expose ports
+EXPOSE 80 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/health.json || exit 1
+
+# Start both services
+CMD ["/start.sh"]
