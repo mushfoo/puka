@@ -1,14 +1,11 @@
 {
-    # Enable compression
-    encode gzip
-
     # Disable admin API for security
     admin off
 }
 
 :80 {
     # Set root directory
-    root * /srv
+    root * /app/dist
 
     # Enable compression
     encode gzip
