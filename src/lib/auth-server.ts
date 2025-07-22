@@ -19,6 +19,8 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:5173",
     "http://localhost:3000",
+    "https://puka-production.up.railway.app",
+    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",") || []),
   ],
 });
 
