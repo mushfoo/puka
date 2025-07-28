@@ -99,6 +99,7 @@ export function AuthInlineForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete='email'
             className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
             placeholder='Enter your email'
           />
@@ -117,6 +118,7 @@ export function AuthInlineForm() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              autoComplete='name'
               className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
               placeholder='Enter your name'
             />
@@ -136,6 +138,7 @@ export function AuthInlineForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
+            autoComplete={activeTab === 'signup' ? 'new-password' : 'current-password'}
             className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
             placeholder='Enter your password'
           />
