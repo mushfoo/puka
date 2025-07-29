@@ -86,7 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const getOnSuccessCallback: (fallbackErrorMessage: string) => AuthCallback = (
-    fallbackErrorMessage,
+    _fallbackErrorMessage,
   ) => {
     return (data) => {
       console.log("Auth success data:", data);

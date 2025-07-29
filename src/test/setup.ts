@@ -40,17 +40,6 @@ vi.mock('@/contexts/AuthContext', () => ({
     signOut: vi.fn().mockResolvedValue({ error: null }),
     isAuthenticated: true,
     canSync: true,
-    // Migration-related properties
-    migrationState: {
-      status: 'none',
-      skipCount: 0,
-    },
-    migrationPromptData: null,
-    showMigrationPrompt: false,
-    dismissMigrationPrompt: vi.fn(),
-    skipMigration: vi.fn(),
-    resetMigrationState: vi.fn(),
-    checkForLocalData: vi.fn().mockResolvedValue(null),
   }),
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
   withAuth: (Component: React.ComponentType) => Component,
@@ -71,20 +60,20 @@ vi.mock('@/contexts/AuthContext', () => ({
   }),
 }))
 
-// Mock the storage service factory to always return MockStorageService in tests
+// Mock the storage service factory to always return DatabaseStorageService in tests
 vi.mock('@/services/storage', async () => {
   const actual = await vi.importActual('@/services/storage')
   return {
     ...actual,
     createStorageService: vi.fn().mockImplementation(async () => {
-      const { MockStorageService } = await import(
-        '@/services/storage/MockStorageService'
+      const { DatabaseStorageService } = await import(
+        '@/services/storage/DatabaseStorageService'
       )
-      const service = new MockStorageService()
+      const service = new DatabaseStorageService()
       await service.initialize()
       return service
     }),
-    getCurrentStorageServiceType: vi.fn().mockReturnValue('mock'),
+    getCurrentStorageServiceType: vi.fn().mockReturnValue('database'),
   }
 })
 

@@ -12,8 +12,6 @@ import StreakDisplay from "./StreakDisplay";
 import { SyncStatusIndicator } from "./sync";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthInlineForm from "./auth/AuthInlineForm";
-import { MigrationPromptCard } from "./migration/MigrationPromptCard";
-import { MigrationModal } from "./migration";
 
 interface DashboardProps {
   books: Book[];
@@ -70,7 +68,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showLoadingMinimum, setShowLoadingMinimum] = useState(true);
   const [hasSignedOut, setHasSignedOut] = useState(false);
-  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState(false);
 
   const { user, signOut, isAuthenticated, loading: authLoading } = useAuth();
 
@@ -900,19 +897,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Migration Prompt */}
-        {showMigrationPrompt && migrationPromptData && (
-          <div className="mb-6">
-            <MigrationPromptCard
-              data={migrationPromptData}
-              onStartMigration={handleStartMigration}
-              onExportFirst={handleExportFirst}
-              onSkip={skipMigration}
-              onDismiss={dismissMigrationPrompt}
-              className="bg-blue-50 border-blue-200"
-            />
-          </div>
-        )}
 
         {/* Prominent Streak Card */}
         <div className="mb-6">
@@ -1215,12 +1199,6 @@ const Dashboard: React.FC<DashboardProps> = ({
         </svg>
       </button>
 
-      {/* Migration Modal */}
-      <MigrationModal
-        isOpen={isMigrationModalOpen}
-        onClose={() => setIsMigrationModalOpen(false)}
-        onComplete={handleMigrationComplete}
-      />
     </div>
   );
 };

@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
 import { dataExportService, ExportOptions, ExportResult } from '@/services/export/DataExportService'
-import { migrationPersistenceService } from '@/services/migration/MigrationPersistenceService'
 
 export interface ExportState {
   isExporting: boolean
@@ -125,7 +124,7 @@ export function useDataExport() {
 
       if (result.success) {
         // Update user preferences to indicate backup was created
-        migrationPersistenceService.setAutoExportPreference(true)
+        // Auto export preference removed with migration system
         
         setExportState(prev => ({
           ...prev,

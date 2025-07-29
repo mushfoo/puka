@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react'
 import Dashboard from './components/Dashboard'
 import ToastContainer from './components/ToastContainer'
 import ErrorBoundary from './components/ErrorBoundary'
-import { AuthProvider, useAuth } from './components/auth'
+import { AuthProvider } from './components/auth'
 import { useStorage } from './hooks/useStorage'
 import { useToast } from './hooks/useToast'
 import { Book } from './types'
 import { ExportData, ImportResult } from './services/storage/StorageService'
-import { MigrationModal } from './components/migration'
 
 function AppContent() {
   const {
@@ -29,8 +28,6 @@ function AppContent() {
   const [exportData, setExportData] = useState<ExportData | null>(null)
   const { toasts, removeToast, success, error: showError, info } = useToast()
 
-  // Migration state from AuthContext
-  const { showMigrationPrompt, dismissMigrationPrompt } = useAuth()
 
   // Fetch export data when books change
   useEffect(() => {
@@ -338,23 +335,6 @@ function AppContent() {
         loading={loading}
       />
 
-      {/* Migration Modal - Shows when migration is available */}
-      <MigrationModal
-        isOpen={showMigrationPrompt}
-        onClose={dismissMigrationPrompt}
-        onComplete={(isSuccess) => {
-          dismissMigrationPrompt()
-          if (isSuccess) {
-            // Show success toast
-            success('Your books have been successfully synced to the cloud!', {
-              title: 'Cloud Sync Complete',
-              duration: 5000,
-            })
-            // Refresh data after migration
-            refresh()
-          }
-        }}
-      />
 
       <ToastContainer
         toasts={toasts}
