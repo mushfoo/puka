@@ -114,8 +114,11 @@ export const useStorage = (): UseStorageResult => {
         // User is authenticated, initialize with cloud storage
         initializeStorage()
       } else {
-        // User is not authenticated, initialize with local storage
-        initializeStorage()
+        // User is not authenticated, just initialize service but don't load data
+        setLoading(false)
+        setBooks([])
+        setStreakHistory(null)
+        console.log('📱 User not authenticated - storage service will initialize when user logs in')
       }
     }
   }, [isAuthenticated, authLoading, initializeStorage])
