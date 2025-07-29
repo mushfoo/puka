@@ -181,6 +181,10 @@ main() {
     log_info "Script location: $0"
     log_info "Environment: NODE_ENV=${NODE_ENV:-not set}, DATABASE_URL=${DATABASE_URL:0:50}..."
     
+    export OPENSSL_CONF=${OPENSSL_CONF:-/etc/ssl/openssl.cnf}
+    export PRISMA_QUERY_ENGINE_LIBRARY=${PRISMA_QUERY_ENGINE_LIBRARY:-/usr/lib/libssl.so.3}
+    log_info "OpenSSL configuration: OPENSSL_CONF=$OPENSSL_CONF"
+    
     if [ "$DRY_RUN" = "true" ]; then
         log_warning "Running in DRY RUN mode - no actual changes will be made"
     fi

@@ -14,8 +14,8 @@ RUN npm run build
 # Production stage with Node.js and Caddy
 FROM node:18-alpine
 
-# Install Caddy and bash (needed for migration script)
-RUN apk add --no-cache curl tar bash && \
+# Install Caddy, bash, and OpenSSL (needed for migration script and Prisma)
+RUN apk add --no-cache curl tar bash openssl openssl-dev && \
     curl -L "https://github.com/caddyserver/caddy/releases/download/v2.8.4/caddy_2.8.4_linux_amd64.tar.gz" | tar -xz -C /usr/local/bin/ caddy && \
     chmod +x /usr/local/bin/caddy
 
