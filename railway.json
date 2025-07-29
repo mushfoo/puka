@@ -17,7 +17,9 @@
         "VITE_APP_VERSION": "2.0.0",
         "VITE_AUTH_URL": "${{RAILWAY_PUBLIC_DOMAIN}}",
         "BETTER_AUTH_URL": "${{RAILWAY_PUBLIC_DOMAIN}}",
-        "APP_URL": "${{RAILWAY_PUBLIC_DOMAIN}}"
+        "APP_URL": "${{RAILWAY_PUBLIC_DOMAIN}}",
+        "PRISMA_QUERY_ENGINE_LIBRARY": "/usr/lib/libssl.so.3",
+        "OPENSSL_CONF": "/etc/ssl/openssl.cnf"
       }
     }
   }
