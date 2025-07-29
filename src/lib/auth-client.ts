@@ -32,11 +32,19 @@ export type AuthError = {
 
 // Convenience functions for common auth operations
 export const signUp = async (email: string, password: string, name: string) => {
-  return await authClient.signUp.email({
-    email,
-    password,
-    name,
-  });
+  return await authClient.signUp.email(
+    {
+      email,
+      password,
+      name,
+    },
+    {
+      onSuccess: (data) => {
+        // Optionally handle success, e.g. redirect or show message
+        console.log("Sign up successful:", data);
+      },
+    },
+  );
 };
 
 export const signIn = async (email: string, password: string) => {
@@ -55,19 +63,23 @@ export const getSession = async () => {
 };
 
 // Auth state change listener
-export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => {
+export const onAuthStateChange = (
+  callback: (user: AuthUser | null) => void,
+) => {
   // Better-auth doesn't have built-in state change listeners
   // We'll need to implement this ourselves or check session periodically
   let currentUser: AuthUser | null = null;
-  
+
   const checkSession = async () => {
     try {
       const session = await getSession();
-      const newUser = session.data?.user ? {
-        ...session.data.user,
-        image: session.data.user.image || null
-      } : null;
-      
+      const newUser = session.data?.user
+        ? {
+            ...session.data.user,
+            image: session.data.user.image || null,
+          }
+        : null;
+
       // Always update on first check, then only on changes
       if (currentUser === null && newUser === null) {
         // First check with no user - still call callback to clear loading
@@ -82,15 +94,16 @@ export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => 
       callback(null);
     }
   };
-  
+
   // Initial check
   checkSession();
-  
+
   // Check every 5 seconds for more responsive auth state updates
   const interval = setInterval(checkSession, 5000);
-  
+
   // Return unsubscribe function
   return () => {
     clearInterval(interval);
   };
 };
+

@@ -47,6 +47,7 @@ export function AuthModal({
 
     try {
       let result;
+
       if (activeTab === 'signup') {
         result = await signUp(email, password, name);
       } else {
@@ -56,12 +57,10 @@ export function AuthModal({
       if (result.error) {
         throw new Error(result.error.error);
       }
-
-      if (result.user) {
-        // Close modal immediately on success
-        onClose();
-        resetForm();
-      }
+      
+      // Close modal and reset form on successful authentication
+      onClose();
+      resetForm();
     } catch (error: any) {
       setError(error.message || 'An unexpected error occurred.');
     } finally {

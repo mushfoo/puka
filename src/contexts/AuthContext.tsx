@@ -117,6 +117,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signUp = useCallback(async (email: string, password: string, name?: string) => {
     // Use email as name if no name is provided
     const displayName = name || email.split('@')[0]
+    
     const result = await authSignUp(email, password, displayName)
     
     if (result.data?.user) {
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...result.data.user,
         image: result.data.user.image || null
       }
+      
       return { user, error: null }
     } else {
       return { user: null, error: { error: result.error?.message || 'Registration failed' } }
@@ -138,6 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...result.data.user,
         image: result.data.user.image || null
       }
+      
       return { user, error: null }
     } else {
       return { user: null, error: { error: result.error?.message || 'Sign in failed' } }

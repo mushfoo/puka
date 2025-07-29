@@ -33,6 +33,7 @@ export function AuthInlineForm() {
 
     try {
       let result;
+
       if (activeTab === 'signup') {
         result = await signUp(email, password, name);
       } else {
@@ -42,11 +43,9 @@ export function AuthInlineForm() {
       if (result.error) {
         throw new Error(result.error.error);
       }
-
-      if (result.user) {
-        // Auth success - component will unmount as user becomes authenticated
-        resetForm();
-      }
+      
+      // Clear form on successful authentication
+      resetForm();
     } catch (error: any) {
       setError(error.message || 'An unexpected error occurred.');
     } finally {
