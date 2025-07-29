@@ -51,9 +51,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true); // Start with loading true
   
 
-  // Check for existing session on mount
+  // Check for existing session on mount with retry logic
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSession = async (retryCount = 0) => {
       try {
         const sessionData = await getSession();
         if (sessionData.data?.user) {
@@ -62,21 +62,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
             image: sessionData.data.user.image || null,
           };
           setUser(user);
-          // Create session object
-          const expires = new Date();
-          expires.setDate(expires.getDate() + 30); // 30 days
-          setSession({
-            user,
-            session: {
-              id: sessionData.data.session?.id || `session_${user.id}`,
-              userId: user.id,
-              expiresAt: sessionData.data.session?.expiresAt || expires,
-              token: sessionData.data.session?.token || 'session_token',
-            }
-          });
+          
+          // Use better-auth session data directly
+          if (sessionData.data.session) {
+            setSession({
+              user,
+              session: sessionData.data.session
+            });
+          } else {
+            // Fallback: Only create minimal session if better-auth doesn't provide one
+            console.warn('No session data from better-auth, creating fallback session');
+            setSession({
+              user,
+              session: {
+                id: `temp_${user.id}`,
+                userId: user.id,
+                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                token: 'temp_token',
+              }
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to check session:', error);
+        
+        // Retry logic for network issues
+        if (retryCount < 2 && (error as any)?.name === 'NetworkError') {
+          console.log(`Retrying session check (attempt ${retryCount + 1})`);
+          setTimeout(() => checkSession(retryCount + 1), 1000 * (retryCount + 1));
+          return;
+        }
+        
+        // Clear session on persistent failure
+        setUser(null);
+        setSession(null);
       } finally {
         setLoading(false);
       }
@@ -99,18 +118,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         setUser(user);
         
-        // Create session object
-        const expires = new Date();
-        expires.setDate(expires.getDate() + 30); // 30 days
-        setSession({
-          user,
-          session: {
-            id: data.data.session?.id || `session_${user.id}`,
-            userId: user.id,
-            expiresAt: data.data.session?.expiresAt || expires,
-            token: data.data.session?.token || 'session_token',
-          }
-        });
+        // Use better-auth session data directly instead of manual construction
+        if (data.data.session) {
+          setSession({
+            user,
+            session: data.data.session
+          });
+        } else {
+          // Fallback: Only create minimal session if better-auth doesn't provide one
+          setSession({
+            user,
+            session: {
+              id: `temp_${user.id}`,
+              userId: user.id,
+              expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+              token: 'temp_token',
+            }
+          });
+        }
       }
       
       setLoading(false); // Clear loading state
@@ -122,6 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ) => {
     return (data) => {
       const error = data.error?.message || errorMessage;
+      console.error('Authentication error:', error, data);
       setError({ error });
       setLoading(false);
     };
@@ -167,6 +193,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setLoading(false);
       });
     } catch (error: any) {
+      console.error('Sign out error:', error);
+      // Always clear session on sign out attempt, even if it fails
+      setUser(null);
+      setSession(null);
       setError({ error: error.message || 'Sign out failed' });
       setLoading(false);
     }

@@ -66,22 +66,12 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [showBookSwitcher, setShowBookSwitcher] = useState(false);
   const [activeBookId, setActiveBookId] = useState<number | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [showLoadingMinimum, setShowLoadingMinimum] = useState(true);
   const [hasSignedOut, setHasSignedOut] = useState(false);
 
   const { user, signOut, isAuthenticated, loading: authLoading } = useAuth();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const bookSwitcherRef = useRef<HTMLDivElement>(null);
-
-  // Handle minimum loading time (3 seconds)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLoadingMinimum(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Debounce search query for better performance
   useEffect(() => {
@@ -432,11 +422,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   // Show loading/auth screen for unauthenticated users
   if (
-    (authLoading || showLoadingMinimum || !isAuthenticated) &&
+    (authLoading || !isAuthenticated) &&
     !hasSignedOut
   ) {
     const showAuthForm =
-      !authLoading && !showLoadingMinimum && !isAuthenticated;
+      !authLoading && !isAuthenticated;
 
     return (
       <div

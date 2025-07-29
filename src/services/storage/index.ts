@@ -17,6 +17,7 @@ export { DatabaseStorageService } from './DatabaseStorageService'
 // Import types for the factory function
 import { type StorageService } from './StorageService'
 import { DatabaseStorageService } from './DatabaseStorageService'
+import { MockStorageService } from './MockStorageService'
 import { getAppBaseUrl } from '@/lib/api/utils'
 
 // Storage service instance cache
@@ -57,7 +58,7 @@ async function checkDatabaseServiceHealth(): Promise<boolean> {
   }
 }
 
-// Storage service factory - always uses DatabaseStorageService
+// Storage service factory with fallback capability
 export async function createStorageService(): Promise<StorageService> {
   // Return cached instance if available
   if (storageServiceInstance) {
@@ -79,7 +80,18 @@ export async function createStorageService(): Promise<StorageService> {
     return dbService
   } catch (error) {
     console.error('❌ Failed to initialize DatabaseStorageService:', error)
-    throw new Error('Unable to initialize storage service. Please check your connection and try again.')
+    console.warn('🔄 Falling back to MockStorageService for offline functionality')
+    
+    try {
+      const mockService = new MockStorageService()
+      await mockService.initialize()
+      storageServiceInstance = mockService
+      console.log('📚 Using MockStorageService as fallback')
+      return mockService
+    } catch (fallbackError) {
+      console.error('❌ Failed to initialize fallback storage service:', fallbackError)
+      throw new Error('Unable to initialize any storage service. Please refresh the page and try again.')
+    }
   }
 }
 
@@ -89,7 +101,7 @@ export function resetStorageService(): void {
 }
 
 // Get current storage service type
-export function getCurrentStorageServiceType(): 'database' | null {
+export function getCurrentStorageServiceType(): 'database' | 'mock' | null {
   if (!storageServiceInstance) return null
-  return 'database'
+  return storageServiceInstance instanceof DatabaseStorageService ? 'database' : 'mock'
 }

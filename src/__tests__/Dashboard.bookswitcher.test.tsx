@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Dashboard from '@/components/Dashboard';
 import { AuthProvider } from '@/components/auth';
 import { Book } from '@/types';
@@ -99,17 +99,14 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
-      // Advance timers to skip the 3-second loading delay
-      await act(async () => {
-        vi.advanceTimersByTime(3000);
-      });
-
       // Should show the switcher button (now visible on both mobile and desktop)
-      const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
-      expect(switcherButton).toBeInTheDocument();
+      await waitFor(() => {
+        const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
+        expect(switcherButton).toBeInTheDocument();
+      });
     });
 
-    it('does not show book switcher when only one book is currently reading', () => {
+    it('does not show book switcher when only one book is currently reading', async () => {
       renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
@@ -118,10 +115,12 @@ describe('Dashboard Book Switcher', () => {
       );
 
       // Should not show the switcher button
-      expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
 
-    it('does not show book switcher when no books are currently reading', () => {
+    it('does not show book switcher when no books are currently reading', async () => {
       const noReadingBooks = mockBooksMultipleReading.map(book => ({
         ...book,
         status: 'want_to_read' as const
@@ -135,7 +134,9 @@ describe('Dashboard Book Switcher', () => {
       );
 
       // Should not show the switcher button
-      expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
   });
 
@@ -147,6 +148,10 @@ describe('Dashboard Book Switcher', () => {
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       
@@ -179,6 +184,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       fireEvent.click(switcherButton);
       
@@ -208,6 +217,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       fireEvent.click(switcherButton);
       
@@ -228,6 +241,10 @@ describe('Dashboard Book Switcher', () => {
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       fireEvent.click(switcherButton);
@@ -261,6 +278,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       fireEvent.click(switcherButton);
       
@@ -286,6 +307,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       // Press B to open
       fireEvent.keyDown(document, { key: 'b', preventDefault: vi.fn() });
       
@@ -301,7 +326,7 @@ describe('Dashboard Book Switcher', () => {
       });
     });
 
-    it('does not toggle switcher with "B" when only one book is reading', () => {
+    it('does not toggle switcher with "B" when only one book is reading', async () => {
       renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
@@ -313,7 +338,9 @@ describe('Dashboard Book Switcher', () => {
       fireEvent.keyDown(document, { key: 'b', preventDefault: vi.fn() });
       
       // Should not show switcher dropdown
-      expect(screen.queryByText('Currently Reading')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Currently Reading')).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
 
     it('cycles through books with Ctrl+N (next)', async () => {
@@ -323,6 +350,10 @@ describe('Dashboard Book Switcher', () => {
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       
@@ -362,6 +393,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       
       // Initially should show Book Two (most recently modified)
@@ -392,7 +427,7 @@ describe('Dashboard Book Switcher', () => {
       });
     });
 
-    it('does not cycle books when only one book is reading', () => {
+    it('does not cycle books when only one book is reading', async () => {
       renderWithAuth(
         <Dashboard 
           books={mockBooksSingleReading}
@@ -414,18 +449,24 @@ describe('Dashboard Book Switcher', () => {
       });
       
       // Should not show any switcher
-      expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByTitle(/Switch between/)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
   });
 
   describe('Active Book Management', () => {
-    it('sets most recently modified book as initial active book', () => {
+    it('sets most recently modified book as initial active book', async () => {
       renderWithAuth(
         <Dashboard 
           books={mockBooksMultipleReading}
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       // Book Two has the most recent dateModified (2024-01-12)
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
@@ -440,6 +481,10 @@ describe('Dashboard Book Switcher', () => {
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       
@@ -467,6 +512,10 @@ describe('Dashboard Book Switcher', () => {
         />
       );
 
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
+
       const switcherButton = screen.getByTitle(/Switch between 3 currently reading books/);
       fireEvent.click(switcherButton);
       
@@ -487,6 +536,10 @@ describe('Dashboard Book Switcher', () => {
           onAddBook={mockHandlers.onAddBook}
         />
       );
+
+      await waitFor(() => {
+        expect(screen.getByTitle(/Switch between 3 currently reading books/)).toBeInTheDocument();
+      });
 
       // Open keyboard help
       fireEvent.keyDown(document, { key: '?', preventDefault: vi.fn() });
