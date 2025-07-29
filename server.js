@@ -141,8 +141,8 @@ app.use('/api', async (req, res) => {
   }
 });
 
-// Health check
-app.get('/health', (req, res) => {
+// Health check endpoint for Railway
+app.get('/health.json', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
