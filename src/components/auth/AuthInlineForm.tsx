@@ -1,152 +1,147 @@
-import React, { useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
-type AuthTab = 'signin' | 'signup'
+type AuthTab = "signin" | "signup";
 
 export function AuthInlineForm() {
-  const [activeTab, setActiveTab] = useState<AuthTab>('signin')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<AuthTab>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const { signUp, signIn } = useAuth()
+  const { signUp, signIn, error } = useAuth();
 
   const resetForm = () => {
-    setEmail('')
-    setPassword('')
-    setName('')
-    setError(null)
-    setLoading(false)
-  }
+    setEmail("");
+    setPassword("");
+    setName("");
+    setLoading(false);
+  };
 
   const handleTabChange = (tab: AuthTab) => {
-    setActiveTab(tab)
-    resetForm()
-  }
+    setActiveTab(tab);
+    resetForm();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
 
-    try {
-      let result;
-
-      if (activeTab === 'signup') {
-        result = await signUp(email, password, name);
-      } else {
-        result = await signIn(email, password);
+    if (activeTab === "signup") {
+      await signUp(email, password, name);
+      if (error) {
+        if (error.error === "User already exists") {
+          // If user already exists, switch to sign in tab
+          setActiveTab("signin");
+        }
       }
-
-      if (result.error) {
-        throw new Error(result.error.error);
-      }
-      
-      // Clear form on successful authentication
-      resetForm();
-    } catch (error: any) {
-      setError(error.message || 'An unexpected error occurred.');
-    } finally {
-      setLoading(false);
+    } else {
+      await signIn(email, password);
     }
   };
 
   return (
-    <div className='bg-surface rounded-lg shadow-xl p-6 border border-border'>
+    <div className="bg-surface rounded-lg shadow-xl p-6 border border-border">
       {/* Tab Navigation */}
-      <div className='flex border-b border-border mb-6'>
+      <div className="flex border-b border-border mb-6">
         <button
-          onClick={() => handleTabChange('signin')}
+          onClick={() => handleTabChange("signin")}
           className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'signin'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}>
+            activeTab === "signin"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-secondary hover:text-text-primary"
+          }`}
+        >
           Sign In
         </button>
         <button
-          onClick={() => handleTabChange('signup')}
+          onClick={() => handleTabChange("signup")}
           className={`flex-1 py-2 px-4 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'signup'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}>
+            activeTab === "signup"
+              ? "border-primary text-primary"
+              : "border-transparent text-text-secondary hover:text-text-primary"
+          }`}
+        >
           Sign Up
         </button>
       </div>
 
       {/* Error Messages */}
       {error && (
-        <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-md'>
-          <p className='text-sm text-red-700'>{error}</p>
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-700">{error.error}</p>
         </div>
       )}
 
       {/* Auth Form */}
-      <form onSubmit={handleSubmit} className='space-y-4'>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label
-            htmlFor='email'
-            className='block text-sm font-medium text-text-primary mb-1'>
+            htmlFor="email"
+            className="block text-sm font-medium text-text-primary mb-1"
+          >
             Email
           </label>
           <input
-            id='email'
-            type='email'
+            id="email"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            autoComplete='email'
-            className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
-            placeholder='Enter your email'
+            autoComplete="email"
+            className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary"
+            placeholder="Enter your email"
           />
         </div>
 
-        {activeTab === 'signup' && (
+        {activeTab === "signup" && (
           <div>
             <label
-              htmlFor='name'
-              className='block text-sm font-medium text-text-primary mb-1'>
+              htmlFor="name"
+              className="block text-sm font-medium text-text-primary mb-1"
+            >
               Name
             </label>
             <input
-              id='name'
-              type='text'
+              id="name"
+              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              autoComplete='name'
-              className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
-              placeholder='Enter your name'
+              autoComplete="name"
+              className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary"
+              placeholder="Enter your name"
             />
           </div>
         )}
 
         <div>
           <label
-            htmlFor='password'
-            className='block text-sm font-medium text-text-primary mb-1'>
+            htmlFor="password"
+            className="block text-sm font-medium text-text-primary mb-1"
+          >
             Password
           </label>
           <input
-            id='password'
-            type='password'
+            id="password"
+            type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            autoComplete={activeTab === 'signup' ? 'new-password' : 'current-password'}
-            className='w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary'
-            placeholder='Enter your password'
+            autoComplete={
+              activeTab === "signup" ? "new-password" : "current-password"
+            }
+            className="w-full px-3 py-2 border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-text-primary"
+            placeholder="Enter your password"
           />
         </div>
 
         <button
-          type='submit'
+          type="submit"
           disabled={loading}
-          className='w-full py-2 px-4 bg-primary text-white font-medium rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2'>
+          className="w-full py-2 px-4 bg-primary text-white font-medium rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
           {loading && (
             <svg
               className="w-4 h-4 animate-spin"
@@ -169,15 +164,14 @@ export function AuthInlineForm() {
             </svg>
           )}
           {loading
-            ? 'Processing...'
-            : activeTab === 'signup'
-            ? 'Create Account'
-            : 'Sign In'}
+            ? "Processing..."
+            : activeTab === "signup"
+              ? "Create Account"
+              : "Sign In"}
         </button>
       </form>
-
     </div>
-  )
+  );
 }
 
-export default AuthInlineForm
+export default AuthInlineForm;
