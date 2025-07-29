@@ -12,13 +12,11 @@ export {
   StorageErrorCode,
 } from './StorageService'
 
-export { MockStorageService } from './MockStorageService'
 export { DatabaseStorageService } from './DatabaseStorageService'
 
 // Import types for the factory function
 import { type StorageService } from './StorageService'
 import { DatabaseStorageService } from './DatabaseStorageService'
-import { MockStorageService } from './MockStorageService'
 import { getAppBaseUrl } from '@/lib/api/utils'
 
 // Storage service instance cache
@@ -59,49 +57,30 @@ async function checkDatabaseServiceHealth(): Promise<boolean> {
   }
 }
 
-// Storage service factory with environment-based selection and fallback
+// Storage service factory - always uses DatabaseStorageService
 export async function createStorageService(): Promise<StorageService> {
   // Return cached instance if available
   if (storageServiceInstance) {
     return storageServiceInstance
   }
 
-  // Check environment configuration
-  const useDatabase = import.meta.env.VITE_USE_DATABASE_STORAGE !== 'false'
+  try {
+    // Perform health check
+    const isHealthy = await checkDatabaseServiceHealth()
 
-  // Always try DatabaseStorageService first when enabled (default behavior)
-  if (useDatabase) {
-    try {
-      // Perform health check
-      const isHealthy = await checkDatabaseServiceHealth()
-
-      if (isHealthy) {
-        const dbService = new DatabaseStorageService()
-        await dbService.initialize()
-        storageServiceInstance = dbService
-        console.log('✅ Using DatabaseStorageService - Cloud sync enabled')
-        return dbService
-      } else {
-        console.warn(
-          '⚠️ Database service health check failed, falling back to MockStorageService'
-        )
-      }
-    } catch (error) {
-      console.error('❌ Failed to initialize DatabaseStorageService:', error)
-      console.warn('⚠️ Falling back to MockStorageService')
+    if (!isHealthy) {
+      throw new Error('Database service health check failed')
     }
-  } else {
-    console.log(
-      '📱 Database storage disabled via VITE_USE_DATABASE_STORAGE=false'
-    )
-  }
 
-  // Fallback to MockStorageService
-  const mockService = new MockStorageService()
-  await mockService.initialize()
-  storageServiceInstance = mockService
-  console.log('📝 Using MockStorageService - Local storage only')
-  return mockService
+    const dbService = new DatabaseStorageService()
+    await dbService.initialize()
+    storageServiceInstance = dbService
+    console.log('✅ Using DatabaseStorageService')
+    return dbService
+  } catch (error) {
+    console.error('❌ Failed to initialize DatabaseStorageService:', error)
+    throw new Error('Unable to initialize storage service. Please check your connection and try again.')
+  }
 }
 
 // Force service re-initialization (useful for testing)
@@ -110,9 +89,7 @@ export function resetStorageService(): void {
 }
 
 // Get current storage service type
-export function getCurrentStorageServiceType(): 'database' | 'mock' | null {
+export function getCurrentStorageServiceType(): 'database' | null {
   if (!storageServiceInstance) return null
-  return storageServiceInstance instanceof DatabaseStorageService
-    ? 'database'
-    : 'mock'
+  return 'database'
 }

@@ -32,9 +32,7 @@ export function SyncStatusIndicator({
         console.log('✅ Cloud sync active - DatabaseStorageService in use')
       } else {
         setSyncStatus('offline')
-        console.log(
-          '⚠️ Using local storage - DatabaseStorageService not active'
-        )
+        console.log('⚠️ Storage service not initialized')
       }
     }
 

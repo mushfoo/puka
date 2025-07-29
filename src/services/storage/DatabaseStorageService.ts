@@ -111,15 +111,8 @@ export class DatabaseStorageService implements StorageService {
         );
       }
 
-      // Verify authentication
-      const session = await getSession();
-      if (!session.data?.user) {
-        throw new StorageError(
-          'Authentication required for database storage',
-          StorageErrorCode.PERMISSION_DENIED
-        );
-      }
-
+      // Note: Authentication is checked per-request, not during initialization
+      // This allows the service to be ready for auth state changes
       this.initialized = true;
       console.log('DatabaseStorageService initialized successfully');
     } catch (error) {
