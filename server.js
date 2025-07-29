@@ -115,6 +115,8 @@ app.use('/api', async (req, res) => {
     // Route handlers
     const pathSegments = req.path.split('/').filter(Boolean);
     
+    // API health endpoint with detailed diagnostics (accessed via /api/health)
+    // Provides comprehensive health info including auth status, environment, etc.
     if (pathSegments[1] === 'health') {
       await allowAnonymous(handleHealthRequest)(expressReq, expressRes);
     } else if (pathSegments[1] === 'books') {
@@ -141,9 +143,11 @@ app.use('/api', async (req, res) => {
   }
 });
 
-// Health check endpoint for Railway
+// Railway-specific health check endpoint (matches railway.json healthcheckPath)
+// This endpoint is required by Railway for deployment health checks and must return 200 OK
+// Different from /api/health which provides detailed diagnostics for monitoring/debugging
 app.get('/health.json', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Error handling
