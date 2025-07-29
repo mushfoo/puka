@@ -63,11 +63,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           };
           setUser(user);
           
-          // Use better-auth session data directly
+          // Use better-auth session data directly, filtering out null values
           if (sessionData.data.session) {
             setSession({
               user,
-              session: sessionData.data.session
+              session: {
+                ...sessionData.data.session,
+                ipAddress: sessionData.data.session.ipAddress || undefined,
+                userAgent: sessionData.data.session.userAgent || undefined,
+              }
             });
           } else {
             // Fallback: Only create minimal session if better-auth doesn't provide one
@@ -118,11 +122,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
         setUser(user);
         
-        // Use better-auth session data directly instead of manual construction
+        // Use better-auth session data directly instead of manual construction, filtering out null values
         if (data.data.session) {
           setSession({
             user,
-            session: data.data.session
+            session: {
+              ...data.data.session,
+              ipAddress: data.data.session.ipAddress || undefined,
+              userAgent: data.data.session.userAgent || undefined,
+            }
           });
         } else {
           // Fallback: Only create minimal session if better-auth doesn't provide one
