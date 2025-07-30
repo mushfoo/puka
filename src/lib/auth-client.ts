@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
-  baseURL: import.meta.env.VITE_AUTH_URL || (import.meta.env.PROD ? "" : "http://localhost:3001"),
+  baseURL: import.meta.env.VITE_AUTH_URL || "",
 });
 
 export type AuthUser = {
@@ -53,16 +53,19 @@ export const signUp = async (
     },
     {
       onSuccess: (data) => {
+        console.log("Sign up success:", data);
         if (onSuccess) {
           onSuccess(data);
         }
       },
       onError: (data) => {
+        console.error("Sign up error:", data);
         if (onError) {
           onError(data);
         }
       },
       onRequest: (data) => {
+        console.log("Sign up request:", data);
         if (onRequest) {
           onRequest(data);
         }
