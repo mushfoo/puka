@@ -1,7 +1,7 @@
 import { createAuthClient } from "better-auth/client";
 
 export const authClient = createAuthClient({
-  baseURL: import.meta.env.VITE_AUTH_URL || "http://localhost:5173", // Use env var in production
+  baseURL: import.meta.env.VITE_AUTH_URL || (import.meta.env.PROD ? "" : "http://localhost:3001"),
 });
 
 export type AuthUser = {
