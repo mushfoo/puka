@@ -38,6 +38,8 @@ app.use(validateRequest);
 // Auth routes
 app.use('/api/auth*', async (req, res) => {
   try {
+    console.log(`Auth request: ${req.method} ${req.originalUrl}`);
+    
     // Sanitize headers
     const sanitizedHeaders = {};
     const allowedHeaders = [
@@ -54,6 +56,8 @@ app.use('/api/auth*', async (req, res) => {
     // Create fetch request - strip /api prefix for better-auth
     const authPath = req.originalUrl.replace(/^\/api/, '');
     const url = new URL(authPath, `http://${req.get('host')}`);
+    console.log(`Better-auth request: ${req.method} ${url.pathname}`);
+    
     const request = new Request(url, {
       method: req.method,
       headers: sanitizedHeaders,
@@ -62,6 +66,7 @@ app.use('/api/auth*', async (req, res) => {
 
     // Call Better Auth
     const response = await auth.handler(request);
+    console.log(`Better-auth response: ${response.status}`);
     
     // Forward response
     res.status(response.status);
