@@ -155,7 +155,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ) => {
     return (data) => {
       const error = data.error?.message || errorMessage;
-      console.error('Authentication error:', error, data);
+      console.error('Authentication error from onError callback:', error, data);
       setError({ error });
       setLoading(false);
     };
