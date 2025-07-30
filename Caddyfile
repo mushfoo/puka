@@ -17,11 +17,11 @@
     }
 
     # API routes - proxy to backend service (auth routes first for specificity)
-    handle_path /api/auth* {
+    handle /api/auth* {
         reverse_proxy localhost:3001
     }
 
-    handle_path /api/* {
+    handle /api/* {
         reverse_proxy localhost:3001
     }
 

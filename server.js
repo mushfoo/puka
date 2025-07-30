@@ -10,9 +10,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Request logging
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`${req.method} ${req.path}`);
-  }
+  console.log(`[EXPRESS] ${req.method} ${req.path} ${req.originalUrl}`);
   next();
 });
 
