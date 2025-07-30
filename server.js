@@ -33,67 +33,11 @@ const validateRequest = (req, res, next) => {
 
 app.use(validateRequest);
 
-// Auth routes
-app.use('/api/auth*', async (req, res) => {
-  try {
-    console.log(`Auth request: ${req.method} ${req.originalUrl}`);
-    
-    // Sanitize headers
-    const sanitizedHeaders = {};
-    const allowedHeaders = [
-      'content-type', 'authorization', 'accept', 'user-agent',
-      'origin', 'referer', 'x-requested-with', 'cookie'
-    ];
-    
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (allowedHeaders.includes(key.toLowerCase()) && typeof value === 'string') {
-        sanitizedHeaders[key] = value;
-      }
-    }
+// Import better-auth node handler
+import { toNodeHandler } from "better-auth/node";
 
-    // Create fetch request - strip /api prefix for better-auth
-    const authPath = req.originalUrl.replace(/^\/api/, '');
-    const url = new URL(authPath, `http://${req.get('host')}`);
-    console.log(`Better-auth request: ${req.method} ${url.pathname}`);
-    
-    // For POST requests, get the raw body properly
-    let body = undefined;
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      body = JSON.stringify(req.body);
-    }
-    
-    // Create proper Request object for better-auth
-    const request = new Request(url.toString(), {
-      method: req.method,
-      headers: sanitizedHeaders,
-      body: body,
-    });
-
-    // Call Better Auth
-    const response = await auth.handler(request);
-    console.log(`Better-auth response: ${response.status}`);
-    
-    // Forward response
-    res.status(response.status);
-    response.headers.forEach((value, key) => {
-      res.set(key, value);
-    });
-
-    if (response.body) {
-      const reader = response.body.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        res.write(Buffer.from(value));
-      }
-    }
-    res.end();
-    
-  } catch (error) {
-    console.error('Auth route error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Auth routes - use proper Express integration
+app.all('/api/auth/*', toNodeHandler(auth));
 
 // Other API routes
 app.use('/api', async (req, res) => {
