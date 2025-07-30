@@ -12,11 +12,21 @@
 
     # API routes - proxy to backend service (MUST come before file_server)
     handle /api/auth* {
-        reverse_proxy localhost:3001
+        reverse_proxy localhost:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
     handle /api/* {
-        reverse_proxy localhost:3001
+        reverse_proxy localhost:3001 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
     # Health check endpoint
