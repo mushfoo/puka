@@ -10,18 +10,18 @@
     # Enable compression
     encode gzip
 
-    # Health check endpoint - must be exact match
-    handle_path /health.json {
+    # Health check endpoint
+    handle /health.json {
         file_server
         header Content-Type application/json
     }
 
-    # API routes - proxy to backend service
-    handle /api/auth* {
+    # API routes - proxy to backend service (auth routes first for specificity)
+    handle_path /api/auth* {
         reverse_proxy localhost:3001
     }
 
-    handle /api/* {
+    handle_path /api/* {
         reverse_proxy localhost:3001
     }
 
