@@ -56,10 +56,17 @@ app.use('/api/auth*', async (req, res) => {
     const url = new URL(authPath, `http://${req.get('host')}`);
     console.log(`Better-auth request: ${req.method} ${url.pathname}`);
     
-    const request = new Request(url, {
+    // For POST requests, get the raw body properly
+    let body = undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      body = JSON.stringify(req.body);
+    }
+    
+    // Create proper Request object for better-auth
+    const request = new Request(url.toString(), {
       method: req.method,
       headers: sanitizedHeaders,
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      body: body,
     });
 
     // Call Better Auth
