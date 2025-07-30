@@ -10,19 +10,19 @@
     # Enable compression
     encode gzip
 
-    # Health check endpoint
-    handle /health.json {
-        file_server
-        header Content-Type application/json
-    }
-
-    # API routes - proxy to backend service (auth routes first for specificity)
+    # API routes - proxy to backend service (MUST come before file_server)
     handle /api/auth* {
         reverse_proxy localhost:3001
     }
 
     handle /api/* {
         reverse_proxy localhost:3001
+    }
+
+    # Health check endpoint
+    handle /health.json {
+        file_server
+        header Content-Type application/json
     }
 
     # Static files with cache headers
