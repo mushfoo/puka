@@ -51,8 +51,9 @@ app.use('/api/auth*', async (req, res) => {
       }
     }
 
-    // Create fetch request
-    const url = new URL(req.originalUrl, `http://${req.get('host')}`);
+    // Create fetch request - strip /api prefix for better-auth
+    const authPath = req.originalUrl.replace(/^\/api/, '');
+    const url = new URL(authPath, `http://${req.get('host')}`);
     const request = new Request(url, {
       method: req.method,
       headers: sanitizedHeaders,
