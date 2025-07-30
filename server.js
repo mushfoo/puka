@@ -5,11 +5,12 @@ import { toNodeHandler } from "better-auth/node";
 const app = express();
 const port = process.env.API_PORT || 3001;
 
-app.all("/api/auth/*", toNodeHandler(auth));
-
-// Security middleware
+// Security middleware - MUST come before auth handler
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// Auth routes - requires body parsing middleware to be registered first
+app.all("/api/auth/*", toNodeHandler(auth));
 
 // Request logging
 app.use((req, res, next) => {
