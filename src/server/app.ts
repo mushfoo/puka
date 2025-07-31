@@ -17,7 +17,33 @@ import {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Validate required environment variables
+function validateEnvironment() {
+  const required = ['DATABASE_URL']
+  const missing = required.filter((key) => !process.env[key])
+
+  if (missing.length > 0) {
+    console.error('Missing required environment variables:', missing.join(', '))
+    console.error('Please check your .env file or environment configuration')
+    process.exit(1)
+  }
+
+  // Warn about optional but recommended variables
+  const recommended = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL']
+  const missingRecommended = recommended.filter((key) => !process.env[key])
+
+  if (missingRecommended.length > 0) {
+    console.warn(
+      'Missing recommended environment variables:',
+      missingRecommended.join(', ')
+    )
+  }
+}
+
 export function createApp() {
+  // Validate environment variables on startup
+  validateEnvironment()
+
   const app = express()
 
   // Trust proxy for Railway deployment
@@ -73,6 +99,9 @@ export function createApp() {
   // CORS configuration
   app.use(cors(createCorsOptions()))
 
+  // Better Auth routes - MUST be before express.json() to avoid client API issues
+  app.all('/api/auth/*', toNodeHandler(auth))
+
   // Request parsing middleware with enhanced security
   app.use(
     express.json({
@@ -95,20 +124,41 @@ export function createApp() {
 
   app.use(validateRequest)
 
-  // Better Auth routes - MUST be before express.json() to avoid client API issues
-  app.all('/api/auth/*', toNodeHandler(auth))
-
   // API routes
   app.use('/api', createApiRouter())
 
   // Railway health check endpoint
-  app.get('/health.json', (_req, res) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      version: process.env.npm_package_version || '2.0.0',
-    })
+  app.get('/health.json', async (_req, res) => {
+    try {
+      // Basic health check - Railway requires simple 200 response
+      const health = {
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        version: process.env.npm_package_version || '2.0.0',
+      }
+
+      // Optional database check (don't fail health check if DB is down)
+      try {
+        const { PrismaClient } = await import('@prisma/client')
+        const prisma = new PrismaClient()
+        await prisma.$queryRaw`SELECT 1`
+        await prisma.$disconnect()
+        ;(health as any).database = 'connected'
+      } catch (dbError) {
+        console.warn('Database health check failed:', dbError)
+        ;(health as any).database = 'disconnected'
+      }
+
+      res.json(health)
+    } catch (error) {
+      console.error('Health check error:', error)
+      res.status(500).json({
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: 'Health check failed',
+      })
+    }
   })
 
   // Static file serving (replaces Caddy)
@@ -228,23 +278,59 @@ export function createApp() {
   return app
 }
 
+// Cache API handlers to avoid dynamic imports on every request
+let apiHandlers: any = null
+
+async function getApiHandlers() {
+  if (!apiHandlers) {
+    // Import handlers once and cache them
+    const [
+      { allowAnonymous, requireAuth },
+      { handleHealthRequest },
+      { handleBooksRequest, handleBookByIdRequest },
+      { handleStreakRequest },
+      { handleSettingsRequest },
+      { handleTransactionRequest },
+    ] = await Promise.all([
+      import('../lib/api/auth.js'),
+      import('../lib/api/health.js'),
+      import('../lib/api/books.js'),
+      import('../lib/api/streak.js'),
+      import('../lib/api/settings.js'),
+      import('../lib/api/transaction.js'),
+    ])
+
+    apiHandlers = {
+      allowAnonymous,
+      requireAuth,
+      handleHealthRequest,
+      handleBooksRequest,
+      handleBookByIdRequest,
+      handleStreakRequest,
+      handleSettingsRequest,
+      handleTransactionRequest,
+    }
+  }
+  return apiHandlers
+}
+
 function createApiRouter() {
   const router = express.Router()
 
   // API route handlers
   router.use(async (req, res, _next) => {
     try {
-      // Import handlers dynamically to avoid circular dependencies
-      const { allowAnonymous, requireAuth } = await import('../lib/api/auth.js')
-      const { handleHealthRequest } = await import('../lib/api/health.js')
-      const { handleBooksRequest, handleBookByIdRequest } = await import(
-        '../lib/api/books.js'
-      )
-      const { handleStreakRequest } = await import('../lib/api/streak.js')
-      const { handleSettingsRequest } = await import('../lib/api/settings.js')
-      const { handleTransactionRequest } = await import(
-        '../lib/api/transaction.js'
-      )
+      // Get cached handlers
+      const {
+        allowAnonymous,
+        requireAuth,
+        handleHealthRequest,
+        handleBooksRequest,
+        handleBookByIdRequest,
+        handleStreakRequest,
+        handleSettingsRequest,
+        handleTransactionRequest,
+      } = await getApiHandlers()
 
       // Convert Express request to API request format
       const apiReq = {

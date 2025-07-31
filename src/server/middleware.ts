@@ -19,8 +19,8 @@ export const createRateLimit = (
     skip: () => process.env.NODE_ENV === 'development',
     // Use a more sophisticated key generator for better accuracy
     keyGenerator: (req: Request) => {
-      // Use forwarded IP if behind proxy (Railway), otherwise use connection IP
-      return req.ip || req.connection.remoteAddress || 'unknown'
+      // Use forwarded IP if behind proxy (Railway), otherwise use socket IP
+      return req.ip || req.socket.remoteAddress || 'unknown'
     },
   })
 
@@ -35,7 +35,7 @@ export const securityHeaders = (
   // Generate unique request ID for tracking
   const requestId = `req_${Date.now()}_${Math.random()
     .toString(36)
-    .substr(2, 9)}`
+    .substring(2, 11)}`
   res.setHeader('X-Request-ID', requestId)
 
   // Additional security headers
