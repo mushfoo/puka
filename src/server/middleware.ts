@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import rateLimit from 'express-rate-limit'
+import { getServerConfig, getLoggingConfig } from '../lib/config/environment.js'
 
 /**
  * Create rate limiting middleware with environment-aware configuration
@@ -8,21 +9,24 @@ export const createRateLimit = (
   windowMs: number,
   max: number,
   message: string
-) =>
-  rateLimit({
+) => {
+  const config = getServerConfig()
+
+  return rateLimit({
     windowMs,
     max,
     message: { error: message },
     standardHeaders: true,
     legacyHeaders: false,
     // Skip rate limiting in development for easier testing
-    skip: () => process.env.NODE_ENV === 'development',
+    skip: () => config.isDevelopment,
     // Use a more sophisticated key generator for better accuracy
     keyGenerator: (req: Request) => {
       // Use forwarded IP if behind proxy (Railway), otherwise use socket IP
       return req.ip || req.socket.remoteAddress || 'unknown'
     },
   })
+}
 
 /**
  * Security headers middleware
@@ -109,7 +113,9 @@ export const developmentLogger = (
   res: Response,
   next: NextFunction
 ) => {
-  if (process.env.NODE_ENV !== 'development') {
+  const loggingConfig = getLoggingConfig()
+
+  if (!loggingConfig.enableRequestLogging) {
     return next()
   }
 
@@ -153,43 +159,43 @@ export const validateJsonPayload = (
 /**
  * CORS configuration factory
  */
-export const createCorsOptions = () => ({
-  origin: function (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true)
+export const createCorsOptions = () => {
+  const config = getServerConfig()
 
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'http://localhost:4173',
-      ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(',').filter(Boolean) ||
-        []),
-      ...(process.env.RAILWAY_PUBLIC_DOMAIN
-        ? [`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`]
-        : []),
-    ]
+  return {
+    origin: function (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void
+    ) {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true)
 
-    // Allow Railway domains
-    if (origin.includes('.railway.app') || origin.includes('.up.railway.app')) {
-      return callback(null, true)
-    }
+      const allowedOrigins = config.betterAuthTrustedOrigins
 
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'Origin',
-    'X-Requested-With',
-  ],
-})
+      // Allow Railway domains
+      if (
+        origin.includes('.railway.app') ||
+        origin.includes('.up.railway.app')
+      ) {
+        return callback(null, true)
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+      'Cookie',
+      'Set-Cookie',
+    ],
+  }
+}

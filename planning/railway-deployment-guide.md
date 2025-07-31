@@ -2,13 +2,24 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for deploying Puka Reading Tracker to Railway with Supabase integration, maintaining the offline-first architecture while enabling cloud synchronization.
+This guide provides step-by-step instructions for deploying Puka Reading Tracker to Railway using the **simplified unified server architecture**.
+
+### Architecture Changes (v2.0)
+
+- ✅ **Single Express.js server** - Handles both static files and API requests
+- ✅ **Native Node.js runtime** - No Docker containers required
+- ✅ **Better Auth integration** - Unified authentication handling
+- ✅ **Simplified deployment** - Single build process and start command
+- ❌ **Removed**: Docker, Caddy, nginx, dual-server setup
+
+The new architecture provides better performance, easier debugging, and simplified maintenance while maintaining all existing functionality.
 
 ---
 
 ## Pre-Deployment Setup
 
 ### 1. Railway Account Setup
+
 ```bash
 # Install Railway CLI
 npm install -g @railway/cli
@@ -23,6 +34,7 @@ railway login --api-key <your-api-key>
 ```
 
 ### 2. Supabase Project Setup
+
 ```bash
 # Install Supabase CLI
 npm install -g supabase
@@ -43,11 +55,45 @@ supabase projects create puka-reading-tracker
 
 ### Railway Configuration Files
 
-#### `railway.json`
+#### `railway.json` (Updated for Native Node.js)
+
 ```json
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "npm run build"
+  },
+  "deploy": {
+    "startCommand": "npm start",
+    "healthcheckPath": "/health.json",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE",
+    "preDeployCommand": "npm run db:migrate"
+  },
+  "environments": {
+    "production": {
+      "variables": {
+        "NODE_ENV": "production",
+        "VITE_APP_ENV": "production",
+        "VITE_APP_VERSION": "2.0.0",
+        "VITE_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "BETTER_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "APP_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+      }
+    },
+    "staging": {
+      "variables": {
+        "NODE_ENV": "staging",
+        "VITE_APP_ENV": "staging",
+        "VITE_APP_VERSION": "2.0.0-staging",
+        "VITE_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "BETTER_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "APP_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+      }
+    }
+  }
+}
     "builder": "NIXPACKS",
     "buildCommand": "npm run build"
   },
@@ -73,6 +119,7 @@ supabase projects create puka-reading-tracker
 ```
 
 #### Updated `package.json` Scripts
+
 ```json
 {
   "scripts": {
@@ -90,11 +137,12 @@ supabase projects create puka-reading-tracker
 ```
 
 #### Vite Configuration for Railway
+
 ```typescript
 // vite.config.ts
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
@@ -102,26 +150,28 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
-      }
-    })
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+      },
+    }),
   ],
   server: {
     host: '0.0.0.0',
-    port: parseInt(process.env.PORT || '5173')
+    port: parseInt(process.env.PORT || '5173'),
   },
   preview: {
     host: '0.0.0.0',
-    port: parseInt(process.env.PORT || '4173')
+    port: parseInt(process.env.PORT || '4173'),
   },
   build: {
     outDir: 'dist',
-    sourcemap: process.env.NODE_ENV === 'development'
+    sourcemap: process.env.NODE_ENV === 'development',
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
-  }
-});
+    'process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || 'development'
+    ),
+  },
+})
 ```
 
 ---
@@ -129,6 +179,7 @@ export default defineConfig({
 ## Environment Variables Setup
 
 ### Railway Environment Variables
+
 ```bash
 # Production environment variables for Railway
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
@@ -145,6 +196,7 @@ PORT=4173
 ```
 
 ### Local Development Environment
+
 ```bash
 # .env.local (for local development)
 VITE_SUPABASE_URL=http://localhost:54321
@@ -153,16 +205,17 @@ VITE_APP_ENV=development
 ```
 
 ### Supabase Environment Configuration
+
 ```typescript
 // src/config/supabase.ts
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+  throw new Error('Missing Supabase environment variables')
 }
 
-export { supabaseUrl, supabaseAnonKey };
+export { supabaseUrl, supabaseAnonKey }
 ```
 
 ---
@@ -172,6 +225,7 @@ export { supabaseUrl, supabaseAnonKey };
 ### 3-Week Implementation with Railway
 
 #### Week 1: Local Development Setup
+
 ```bash
 # Day 1-2: Local Supabase Setup
 supabase init
@@ -193,6 +247,7 @@ npm install @supabase/auth-helpers-react
 ```
 
 #### Week 2: Cloud Integration
+
 ```bash
 # Day 1-3: Cloud Supabase Setup
 supabase projects create puka-reading-tracker
@@ -210,6 +265,7 @@ railway add
 ```
 
 #### Week 3: Production Deployment
+
 ```bash
 # Day 1-3: Railway Deployment
 railway up
@@ -228,6 +284,7 @@ railway domain add puka-reading-tracker.up.railway.app
 ## Deployment Steps
 
 ### Step 1: Prepare Repository
+
 ```bash
 # Ensure clean git state
 git status
@@ -239,6 +296,7 @@ git checkout -b production
 ```
 
 ### Step 2: Configure Railway Project
+
 ```bash
 # Create new Railway project
 railway init
@@ -251,6 +309,7 @@ railway variables set NODE_ENV=production
 ```
 
 ### Step 3: Deploy to Railway
+
 ```bash
 # Deploy current branch
 railway up
@@ -263,6 +322,7 @@ railway logs
 ```
 
 ### Step 4: Custom Domain Setup
+
 ```bash
 # Add custom domain
 railway domain add puka.yourdomain.com
@@ -278,6 +338,7 @@ railway domain add puka.yourdomain.com
 ### Supabase Production Setup
 
 #### Database Schema Deployment
+
 ```sql
 -- Create production tables
 -- books table
@@ -311,16 +372,17 @@ ALTER TABLE public.books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reading_days ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
-CREATE POLICY "Users can only access their own books" 
-ON public.books FOR ALL 
+CREATE POLICY "Users can only access their own books"
+ON public.books FOR ALL
 USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can only access their own reading days" 
-ON public.reading_days FOR ALL 
+CREATE POLICY "Users can only access their own reading days"
+ON public.reading_days FOR ALL
 USING (auth.uid() = user_id);
 ```
 
 #### Authentication Configuration
+
 ```javascript
 // Supabase Dashboard -> Authentication -> Settings
 {
@@ -339,11 +401,12 @@ USING (auth.uid() = user_id);
 ### Railway Production Settings
 
 #### Service Configuration
+
 ```yaml
 # Railway service settings
 Name: puka-reading-tracker
 Environment: production
-Region: us-west1  # Choose closest to your users
+Region: us-west1 # Choose closest to your users
 
 # Build settings
 Build Command: npm run build
@@ -357,6 +420,7 @@ Auto-deploy: enabled
 ```
 
 #### Performance Optimization
+
 ```javascript
 // Add to vite.config.ts for production
 export default defineConfig({
@@ -366,19 +430,19 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           supabase: ['@supabase/supabase-js'],
-          ui: ['tailwindcss']
-        }
-      }
+          ui: ['tailwindcss'],
+        },
+      },
     },
     chunkSizeWarningLimit: 500,
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true
-      }
-    }
-  }
-});
+        drop_console: true,
+      },
+    },
+  },
+})
 ```
 
 ---
@@ -386,6 +450,7 @@ export default defineConfig({
 ## Monitoring & Maintenance
 
 ### Railway Monitoring
+
 ```bash
 # Monitor deployment logs
 railway logs --tail
@@ -401,31 +466,33 @@ railway shell
 ```
 
 ### Supabase Monitoring
+
 ```javascript
 // Add error tracking to app
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    debug: process.env.NODE_ENV === 'development'
+    debug: process.env.NODE_ENV === 'development',
   },
   global: {
     headers: {
-      'x-application-name': 'puka-reading-tracker'
-    }
-  }
-});
+      'x-application-name': 'puka-reading-tracker',
+    },
+  },
+})
 
 // Monitor auth events
 supabase.auth.onAuthStateChange((event, session) => {
   if (process.env.NODE_ENV === 'production') {
     // Log auth events for monitoring
-    console.log('Auth event:', event, session?.user?.id);
+    console.log('Auth event:', event, session?.user?.id)
   }
-});
+})
 ```
 
 ### Health Checks
+
 ```typescript
 // src/utils/healthCheck.ts
 export const performHealthCheck = async (): Promise<boolean> => {
@@ -433,10 +500,10 @@ export const performHealthCheck = async (): Promise<boolean> => {
     // Check Supabase connection
     const { data, error } = await supabase.from('books').select('count(*)').limit(1);
     if (error) throw error;
-    
+
     // Check local storage
     const localHealth = await checkLocalStorageHealth();
-    
+
     return true;
   } catch (error) {
     console.error('Health check failed:', error);
@@ -458,6 +525,7 @@ export const performHealthCheck = async (): Promise<boolean> => {
 ## Backup & Recovery
 
 ### Automated Backups
+
 ```bash
 # Set up automated Supabase backups
 # In Supabase Dashboard -> Settings -> Database -> Backups
@@ -465,22 +533,23 @@ export const performHealthCheck = async (): Promise<boolean> => {
 ```
 
 ### Data Export Strategy
+
 ```typescript
 // Implement user data export
 export const exportUserData = async (userId: string): Promise<ExportData> => {
   const [books, readingDays] = await Promise.all([
     supabase.from('books').select('*').eq('user_id', userId),
-    supabase.from('reading_days').select('*').eq('user_id', userId)
-  ]);
-  
+    supabase.from('reading_days').select('*').eq('user_id', userId),
+  ])
+
   return {
     exportDate: new Date().toISOString(),
     userId,
     books: books.data || [],
     readingDays: readingDays.data || [],
-    version: '2.0.0'
-  };
-};
+    version: '2.0.0',
+  }
+}
 ```
 
 ---
@@ -488,17 +557,20 @@ export const exportUserData = async (userId: string): Promise<ExportData> => {
 ## Cost Optimization
 
 ### Railway Cost Management
+
 - **Free Tier**: $0/month for hobby projects
 - **Pro Plan**: $5/month when you need more resources
 - **Resource Limits**: Monitor usage in Railway dashboard
 - **Scaling**: Auto-scales based on traffic
 
 ### Supabase Cost Management
+
 - **Free Tier**: 500MB database, 50k monthly active users
 - **Pro Plan**: $25/month when you exceed free limits
 - **Optimization**: Use RLS policies to minimize data transfer
 
 ### Combined Cost Estimate
+
 ```
 Development: $0/month (free tiers)
 Production (low usage): $0-10/month
@@ -512,6 +584,7 @@ Production (moderate usage): $10-30/month
 ### Common Deployment Issues
 
 #### Build Failures
+
 ```bash
 # Check build logs
 railway logs --deployment <deployment-id>
@@ -522,6 +595,7 @@ npm run build  # Test build locally
 ```
 
 #### Environment Variable Issues
+
 ```bash
 # List current variables
 railway variables
@@ -531,18 +605,20 @@ railway variables set VITE_SUPABASE_URL=new-value
 ```
 
 #### Supabase Connection Issues
+
 ```typescript
 // Add connection debugging
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     debug: true,
     persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+    detectSessionInUrl: true,
+  },
+})
 ```
 
 ### Recovery Procedures
+
 1. **Deployment Rollback**: Use Railway dashboard to rollback to previous deployment
 2. **Database Recovery**: Use Supabase backup restoration
 3. **Data Migration**: Export user data and re-import if needed

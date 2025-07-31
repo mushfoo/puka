@@ -1,13 +1,24 @@
 import { createApp } from './app.js'
+import {
+  getServerConfig,
+  logEnvironmentInfo,
+} from '../lib/config/environment.js'
 
 const app = createApp()
-const port = process.env.PORT || 3000
+const config = getServerConfig()
 
 // Start server
-const server = app.listen(Number(port), '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`)
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
-  console.log(`Health check: http://localhost:${port}/health.json`)
+const server = app.listen(config.port, '0.0.0.0', () => {
+  console.log(`🚀 Server started successfully!`)
+  console.log(`📍 Running on port ${config.port}`)
+  console.log(`🌐 App URL: ${config.appUrl}`)
+  console.log(`❤️  Health check: ${config.appUrl}/health.json`)
+  console.log('')
+
+  // Log detailed environment info in development or if explicitly requested
+  if (config.isDevelopment || process.env.LOG_ENV_INFO === 'true') {
+    logEnvironmentInfo()
+  }
 })
 
 // Graceful shutdown handling
