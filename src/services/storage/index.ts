@@ -67,7 +67,9 @@ export async function createStorageService(): Promise<StorageService> {
   }
 
   // Check environment configuration
-  const useDatabase = import.meta.env.VITE_USE_DATABASE_STORAGE !== 'false'
+  const { getClientConfig } = await import('../../lib/config/environment.js')
+  const config = getClientConfig()
+  const useDatabase = config.useDatabaseStorage
 
   // Always try DatabaseStorageService first when enabled (default behavior)
   if (useDatabase) {

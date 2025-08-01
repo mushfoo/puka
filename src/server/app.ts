@@ -11,38 +11,28 @@ import {
   validateRequest,
   developmentLogger,
   validateJsonPayload,
-  createCorsOptions,
 } from './middleware.js'
+import {
+  getServerConfig,
+  validateServerEnvironment,
+  getSecurityConfig,
+  getLoggingConfig,
+} from '../lib/config/environment.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Validate required environment variables
-function validateEnvironment() {
-  const required = ['DATABASE_URL']
-  const missing = required.filter((key) => !process.env[key])
-
-  if (missing.length > 0) {
-    console.error('Missing required environment variables:', missing.join(', '))
-    console.error('Please check your .env file or environment configuration')
-    process.exit(1)
-  }
-
-  // Warn about optional but recommended variables
-  const recommended = ['BETTER_AUTH_SECRET', 'BETTER_AUTH_URL']
-  const missingRecommended = recommended.filter((key) => !process.env[key])
-
-  if (missingRecommended.length > 0) {
-    console.warn(
-      'Missing recommended environment variables:',
-      missingRecommended.join(', ')
-    )
-  }
-}
+// Environment validation is now handled by the centralized config
 
 export function createApp() {
   // Validate environment variables on startup
-  validateEnvironment()
+  validateServerEnvironment()
+
+  // Get centralized configuration
+  const config = getServerConfig()
+  const securityConfig = getSecurityConfig()
+  const loggingConfig = getLoggingConfig()
 
   const app = express()
 
@@ -52,52 +42,92 @@ export function createApp() {
   // Security middleware - applied first
   app.use(
     helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
-          imgSrc: ["'self'", 'data:', 'https:'],
-          fontSrc: ["'self'", 'https:', 'data:'],
-          connectSrc: ["'self'"],
-          frameSrc: ["'none'"],
-          objectSrc: ["'none'"],
-          baseUri: ["'self'"],
-          formAction: ["'self'"],
-          upgradeInsecureRequests:
-            process.env.NODE_ENV === 'production' ? [] : null,
-        },
-      },
+      contentSecurityPolicy: securityConfig.enableCSP
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              styleSrc: ["'self'", "'unsafe-inline'", 'https:'],
+              imgSrc: ["'self'", 'data:', 'https:'],
+              fontSrc: ["'self'", 'https:', 'data:'],
+              connectSrc: ["'self'"],
+              frameSrc: ["'none'"],
+              objectSrc: ["'none'"],
+              baseUri: ["'self'"],
+              formAction: ["'self'"],
+              upgradeInsecureRequests: config.isProduction ? [] : null,
+            },
+          }
+        : false,
       crossOriginEmbedderPolicy: false, // Disable for compatibility
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: process.env.NODE_ENV === 'production',
-      },
+      hsts: securityConfig.enableHSTS
+        ? {
+            maxAge: 31536000,
+            includeSubDomains: true,
+            preload: true,
+          }
+        : false,
     })
   )
 
-  // Rate limiting middleware
-  app.use(
-    createRateLimit(
-      15 * 60 * 1000, // 15 minutes
-      100, // limit each IP to 100 requests per windowMs
-      'Too many requests from this IP, please try again later'
+  // Rate limiting middleware (disabled in development)
+  if (securityConfig.rateLimitEnabled) {
+    app.use(
+      createRateLimit(
+        15 * 60 * 1000, // 15 minutes
+        100, // limit each IP to 100 requests per windowMs
+        'Too many requests from this IP, please try again later'
+      )
     )
-  )
 
-  // Stricter rate limiting for auth endpoints
-  app.use(
-    '/api/auth',
-    createRateLimit(
-      15 * 60 * 1000, // 15 minutes
-      20, // limit each IP to 20 auth requests per windowMs
-      'Too many authentication attempts, please try again later'
+    // Stricter rate limiting for auth endpoints
+    app.use(
+      '/api/auth',
+      createRateLimit(
+        15 * 60 * 1000, // 15 minutes
+        20, // limit each IP to 20 auth requests per windowMs
+        'Too many authentication attempts, please try again later'
+      )
     )
-  )
+  }
 
   // CORS configuration
-  app.use(cors(createCorsOptions()))
+  app.use(
+    cors({
+      origin: function (
+        origin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void
+      ) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true)
+
+        // Allow Railway domains
+        if (
+          origin.includes('.railway.app') ||
+          origin.includes('.up.railway.app')
+        ) {
+          return callback(null, true)
+        }
+
+        if (securityConfig.corsOrigins.includes(origin)) {
+          callback(null, true)
+        } else {
+          callback(new Error('Not allowed by CORS'))
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'Accept',
+        'Origin',
+        'X-Requested-With',
+        'Cookie',
+        'Set-Cookie',
+      ],
+    })
+  )
 
   // Better Auth routes - MUST be before express.json() to avoid client API issues
   app.all('/api/auth/*', toNodeHandler(auth))
@@ -120,7 +150,11 @@ export function createApp() {
 
   // Security headers and request validation
   app.use(securityHeaders)
-  app.use(developmentLogger)
+
+  // Development logging (only in development)
+  if (loggingConfig.enableRequestLogging) {
+    app.use(developmentLogger)
+  }
 
   app.use(validateRequest)
 
@@ -134,7 +168,7 @@ export function createApp() {
       const health = {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: config.nodeEnv,
         version: process.env.npm_package_version || '2.0.0',
       }
 
@@ -258,16 +292,15 @@ export function createApp() {
         path: req.path,
         ip: req.ip,
         userAgent: req.get('User-Agent'),
-        ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+        ...(config.isDevelopment && { stack: error.stack }),
       })
 
       // Send error response
-      const isDevelopment = process.env.NODE_ENV === 'development'
       res.status(status).json({
         error: message,
         type: errorType,
         requestId,
-        ...(isDevelopment && {
+        ...(config.isDevelopment && {
           details: error.message,
           ...(status >= 500 && { stack: error.stack }),
         }),

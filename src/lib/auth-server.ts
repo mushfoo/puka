@@ -1,14 +1,17 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import { betterAuth } from 'better-auth'
+import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { PrismaClient } from '@prisma/client'
+import { getServerConfig } from './config/environment.js'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
+const config = getServerConfig()
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "postgresql",
+    provider: 'postgresql',
   }),
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5173",
+  baseURL: config.betterAuthUrl,
+  secret: config.betterAuthSecret,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -16,14 +19,18 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5, // 5 minutes
+    },
   },
-  trustedOrigins: [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    // Add production domain from environment variables
-    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
-    ...(process.env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",").filter(Boolean) || []),
-  ],
-});
+  trustedOrigins: config.betterAuthTrustedOrigins,
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: false, // Keep simple for now
+    },
+    useSecureCookies: config.isProduction,
+  },
+})
 
-export type Session = typeof auth.$Infer.Session;
+export type Session = typeof auth.$Infer.Session
