@@ -17,11 +17,13 @@
     "start:production": "NODE_ENV=production npm run start",
     "test": "vitest",
     "test:watch": "vitest --watch",
+    "test:integration": "vitest --config vitest.integration.config.ts --run",
+    "test:integration:watch": "vitest --config vitest.integration.config.ts --watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
-    "test:all": "npm run test -- --run && npm run test:e2e",
+    "test:all": "npm run test -- --run && npm run test:integration && npm run test:e2e",
     "type-check": "tsc --noEmit",
     "health-check": "curl -f http://localhost:3000/health.json || exit 1",
     "db:setup": "./scripts/setup-db.sh",
@@ -34,6 +36,9 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
     "deploy:check": "npm run build:production && npm run health-check",
+    "deploy:validate": "./scripts/validate-deployment.sh",
+    "deploy:validate:staging": "./scripts/validate-deployment.sh https://puka-staging.up.railway.app",
+    "deploy:validate:production": "./scripts/validate-deployment.sh https://puka-production.up.railway.app",
     "railway:start": "npm run start"
   },
   "dependencies": {
@@ -73,6 +78,8 @@
     "tailwindcss": "^3.4.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/supertest": "^6.0.2",
+    "supertest": "^7.0.0",
     "typescript": "^5.2.2",
     "vite": "^5.2.0",
     "vitest": "^1.4.0"
