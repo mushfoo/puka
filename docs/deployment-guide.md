@@ -161,6 +161,8 @@ Returns comprehensive system health including:
 - Environment configuration
 - Railway integration status
 
+> **Security Note**: In production environments, consider adding API key authentication for detailed health checks to prevent information disclosure. The endpoint currently uses rate limiting and caching for protection.
+
 ### Health Summary
 
 ```

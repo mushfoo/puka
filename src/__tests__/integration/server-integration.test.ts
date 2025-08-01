@@ -3,7 +3,7 @@
  * Tests authentication flows, API endpoints, static files, and health checks
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import request from 'supertest'
 import { createApp } from '../../server/app.js'
 import { Express } from 'express'
@@ -160,9 +160,7 @@ describe('Unified Server Integration Tests', () => {
 
     it('should serve static assets with proper cache headers', async () => {
       // This test might fail if assets don't exist, but that's expected in test environment
-      const response = await request(app)
-        .get('/assets/nonexistent.js')
-        .expect(404) // Expected in test environment without built assets
+      await request(app).get('/assets/nonexistent.js').expect(404) // Expected in test environment without built assets
     })
 
     it('should serve manifest.json with appropriate cache headers', async () => {

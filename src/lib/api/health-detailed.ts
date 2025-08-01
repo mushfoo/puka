@@ -7,12 +7,31 @@ import { Request, Response } from 'express'
 import { HealthCheckService } from '../health/HealthCheckService.js'
 
 let healthCheckService: HealthCheckService | null = null
+let cachedHealthResult: any = null
+let cacheTimestamp: number = 0
+const CACHE_DURATION = 10000 // 10 seconds cache
 
 function getHealthCheckService(): HealthCheckService {
   if (!healthCheckService) {
     healthCheckService = new HealthCheckService()
   }
   return healthCheckService
+}
+
+async function getCachedHealthResult(): Promise<any> {
+  const now = Date.now()
+
+  // Return cached result if still valid
+  if (cachedHealthResult && now - cacheTimestamp < CACHE_DURATION) {
+    return cachedHealthResult
+  }
+
+  // Get fresh health result
+  const service = getHealthCheckService()
+  cachedHealthResult = await service.performHealthCheck()
+  cacheTimestamp = now
+
+  return cachedHealthResult
 }
 
 /**
@@ -24,8 +43,7 @@ export async function handleDetailedHealthRequest(
   res: Response
 ): Promise<void> {
   try {
-    const service = getHealthCheckService()
-    const healthResult = await service.performHealthCheck()
+    const healthResult = await getCachedHealthResult()
 
     // Set appropriate HTTP status based on health
     let httpStatus = 200
@@ -65,8 +83,7 @@ export async function handleSimpleHealthRequest(
   res: Response
 ): Promise<void> {
   try {
-    const service = getHealthCheckService()
-    const healthResult = await service.performHealthCheck()
+    const healthResult = await getCachedHealthResult()
 
     // Railway expects a simple 200 OK for healthy services
     if (healthResult.status === 'unhealthy') {
@@ -104,8 +121,7 @@ export async function handleHealthSummaryRequest(
   res: Response
 ): Promise<void> {
   try {
-    const service = getHealthCheckService()
-    const healthResult = await service.performHealthCheck()
+    const healthResult = await getCachedHealthResult()
 
     const summary = {
       status: healthResult.status,
@@ -115,14 +131,16 @@ export async function handleHealthSummaryRequest(
       environment: healthResult.environment,
       summary: healthResult.summary,
       components: Object.fromEntries(
-        Object.entries(healthResult.checks).map(([key, check]) => [
-          key,
-          {
-            status: check.status,
-            message: check.message,
-            responseTime: check.responseTime,
-          },
-        ])
+        Object.entries(healthResult.checks).map(
+          ([key, check]: [string, any]) => [
+            key,
+            {
+              status: check.status,
+              message: check.message,
+              responseTime: check.responseTime,
+            },
+          ]
+        )
       ),
     }
 

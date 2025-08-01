@@ -158,6 +158,18 @@ export function createApp() {
 
   app.use(validateRequest)
 
+  // Rate limiting for health endpoints in production
+  if (!config.isDevelopment) {
+    app.use(
+      ['/health.json', '/api/health'],
+      createRateLimit(
+        60 * 1000, // 1 minute
+        60, // 60 requests per minute per IP
+        'Too many health check requests, please try again later'
+      )
+    )
+  }
+
   // API routes
   app.use('/api', createApiRouter())
 

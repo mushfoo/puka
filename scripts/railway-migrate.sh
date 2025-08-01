@@ -5,6 +5,12 @@
 
 set -e
 
+# Check if script has executable permissions
+if [ ! -x "$0" ]; then
+    echo "⚠️  Warning: Script may not have executable permissions"
+    echo "💡 Run: chmod +x $0"
+fi
+
 echo "🚀 Starting Railway database migration..."
 
 # Check required environment variables

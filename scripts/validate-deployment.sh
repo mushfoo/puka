@@ -5,6 +5,13 @@
 
 set -e
 
+# Check if script has executable permissions
+if [ ! -x "$0" ]; then
+    echo "⚠️  Warning: Script may not have executable permissions"
+    echo "💡 Run: chmod +x $0"
+    echo ""
+fi
+
 # Configuration
 DEPLOYMENT_URL=${1:-"http://localhost:3000"}
 TIMEOUT=${TIMEOUT:-30}
