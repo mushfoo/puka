@@ -161,30 +161,13 @@ export function createApp() {
   // API routes
   app.use('/api', createApiRouter())
 
-  // Railway health check endpoint
-  app.get('/health.json', async (_req, res) => {
+  // Railway health check endpoint - use comprehensive health check service
+  app.get('/health.json', async (req, res) => {
     try {
-      // Basic health check - Railway requires simple 200 response
-      const health = {
-        status: 'ok',
-        timestamp: new Date().toISOString(),
-        environment: config.nodeEnv,
-        version: process.env.npm_package_version || '2.0.0',
-      }
-
-      // Optional database check (don't fail health check if DB is down)
-      try {
-        const { PrismaClient } = await import('@prisma/client')
-        const prisma = new PrismaClient()
-        await prisma.$queryRaw`SELECT 1`
-        await prisma.$disconnect()
-        ;(health as any).database = 'connected'
-      } catch (dbError) {
-        console.warn('Database health check failed:', dbError)
-        ;(health as any).database = 'disconnected'
-      }
-
-      res.json(health)
+      const { handleSimpleHealthRequest } = await import(
+        '../lib/api/health-detailed.js'
+      )
+      await handleSimpleHealthRequest(req, res)
     } catch (error) {
       console.error('Health check error:', error)
       res.status(500).json({
@@ -320,6 +303,7 @@ async function getApiHandlers() {
     const [
       { allowAnonymous, requireAuth },
       { handleHealthRequest },
+      { handleDetailedHealthRequest, handleHealthSummaryRequest },
       { handleBooksRequest, handleBookByIdRequest },
       { handleStreakRequest },
       { handleSettingsRequest },
@@ -327,6 +311,7 @@ async function getApiHandlers() {
     ] = await Promise.all([
       import('../lib/api/auth.js'),
       import('../lib/api/health.js'),
+      import('../lib/api/health-detailed.js'),
       import('../lib/api/books.js'),
       import('../lib/api/streak.js'),
       import('../lib/api/settings.js'),
@@ -337,6 +322,8 @@ async function getApiHandlers() {
       allowAnonymous,
       requireAuth,
       handleHealthRequest,
+      handleDetailedHealthRequest,
+      handleHealthSummaryRequest,
       handleBooksRequest,
       handleBookByIdRequest,
       handleStreakRequest,
@@ -358,6 +345,8 @@ function createApiRouter() {
         allowAnonymous,
         requireAuth,
         handleHealthRequest,
+        handleDetailedHealthRequest,
+        handleHealthSummaryRequest,
         handleBooksRequest,
         handleBookByIdRequest,
         handleStreakRequest,
@@ -382,7 +371,13 @@ function createApiRouter() {
 
       // Route to appropriate handler
       if (pathSegments[0] === 'health') {
-        await allowAnonymous(handleHealthRequest)(apiReq, res)
+        if (pathSegments[1] === 'detailed') {
+          await allowAnonymous(handleDetailedHealthRequest)(req, res)
+        } else if (pathSegments[1] === 'summary') {
+          await allowAnonymous(handleHealthSummaryRequest)(req, res)
+        } else {
+          await allowAnonymous(handleHealthRequest)(apiReq, res)
+        }
       } else if (pathSegments[0] === 'books') {
         if (pathSegments[1]) {
           await requireAuth(handleBookByIdRequest)(apiReq, res, pathSegments[1])
