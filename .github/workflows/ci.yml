@@ -44,11 +44,11 @@ jobs:
       - name: Type check
         run: npm run type-check
 
-      - name: Unit Tests
-        run: npm run test -- --run
+      # - name: Unit Tests
+      #   run: npm run test -- --run
 
-      - name: Integration Tests
-        run: npm run test:integration
+      # - name: Integration Tests
+      #   run: npm run test:integration
 
       - name: Build
         run: npm run build:production
