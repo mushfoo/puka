@@ -70,53 +70,39 @@ supabase projects create puka-reading-tracker
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "preDeployCommand": "npm run db:migrate"
-  },
-  "environments": {
-    "production": {
-      "variables": {
-        "NODE_ENV": "production",
-        "VITE_APP_ENV": "production",
-        "VITE_APP_VERSION": "2.0.0",
-        "VITE_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
-        "BETTER_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
-        "APP_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
-      }
-    },
-    "staging": {
-      "variables": {
-        "NODE_ENV": "staging",
-        "VITE_APP_ENV": "staging",
-        "VITE_APP_VERSION": "2.0.0-staging",
-        "VITE_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
-        "BETTER_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
-        "APP_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
-      }
-    }
-  }
-}
-    "builder": "NIXPACKS",
-    "buildCommand": "npm run build"
-  },
-  "deploy": {
-    "startCommand": "npm run preview",
-    "healthcheckPath": "/",
-    "healthcheckTimeout": 100,
-    "restartPolicyType": "ON_FAILURE"
-  },
-  "environments": {
-    "production": {
-      "variables": {
-        "NODE_ENV": "production"
-      }
-    },
-    "staging": {
-      "variables": {
-        "NODE_ENV": "staging"
-      }
-    }
   }
 }
 ```
+
+#### Environment Variables (Set via Railway Dashboard/CLI)
+
+**Production Environment:**
+
+```bash
+NODE_ENV=production
+VITE_APP_ENV=production
+VITE_APP_VERSION=2.0.0
+VITE_AUTH_URL=https://your-production-domain.up.railway.app
+BETTER_AUTH_URL=https://your-production-domain.up.railway.app
+APP_URL=https://your-production-domain.up.railway.app
+BETTER_AUTH_SECRET=your-production-secret
+DATABASE_URL=postgresql://... # Auto-provided by Railway Postgres
+```
+
+**Staging Environment:**
+
+```bash
+NODE_ENV=staging
+VITE_APP_ENV=staging
+VITE_APP_VERSION=2.0.0-staging
+VITE_AUTH_URL=https://your-staging-domain.up.railway.app
+BETTER_AUTH_URL=https://your-staging-domain.up.railway.app
+APP_URL=https://your-staging-domain.up.railway.app
+BETTER_AUTH_SECRET=your-staging-secret
+DATABASE_URL=postgresql://... # Auto-provided by Railway Postgres
+```
+
+> **Note**: Environment variables should be set through the Railway dashboard or CLI, not in the `railway.json` file. Railway automatically provides `RAILWAY_PUBLIC_DOMAIN` which can be used in your environment variables.
 
 #### Updated `package.json` Scripts
 
