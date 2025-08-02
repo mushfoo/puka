@@ -1,6 +1,6 @@
 import React, { ComponentType, ErrorInfo } from 'react'
 import { ErrorBoundary } from './ErrorBoundary'
-import { UserFriendlyError } from '../../types/error'
+import { UserFriendlyError } from '../../types'
 
 interface WithErrorBoundaryOptions {
   fallback?: (error: UserFriendlyError, retry: () => void) => React.ReactNode

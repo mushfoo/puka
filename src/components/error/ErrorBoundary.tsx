@@ -1,5 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { ErrorType, UserFriendlyError, ErrorAction } from '../../types/error'
+import { Component, ErrorInfo, ReactNode } from 'react'
+import { ErrorType, UserFriendlyError, ErrorAction } from '../../types'
 import { ErrorClassifier } from '../../services/error/ErrorClassifier'
 import { errorReporter } from '../../services/error/ErrorReporter'
 
@@ -105,7 +105,9 @@ export class ErrorBoundary extends Component<Props, State> {
           actions: [
             {
               label: 'Sign In Again',
-              action: () => (window.location.href = '/auth'),
+              action: () => {
+                window.location.href = '/auth'
+              },
               style: 'primary',
             },
             reloadAction,
