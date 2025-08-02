@@ -1,8 +1,8 @@
-import { LoadingState } from '../../types/error'
+import { LoadingState } from '../../types'
 
 export class LoadingStateManager {
   private loadingStates: Map<string, LoadingState> = new Map()
-  private timeouts: Map<string, NodeJS.Timeout> = new Map()
+  private timeouts: Map<string, ReturnType<typeof setTimeout>> = new Map()
   private listeners: Set<(states: Record<string, LoadingState>) => void> =
     new Set()
 

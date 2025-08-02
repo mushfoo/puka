@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { loadingStateManager } from '../services/loading'
-import { LoadingState } from '../types/error'
+import { LoadingState } from '../types'
 
 /**
  * Hook to manage and subscribe to loading states
