@@ -9,6 +9,6 @@
     "healthcheckPath": "/health.json",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
-    "preDeployCommand": "npm run db:migrate"
+    "preDeployCommand": "npm run db:migrate && npm run test:auth-config"
   }
 }

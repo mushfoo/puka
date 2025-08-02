@@ -26,6 +26,7 @@
     "test:all": "npm run test -- --run && npm run test:integration && npm run test:e2e",
     "type-check": "tsc --noEmit",
     "health-check": "curl -f http://localhost:3000/health.json || exit 1",
+    "test:auth-config": "tsx scripts/test-auth-config.js",
     "db:setup": "./scripts/setup-db.sh",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

@@ -19,6 +19,23 @@ const server = app.listen(config.port, '0.0.0.0', () => {
   if (config.isDevelopment || process.env.LOG_ENV_INFO === 'true') {
     logEnvironmentInfo()
   }
+
+  // Always log Railway-specific info in production for debugging
+  if (config.isProduction || config.isStaging) {
+    const railwayConfig = {
+      publicDomain: process.env.RAILWAY_PUBLIC_DOMAIN,
+      staticUrl: process.env.RAILWAY_STATIC_URL,
+      environment: process.env.RAILWAY_ENVIRONMENT,
+      projectId: process.env.RAILWAY_PROJECT_ID,
+      serviceId: process.env.RAILWAY_SERVICE_ID,
+    }
+
+    console.log('🚂 Railway Configuration:')
+    Object.entries(railwayConfig).forEach(([key, value]) => {
+      console.log(`   ${key}: ${value || 'Not set'}`)
+    })
+    console.log('')
+  }
 })
 
 // Graceful shutdown handling

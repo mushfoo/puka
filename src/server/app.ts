@@ -101,18 +101,25 @@ export function createApp() {
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true)
 
-        // Allow Railway domains
+        // Allow Railway domains (multiple patterns for compatibility)
         if (
           origin.includes('.railway.app') ||
-          origin.includes('.up.railway.app')
+          origin.includes('.up.railway.app') ||
+          origin.includes('railway.app')
         ) {
           return callback(null, true)
         }
 
+        // Check against configured trusted origins
         if (securityConfig.corsOrigins.includes(origin)) {
           callback(null, true)
         } else {
-          callback(new Error('Not allowed by CORS'))
+          // Log CORS rejection for debugging
+          console.warn(`🚫 CORS rejected origin: ${origin}`)
+          console.warn(
+            `   Allowed origins: ${securityConfig.corsOrigins.join(', ')}`
+          )
+          callback(new Error(`Not allowed by CORS: ${origin}`))
         }
       },
       credentials: true,

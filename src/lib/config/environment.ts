@@ -65,6 +65,9 @@ export function getServerConfig(): ServerConfig {
     appUrl = process.env.APP_URL
   } else if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     appUrl = `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+  } else if (process.env.RAILWAY_STATIC_URL) {
+    // Fallback to Railway static URL if public domain not available
+    appUrl = process.env.RAILWAY_STATIC_URL
   } else {
     appUrl = `http://localhost:${port}`
   }
@@ -84,9 +87,25 @@ export function getServerConfig(): ServerConfig {
     )
   }
 
-  // Add Railway domains
+  // Add Railway domains (multiple formats for compatibility)
   if (process.env.RAILWAY_PUBLIC_DOMAIN) {
     trustedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`)
+  }
+
+  if (process.env.RAILWAY_STATIC_URL) {
+    trustedOrigins.push(process.env.RAILWAY_STATIC_URL)
+  }
+
+  // Add common Railway domain patterns
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    const domain = process.env.RAILWAY_PUBLIC_DOMAIN
+    // Add both .railway.app and .up.railway.app patterns
+    if (domain.includes('.railway.app')) {
+      trustedOrigins.push(`https://${domain}`)
+    }
+    if (domain.includes('.up.railway.app')) {
+      trustedOrigins.push(`https://${domain}`)
+    }
   }
 
   return {
