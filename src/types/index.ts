@@ -1,59 +1,59 @@
 export interface Book {
-  id: number;
-  title: string;
-  author: string;
-  status: 'want_to_read' | 'currently_reading' | 'finished';
-  progress: number; // 0-100
-  notes?: string;
-  dateAdded: Date;
-  dateModified?: Date;
-  dateStarted?: Date;
-  dateFinished?: Date;
-  isbn?: string;
-  coverUrl?: string;
-  tags?: string[];
-  rating?: number;
-  totalPages?: number;
-  currentPage?: number;
-  genre?: string;
-  publishedDate?: string;
+  id: number
+  title: string
+  author: string
+  status: 'want_to_read' | 'currently_reading' | 'finished'
+  progress: number // 0-100
+  notes?: string
+  dateAdded: Date
+  dateModified?: Date
+  dateStarted?: Date
+  dateFinished?: Date
+  isbn?: string
+  coverUrl?: string
+  tags?: string[]
+  rating?: number
+  totalPages?: number
+  currentPage?: number
+  genre?: string
+  publishedDate?: string
 }
 
 export interface ReadingSession {
-  id: number;
-  bookId: number;
-  startTime: Date;
-  endTime: Date;
-  pagesRead: number;
-  notes?: string;
+  id: number
+  bookId: number
+  startTime: Date
+  endTime: Date
+  pagesRead: number
+  notes?: string
 }
 
 export interface StreakData {
-  currentStreak: number;
-  longestStreak: number;
-  lastReadDate: Date | null;
-  dailyGoal: number;
-  todayProgress: number;
-  hasReadToday: boolean;
+  currentStreak: number
+  longestStreak: number
+  lastReadDate: Date | null
+  dailyGoal: number
+  todayProgress: number
+  hasReadToday: boolean
 }
 
 export interface ReadingPeriod {
-  bookId: number;
-  title: string;
-  author: string;
-  startDate: Date;
-  endDate: Date;
-  totalDays: number;
+  bookId: number
+  title: string
+  author: string
+  startDate: Date
+  endDate: Date
+  totalDays: number
 }
 
 export interface StreakImportResult {
-  periodsProcessed: number;
-  daysAdded: number;
-  readingDaysGenerated: Set<string>; // ISO date strings
-  newCurrentStreak: number;
-  newLongestStreak: number;
-  oldCurrentStreak: number;
-  oldLongestStreak: number;
+  periodsProcessed: number
+  daysAdded: number
+  readingDaysGenerated: Set<string> // ISO date strings
+  newCurrentStreak: number
+  newLongestStreak: number
+  oldCurrentStreak: number
+  oldLongestStreak: number
 }
 
 /**
@@ -62,17 +62,17 @@ export interface StreakImportResult {
  */
 export interface EnhancedReadingDayEntry {
   /** Date in YYYY-MM-DD format for consistency and sorting */
-  date: string;
+  date: string
   /** Source of the reading day entry for audit trails */
-  source: 'manual' | 'book' | 'progress';
+  source: 'manual' | 'book' | 'progress'
   /** Associated book IDs for this reading session (optional) */
-  bookIds?: number[];
+  bookIds?: number[]
   /** Optional user notes about the reading session */
-  notes?: string;
+  notes?: string
   /** Timestamp when this entry was originally created */
-  createdAt: Date;
+  createdAt: Date
   /** Timestamp when this entry was last modified */
-  modifiedAt: Date;
+  modifiedAt: Date
 }
 
 /**
@@ -80,9 +80,9 @@ export interface EnhancedReadingDayEntry {
  * @deprecated Use EnhancedStreakHistory for new implementations
  */
 export interface StreakHistory {
-  readingDays: Set<string>; // ISO date strings (YYYY-MM-DD format)
-  bookPeriods: ReadingPeriod[];
-  lastCalculated: Date;
+  readingDays: Set<string> // ISO date strings (YYYY-MM-DD format)
+  bookPeriods: ReadingPeriod[]
+  lastCalculated: Date
 }
 
 /**
@@ -91,45 +91,49 @@ export interface StreakHistory {
  */
 export interface EnhancedStreakHistory extends StreakHistory {
   /** Detailed reading day entries with rich metadata */
-  readingDayEntries: EnhancedReadingDayEntry[];
+  readingDayEntries: EnhancedReadingDayEntry[]
   /** Last synchronization date for data integrity */
-  lastSyncDate: Date;
+  lastSyncDate: Date
   /** Data model version for migration management */
-  version: number;
+  version: number
 }
 
-export type StatusFilter = 'all' | 'want_to_read' | 'currently_reading' | 'finished';
+export type StatusFilter =
+  | 'all'
+  | 'want_to_read'
+  | 'currently_reading'
+  | 'finished'
 
 export interface FilterOptions {
-  status?: StatusFilter;
-  search?: string;
-  genre?: string;
-  rating?: number;
+  status?: StatusFilter
+  search?: string
+  genre?: string
+  rating?: number
   dateRange?: {
-    start: Date;
-    end: Date;
-  };
+    start: Date
+    end: Date
+  }
 }
 
 export interface ToastMessage {
-  id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-  message: string;
-  title?: string;
-  duration?: number;
-  dismissible?: boolean;
+  id: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  message: string
+  title?: string
+  duration?: number
+  dismissible?: boolean
   action?: {
-    label: string;
-    onClick: () => void;
-  };
+    label: string
+    onClick: () => void
+  }
 }
 
 export interface QuickAction {
-  id: string;
-  label: string;
-  icon: string;
-  action: (bookId: number) => void;
-  condition?: (book: Book) => boolean;
+  id: string
+  label: string
+  icon: string
+  action: (bookId: number) => void
+  condition?: (book: Book) => boolean
 }
 
 /**
@@ -137,15 +141,15 @@ export interface QuickAction {
  */
 export interface MigrationStatus {
   /** Whether migration is needed */
-  migrationNeeded: boolean;
+  migrationNeeded: boolean
   /** Current data version */
-  currentVersion: number;
+  currentVersion: number
   /** Target data version */
-  targetVersion: number;
+  targetVersion: number
   /** Migration operation details */
-  details: string;
+  details: string
   /** Estimated time for migration */
-  estimatedTime?: string;
+  estimatedTime?: string
 }
 
 /**
@@ -153,15 +157,15 @@ export interface MigrationStatus {
  */
 export interface MigrationResult {
   /** Whether migration was successful */
-  success: boolean;
+  success: boolean
   /** Number of records migrated */
-  recordsMigrated: number;
+  recordsMigrated: number
   /** Any errors encountered during migration */
-  errors: string[];
+  errors: string[]
   /** Migration execution time in milliseconds */
-  executionTime: number;
+  executionTime: number
   /** Final data version after migration */
-  finalVersion: number;
+  finalVersion: number
 }
 
 /**
@@ -169,10 +173,10 @@ export interface MigrationResult {
  * Used by existing ReadingDataService - will be migrated in Phase 1.2
  */
 export interface ReadingDayEntry {
-  date: string; // ISO date string (YYYY-MM-DD)
-  sources: ReadingDataSource[];
-  bookIds: number[];
-  notes?: string;
+  date: string // ISO date string (YYYY-MM-DD)
+  sources: ReadingDataSource[]
+  bookIds: number[]
+  notes?: string
 }
 
 /**
@@ -180,19 +184,77 @@ export interface ReadingDayEntry {
  * Used by existing ReadingDataService - will be migrated in Phase 1.2
  */
 export interface ReadingDataSource {
-  type: 'manual' | 'book_completion' | 'progress_update';
-  timestamp: Date;
-  bookId?: number;
+  type: 'manual' | 'book_completion' | 'progress_update'
+  timestamp: Date
+  bookId?: number
   metadata?: {
-    progress?: number;
-    pages?: number;
-    [key: string]: any;
-  };
+    progress?: number
+    pages?: number
+    [key: string]: any
+  }
 }
 
 /**
  * Legacy reading day map type for backward compatibility
  * Used by existing ReadingDataService - will be migrated in Phase 1.2
  */
-export type ReadingDayMap = Map<string, ReadingDayEntry>;
+export type ReadingDayMap = Map<string, ReadingDayEntry>
 
+// Error management types
+export interface UserFriendlyError {
+  id: string
+  type: ErrorType
+  title: string
+  message: string
+  details?: string
+  actions: ErrorAction[]
+  dismissible: boolean
+  persistent: boolean
+}
+
+export interface ErrorAction {
+  label: string
+  action: () => void | Promise<void>
+  style: 'primary' | 'secondary' | 'danger'
+  loading?: boolean
+}
+
+export enum ErrorType {
+  AUTHENTICATION = 'authentication',
+  NETWORK = 'network',
+  RATE_LIMIT = 'rate_limit',
+  SERVER = 'server',
+  STORAGE = 'storage',
+}
+
+export interface AuthError {
+  type: 'NETWORK' | 'CREDENTIALS' | 'RATE_LIMIT' | 'SERVER' | 'UNKNOWN'
+  message: string
+  userMessage: string
+  actionable: boolean
+  retryable: boolean
+}
+
+export interface AuthResult {
+  success: boolean
+  error?: AuthError
+  user?: any
+  requiresRetry?: boolean
+  retryAfter?: number
+}
+
+export interface LoadingState {
+  isLoading: boolean
+  message?: string
+  progress?: number
+  timeout?: number
+  startTime: number
+}
+
+export interface ServiceStatus {
+  type: 'DATABASE' | 'MOCK'
+  online: boolean
+  lastSync?: Date
+  pendingSync: boolean
+  error?: string
+}
