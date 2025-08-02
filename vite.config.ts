@@ -13,8 +13,16 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: parseInt(process.env.PORT || '5173'),
+    // Proxy all API requests to the unified Express server
     proxy: {
       '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+        ws: true, // Enable WebSocket proxying if needed
+      },
+      // Proxy health check endpoint
+      '/health.json': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
@@ -31,6 +39,10 @@ export default defineConfig({
       // Allow .local domains for mDNS
       /\.local$/,
     ],
+    // Enable hot reloading for both frontend and backend changes
+    hmr: {
+      overlay: true,
+    },
   },
   preview: {
     host: '0.0.0.0',
