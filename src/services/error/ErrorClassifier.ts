@@ -1,4 +1,4 @@
-import { ErrorType, AuthError } from '../../types/error'
+import { ErrorType, AuthError } from '../../types'
 
 export class ErrorClassifier {
   /**

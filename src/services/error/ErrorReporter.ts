@@ -1,4 +1,4 @@
-import { UserFriendlyError, ErrorType } from '../../types/error'
+import { UserFriendlyError, ErrorType } from '../../types'
 
 interface ErrorReport {
   id: string
