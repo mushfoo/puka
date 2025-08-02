@@ -148,7 +148,7 @@ test_static_files() {
     log_info "Testing static file serving"
 
     # Test main HTML file
-    if curl -f -s --max-time $TIMEOUT "$DEPLOYMENT_URL/" | grep -q -e "<!DOCTYPE html>" -e "<!doctype html>"; then
+    if curl -f -s --max-time $TIMEOUT "$DEPLOYMENT_URL/" | grep -q -i -e "<!DOCTYPE html>" -e "<!doctype html>"; then
         log_success "✅ Static HTML serving test passed"
     else
         log_error "❌ Static HTML serving test failed"
