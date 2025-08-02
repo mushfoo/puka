@@ -58,7 +58,7 @@ trap 'handle_error $LINENO "$BASH_COMMAND"' ERR
 validate_environment() {
     log_info "Validating environment..."
     log_info "Checking schema path: $SCHEMA_PATH"
-    
+
     # Check if required files exist
     if [ ! -f "$SCHEMA_PATH" ]; then
         log_error "Prisma schema not found at $SCHEMA_PATH"
@@ -67,7 +67,7 @@ validate_environment() {
         exit 1
     fi
     log_info "✓ Schema file exists"
-    
+
     log_info "Checking migrations directory: $MIGRATIONS_DIR"
     if [ ! -d "$MIGRATIONS_DIR" ]; then
         log_error "Migrations directory not found at $MIGRATIONS_DIR"
@@ -76,7 +76,7 @@ validate_environment() {
         exit 1
     fi
     log_info "✓ Migrations directory exists"
-    
+
     # Check if DATABASE_URL is set
     if [ -z "$DATABASE_URL" ]; then
         log_error "DATABASE_URL environment variable is not set"
@@ -85,7 +85,7 @@ validate_environment() {
         exit 1
     fi
     log_info "✓ DATABASE_URL is set"
-    
+
     # Check if npx is available
     if ! command -v npx &> /dev/null; then
         log_error "npx is not installed or not in PATH"
@@ -96,20 +96,20 @@ validate_environment() {
         exit 1
     fi
     log_info "✓ npx is available"
-    
+
     log_success "Environment validation passed"
 }
 
 # Smart migration check - only run migrations if needed
 check_migrations_needed() {
     log_info "Checking if migrations are needed..."
-    
+
     # Get available migration files
     if [ ! -d "$MIGRATIONS_DIR" ]; then
         log_warning "No migrations directory found, skipping migration check"
         return 1
     fi
-    
+
     # Count migration directories without command substitution
     local available_migrations=0
     for dir in "$MIGRATIONS_DIR"/*_*/; do
@@ -117,14 +117,14 @@ check_migrations_needed() {
             available_migrations=$((available_migrations + 1))
         fi
     done
-    
+
     if [ "$available_migrations" -eq 0 ]; then
         log_info "No migration files found, skipping migrations"
         return 1
     fi
-    
+
     log_info "Found $available_migrations migration files"
-    
+
     # Simple approach: always run migrations on first deployment, then use Prisma's built-in detection
     # Prisma migrate deploy will automatically skip if no pending migrations
     log_info "Proceeding with migration check - Prisma will determine if deployment needed"
@@ -135,14 +135,14 @@ check_migrations_needed() {
 baseline_migrations() {
     log_info "Baselining existing migrations..."
     log_info "Marking all migrations as already applied to existing database"
-    
+
     # Mark the initial migration as applied for existing databases
     npx --yes prisma migrate resolve --applied "20250715085601_init" --schema="$SCHEMA_PATH" 2>&1 || true
-    
+
     # Add future migrations here as they are created
     # Example:
     # npx --yes prisma migrate resolve --applied "20250716000000_add_feature" --schema="$SCHEMA_PATH" 2>&1 || true
-    
+
     log_success "Baseline process completed"
 }
 
@@ -150,27 +150,26 @@ baseline_migrations() {
 generate_client() {
     log_info "Generating Prisma client..."
     log_info "Running: npx prisma generate --schema=$SCHEMA_PATH"
-    
+
     if [ "$DRY_RUN" = "true" ]; then
         log_info "[DRY RUN] Would generate Prisma client"
         return 0
     fi
-    
+
     # Create a temporary file to capture output
     local temp_file=$(mktemp)
-    
+
     # Run the command and tee output to both console and temp file
     npx --yes prisma generate --schema="$SCHEMA_PATH" 2>&1 | tee "$temp_file"
     local exit_code=${PIPESTATUS[0]}
-    
-    local generate_output=$(cat "$temp_file")
+
     rm -f "$temp_file"
-    
+
     if [ $exit_code -ne 0 ]; then
         log_error "Prisma client generation failed (exit code: $exit_code)"
         return 1
     fi
-    
+
     log_success "Prisma client generated successfully"
 }
 
@@ -180,18 +179,14 @@ main() {
     log_info "Current working directory: $(pwd)"
     log_info "Script location: $0"
     log_info "Environment: NODE_ENV=${NODE_ENV:-not set}, DATABASE_URL=${DATABASE_URL:0:50}..."
-    
-    export OPENSSL_CONF=${OPENSSL_CONF:-/etc/ssl/openssl.cnf}
-    export PRISMA_QUERY_ENGINE_LIBRARY=${PRISMA_QUERY_ENGINE_LIBRARY:-/usr/lib/libssl.so.3}
-    log_info "OpenSSL configuration: OPENSSL_CONF=$OPENSSL_CONF"
-    
+
     if [ "$DRY_RUN" = "true" ]; then
         log_warning "Running in DRY RUN mode - no actual changes will be made"
     fi
-    
+
     # Validate environment
     validate_environment
-    
+
     # Check if migrations are actually needed
     if check_migrations_needed; then
         # Deploy migrations
@@ -214,10 +209,10 @@ main() {
     else
         log_success "No migrations needed, database is up to date"
     fi
-    
+
     # Generate client
     generate_client
-    
+
     log_success "Puka migration process completed successfully!"
     exit 0
 }
@@ -233,7 +228,7 @@ Options:
     -h, --help          Show this help message
     -d, --dry-run       Run in dry-run mode (no actual changes)
     -v, --verbose       Enable verbose logging
-    
+
 Environment Variables:
     DATABASE_URL        PostgreSQL connection string (required)
     DRY_RUN            Set to 'true' for dry-run mode
