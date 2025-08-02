@@ -1,9 +1,4 @@
-import {
-  UserFriendlyError,
-  ErrorType,
-  ErrorAction,
-  AuthError,
-} from '../../types/error'
+import { UserFriendlyError, ErrorType, AuthError } from '../../types'
 
 export class ErrorManager {
   private errors: Map<string, UserFriendlyError> = new Map()
