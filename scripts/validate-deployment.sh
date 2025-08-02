@@ -67,7 +67,7 @@ test_health_endpoint() {
     local exit_code=$?
 
     if [ $exit_code -eq 0 ]; then
-        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
         if [ "$status" = "ok" ]; then
             log_success "✅ Health check endpoint test passed"
             log_verbose "Health response: $response"
@@ -89,7 +89,7 @@ test_detailed_health() {
     local exit_code=$?
 
     if [ $exit_code -eq 0 ]; then
-        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
         if [[ "$status" =~ ^(healthy|degraded)$ ]]; then
             log_success "✅ Detailed health check test passed (status: $status)"
 
@@ -120,7 +120,7 @@ test_api_endpoints() {
     local exit_code=$?
 
     if [ $exit_code -eq 0 ]; then
-        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+        local status=$(echo "$response" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
         if [ "$status" = "ok" ]; then
             log_success "✅ API health endpoint test passed"
         else
@@ -148,7 +148,7 @@ test_static_files() {
     log_info "Testing static file serving"
 
     # Test main HTML file
-    if curl -f -s --max-time $TIMEOUT "$DEPLOYMENT_URL/" | grep -q "<!DOCTYPE html>"; then
+    if curl -f -s --max-time $TIMEOUT "$DEPLOYMENT_URL/" | grep -q -i -e "<!DOCTYPE html>"; then
         log_success "✅ Static HTML serving test passed"
     else
         log_error "❌ Static HTML serving test failed"
@@ -173,19 +173,19 @@ test_security_headers() {
 
     local headers=$(curl -s -I --max-time $TIMEOUT "$DEPLOYMENT_URL/")
 
-    if echo "$headers" | grep -q "X-Content-Type-Options: nosniff"; then
+    if echo "$headers" | grep -q -i "X-Content-Type-Options: nosniff"; then
         log_success "✅ X-Content-Type-Options header present"
     else
         log_warning "⚠️  X-Content-Type-Options header missing"
     fi
 
-    if echo "$headers" | grep -q "X-Frame-Options: DENY"; then
+    if echo "$headers" | grep -q -i "X-Frame-Options: DENY"; then
         log_success "✅ X-Frame-Options header present"
     else
         log_warning "⚠️  X-Frame-Options header missing"
     fi
 
-    if echo "$headers" | grep -q "Content-Security-Policy:"; then
+    if echo "$headers" | grep -q -i "Content-Security-Policy:"; then
         log_success "✅ Content-Security-Policy header present"
     else
         log_warning "⚠️  Content-Security-Policy header missing"
@@ -198,7 +198,7 @@ test_authentication_routes() {
     log_info "Testing authentication routes"
 
     # Test auth session endpoint
-    local auth_response=$(curl -s -w "%{http_code}" --max-time $TIMEOUT "$DEPLOYMENT_URL/api/auth/session")
+    local auth_response=$(curl -s -w "%{http_code}" --max-time $TIMEOUT "$DEPLOYMENT_URL/api/auth/get-session")
     local auth_code="${auth_response: -3}"
 
     if [[ "$auth_code" =~ ^(200|401|403)$ ]]; then
