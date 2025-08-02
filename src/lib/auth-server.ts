@@ -6,6 +6,31 @@ import { getServerConfig } from './config/environment.js'
 const prisma = new PrismaClient()
 const config = getServerConfig()
 
+// Log auth configuration for debugging (without secrets)
+console.log('🔐 Better Auth Configuration:')
+console.log(`   Base URL: ${config.betterAuthUrl}`)
+console.log(
+  `   Trusted Origins: ${config.betterAuthTrustedOrigins.length} configured`
+)
+console.log(`   Use Secure Cookies: ${config.isProduction}`)
+console.log(`   Environment: ${config.nodeEnv}`)
+
+// Validate critical auth configuration
+if (!config.databaseUrl) {
+  throw new Error('DATABASE_URL is required for Better Auth')
+}
+
+if (
+  config.isProduction &&
+  config.betterAuthSecret === 'fallback-secret-for-development-only'
+) {
+  throw new Error('BETTER_AUTH_SECRET must be set in production')
+}
+
+if (!config.betterAuthUrl) {
+  throw new Error('Better Auth URL could not be determined')
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: 'postgresql',

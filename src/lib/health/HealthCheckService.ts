@@ -170,6 +170,28 @@ export class HealthCheckService {
             ? 'Using development auth secret'
             : 'Production auth secret not configured',
           responseTime: Date.now() - startTime,
+          details: {
+            authUrl: config.betterAuthUrl,
+            environment: config.nodeEnv,
+            hasSecret: !!config.betterAuthSecret,
+            secretType:
+              config.betterAuthSecret === 'fallback-secret-for-development-only'
+                ? 'fallback'
+                : 'custom',
+          },
+        }
+      }
+
+      // Verify auth URL configuration
+      if (!config.betterAuthUrl) {
+        return {
+          status: 'unhealthy',
+          message: 'Better Auth URL not configured',
+          responseTime: Date.now() - startTime,
+          details: {
+            appUrl: config.appUrl,
+            railwayDomain: config.railwayPublicDomain,
+          },
         }
       }
 
@@ -179,6 +201,24 @@ export class HealthCheckService {
           status: 'unhealthy',
           message: 'Authentication service not initialized',
           responseTime: Date.now() - startTime,
+          details: {
+            authUrl: config.betterAuthUrl,
+            databaseConnected: !!config.databaseUrl,
+          },
+        }
+      }
+
+      // Verify trusted origins configuration
+      const hasValidOrigins = config.betterAuthTrustedOrigins.length > 0
+      if (!hasValidOrigins) {
+        return {
+          status: 'degraded',
+          message: 'No trusted origins configured',
+          responseTime: Date.now() - startTime,
+          details: {
+            authUrl: config.betterAuthUrl,
+            trustedOrigins: config.betterAuthTrustedOrigins,
+          },
         }
       }
 
@@ -191,6 +231,11 @@ export class HealthCheckService {
         details: {
           authUrl: config.betterAuthUrl,
           trustedOrigins: config.betterAuthTrustedOrigins.length,
+          useSecureCookies: config.isProduction,
+          environment: config.nodeEnv,
+          origins: config.isDevelopment
+            ? config.betterAuthTrustedOrigins
+            : ['[hidden in production]'],
         },
       }
     } catch (error) {
@@ -201,6 +246,14 @@ export class HealthCheckService {
         message: 'Authentication service check failed',
         responseTime,
         error: error instanceof Error ? error.message : String(error),
+        details: {
+          errorType:
+            error instanceof Error ? error.constructor.name : 'Unknown',
+          stack:
+            error instanceof Error
+              ? error.stack?.split('\n').slice(0, 3)
+              : undefined,
+        },
       }
     }
   }
