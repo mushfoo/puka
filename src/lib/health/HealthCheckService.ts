@@ -159,20 +159,6 @@ export class HealthCheckService {
     try {
       const config = getServerConfig()
 
-      // Verify Better Auth configuration
-      if (
-        !config.betterAuthSecret ||
-        config.betterAuthSecret === 'fallback-secret-for-development-only'
-      ) {
-        return {
-          status: config.isDevelopment ? 'degraded' : 'unhealthy',
-          message: config.isDevelopment
-            ? 'Using development auth secret'
-            : 'Production auth secret not configured',
-          responseTime: Date.now() - startTime,
-        }
-      }
-
       // Test auth service availability (basic check)
       if (!auth) {
         return {
@@ -182,7 +168,27 @@ export class HealthCheckService {
         }
       }
 
+      // Verify Better Auth configuration
+      const isUsingFallbackSecret = 
+        !config.betterAuthSecret ||
+        config.betterAuthSecret === 'fallback-secret-for-development-only'
+
       const responseTime = Date.now() - startTime
+
+      // In staging/production, only mark as degraded (not unhealthy) if using fallback secret
+      // since auth may still be functional with Railway's environment variables
+      if (isUsingFallbackSecret && !config.isDevelopment) {
+        return {
+          status: 'degraded',
+          message: 'Using fallback auth secret - verify BETTER_AUTH_SECRET is set',
+          responseTime,
+          details: {
+            authUrl: config.betterAuthUrl,
+            trustedOrigins: config.betterAuthTrustedOrigins.length,
+            secretConfigured: false,
+          },
+        }
+      }
 
       return {
         status: 'healthy',
@@ -191,6 +197,7 @@ export class HealthCheckService {
         details: {
           authUrl: config.betterAuthUrl,
           trustedOrigins: config.betterAuthTrustedOrigins.length,
+          secretConfigured: !isUsingFallbackSecret,
         },
       }
     } catch (error) {

@@ -100,9 +100,24 @@ test_detailed_health() {
             log_verbose "Database status: $db_status"
             log_verbose "Authentication status: $auth_status"
 
+            # Log warnings for degraded components but don't fail
+            if [ "$db_status" = "unhealthy" ]; then
+                log_error "❌ Database is unhealthy"
+                return 1
+            elif [ "$db_status" = "degraded" ]; then
+                log_warning "⚠️  Database is degraded but functional"
+            fi
+
+            if [ "$auth_status" = "unhealthy" ]; then
+                log_error "❌ Authentication is unhealthy"
+                return 1
+            elif [ "$auth_status" = "degraded" ]; then
+                log_warning "⚠️  Authentication is degraded but functional"
+            fi
+
             return 0
         else
-            log_warning "⚠️  Detailed health check returned status: $status"
+            log_error "❌ Detailed health check returned unhealthy status: $status"
             log_verbose "Response: $response"
             return 1
         fi
