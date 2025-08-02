@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "name": "Pull Request Code Review",
+  "description": "Automatically reviews pull request changes as a senior engineer and posts feedback comments with approval or change requests",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".github/workflows/*",
+      "src/**/*",
+      "e2e/**/*",
+      "docs/**/*",
+      "package.json",
+      "tsconfig.json",
+      "vite.config.ts",
+      "playwright.config.ts",
+      "prisma/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A pull request has been created with changes to the codebase. Please act as a senior software engineer and conduct a thorough code review of the changes. \n\nFocus on:\n- Code quality and adherence to TypeScript/React best practices\n- Performance implications and optimization opportunities\n- Security considerations and potential vulnerabilities\n- Test coverage and testing strategy\n- Architecture and design patterns alignment\n- Documentation completeness\n- Mobile-first responsive design compliance\n- Accessibility considerations\n- Database schema changes and migration safety\n- API design and error handling\n\nProvide specific, actionable feedback with code examples where helpful. Conclude with either:\n- APPROVED: Changes look good to merge\n- REQUEST CHANGES: Issues that must be addressed before merging\n\nFormat your response as a detailed pull request comment that would be helpful for the developer."
+  }
+}
