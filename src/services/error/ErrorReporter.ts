@@ -127,7 +127,10 @@ export class ErrorReporter {
         )
       } catch (storageError) {
         // Handle quota exceeded or other localStorage errors
-        if (storageError instanceof DOMException && storageError.code === 22) {
+        if (
+          storageError instanceof DOMException &&
+          storageError.name === 'QuotaExceededError'
+        ) {
           // Quota exceeded, clear old reports and try again
           localStorage.removeItem('puka-error-reports')
           localStorage.setItem('puka-error-reports', JSON.stringify([report]))
