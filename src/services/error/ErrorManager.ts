@@ -8,6 +8,16 @@ export class ErrorManager {
    * Add or update an error in the error state
    */
   addError(error: UserFriendlyError): void {
+    if (!error || typeof error !== 'object') {
+      throw new Error('Invalid error object provided')
+    }
+    if (!error.id || typeof error.id !== 'string') {
+      throw new Error('Error must have a valid string ID')
+    }
+    if (!error.type || !Object.values(ErrorType).includes(error.type)) {
+      throw new Error('Error must have a valid ErrorType')
+    }
+
     this.errors.set(error.id, error)
     this.notifyListeners()
   }
@@ -168,8 +178,9 @@ export class ErrorManager {
     error: Error,
     type: ErrorType = ErrorType.SERVER
   ): UserFriendlyError {
+    const errorId = `generic-${Date.now()}`
     return {
-      id: `generic-${Date.now()}`,
+      id: errorId,
       type,
       title: 'Something Went Wrong',
       message: 'An unexpected error occurred. Please try again.',
@@ -179,7 +190,7 @@ export class ErrorManager {
       actions: [
         {
           label: 'Dismiss',
-          action: () => this.removeError(`generic-${Date.now()}`),
+          action: () => this.removeError(errorId),
           style: 'primary' as const,
         },
       ],

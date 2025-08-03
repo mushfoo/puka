@@ -24,7 +24,7 @@ export class ErrorReporter {
    */
   reportError(error: UserFriendlyError, userId?: string): void {
     const report: ErrorReport = {
-      id: `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `report-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       timestamp: new Date(),
       error,
       userAgent: navigator.userAgent,
@@ -104,7 +104,9 @@ export class ErrorReporter {
   }
 
   private generateSessionId(): string {
-    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    return `session-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 11)}`
   }
 
   private async sendToMonitoringService(report: ErrorReport): Promise<void> {
@@ -117,7 +119,22 @@ export class ErrorReporter {
 
       // Keep only the last 50 reports in localStorage
       const recentReports = reports.slice(-50)
-      localStorage.setItem('puka-error-reports', JSON.stringify(recentReports))
+
+      try {
+        localStorage.setItem(
+          'puka-error-reports',
+          JSON.stringify(recentReports)
+        )
+      } catch (storageError) {
+        // Handle quota exceeded or other localStorage errors
+        if (storageError instanceof DOMException && storageError.code === 22) {
+          // Quota exceeded, clear old reports and try again
+          localStorage.removeItem('puka-error-reports')
+          localStorage.setItem('puka-error-reports', JSON.stringify([report]))
+        } else {
+          throw storageError
+        }
+      }
     } catch (error) {
       console.warn('Failed to send error report to monitoring service:', error)
     }
