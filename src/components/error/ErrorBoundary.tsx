@@ -7,6 +7,7 @@ interface Props {
   children: ReactNode
   fallback?: (error: UserFriendlyError, retry: () => void) => ReactNode
   onError?: (error: Error, errorInfo: ErrorInfo) => void
+  authRoute?: string
 }
 
 interface State {
@@ -16,6 +17,8 @@ interface State {
   userFriendlyError?: UserFriendlyError
   retryCount: number
 }
+
+const MAX_RETRY_ATTEMPTS = 3
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
@@ -106,7 +109,7 @@ export class ErrorBoundary extends Component<Props, State> {
             {
               label: 'Sign In Again',
               action: () => {
-                window.location.href = '/auth'
+                window.location.href = this.props.authRoute || '/auth'
               },
               style: 'primary',
             },
@@ -151,6 +154,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleRetry = (): void => {
+    if (this.state.retryCount >= MAX_RETRY_ATTEMPTS) {
+      alert(
+        `Maximum retry attempts (${MAX_RETRY_ATTEMPTS}) reached. Please refresh the page or contact support.`
+      )
+      return
+    }
+
     this.setState((prevState) => ({
       hasError: false,
       error: undefined,
@@ -186,19 +196,37 @@ export class ErrorBoundary extends Component<Props, State> {
         )
       })
       .catch(() => {
-        // Fallback: show error details in a new window
+        // Fallback: show error details in a new window using safe DOM manipulation
         const newWindow = window.open('', '_blank')
         if (newWindow) {
-          newWindow.document.write(`
-          <html>
-            <head><title>Error Report</title></head>
-            <body>
-              <h1>Error Report</h1>
-              <p>Please copy this information when reporting the issue:</p>
-              <pre>${JSON.stringify(reportData, null, 2)}</pre>
-            </body>
-          </html>
-        `)
+          const doc = newWindow.document
+          doc.title = 'Error Report'
+
+          const html = doc.createElement('html')
+          const head = doc.createElement('head')
+          const title = doc.createElement('title')
+          title.textContent = 'Error Report'
+          head.appendChild(title)
+
+          const body = doc.createElement('body')
+          const h1 = doc.createElement('h1')
+          h1.textContent = 'Error Report'
+
+          const p = doc.createElement('p')
+          p.textContent =
+            'Please copy this information when reporting the issue:'
+
+          const pre = doc.createElement('pre')
+          pre.textContent = JSON.stringify(reportData, null, 2)
+          pre.style.whiteSpace = 'pre-wrap'
+          pre.style.wordBreak = 'break-word'
+
+          body.appendChild(h1)
+          body.appendChild(p)
+          body.appendChild(pre)
+          html.appendChild(head)
+          html.appendChild(body)
+          doc.appendChild(html)
         }
       })
   }
