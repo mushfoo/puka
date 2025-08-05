@@ -273,7 +273,6 @@ describe('ErrorReporter', () => {
         'Quota exceeded',
         'QuotaExceededError'
       )
-      quotaError.code = 22
 
       localStorageMock.getItem.mockReturnValue('[]')
       localStorageMock.setItem

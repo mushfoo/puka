@@ -250,7 +250,7 @@ describe('withErrorBoundary', () => {
 
   describe('error boundary integration', () => {
     it('should work with both HOC options and hook together', () => {
-      const customFallback = (error: UserFriendlyError, retry: () => void) => (
+      const customFallback = (_error: UserFriendlyError, retry: () => void) => (
         <div>
           <h1>Custom Hook Error</h1>
           <button onClick={retry}>Retry Hook Error</button>
