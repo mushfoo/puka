@@ -30,6 +30,7 @@ interface DashboardProps {
   onDeleteBook?: (bookId: number) => Promise<void>
   onImportComplete?: (result: ImportResult) => void
   onMarkReadingDay?: () => Promise<boolean>
+  onUnmarkReadingDay?: () => Promise<boolean>
   onStreakUpdate?: () => void
   loading?: boolean
   className?: string
@@ -48,6 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onDeleteBook,
   onImportComplete,
   onMarkReadingDay,
+  onUnmarkReadingDay,
   onStreakUpdate,
   loading = false,
   className = '',
@@ -277,22 +279,20 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   // Filter books based on active filter and search query
   const filteredBooks = useMemo(() => {
+    const query = debouncedSearchQuery.toLowerCase().trim()
     let filtered = books
 
-    // Apply status filter
-    if (activeFilter !== 'all') {
-      filtered = filtered.filter((book) => book.status === activeFilter)
-    }
-
-    // Apply search filter
-    if (debouncedSearchQuery.trim()) {
-      const query = debouncedSearchQuery.toLowerCase().trim()
+    if (query) {
+      // Global search across all statuses when query is present
       filtered = filtered.filter(
         (book) =>
           book.title.toLowerCase().includes(query) ||
           book.author.toLowerCase().includes(query) ||
           (book.notes && book.notes.toLowerCase().includes(query))
       )
+    } else if (activeFilter !== 'all') {
+      // Apply status filter only when no search query
+      filtered = filtered.filter((book) => book.status === activeFilter)
     }
 
     return filtered
@@ -921,6 +921,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             books={books}
             streakHistory={streakHistory}
             onMarkReadingDay={onMarkReadingDay}
+            onUnmarkReadingDay={onUnmarkReadingDay}
             onStreakUpdate={onStreakUpdate}
             showDetails={true}
             compact={false}
