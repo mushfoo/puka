@@ -23,6 +23,7 @@ function AppContent() {
     deleteBook,
     getExportData,
     markReadingDay,
+    removeReadingDayEntry,
     refresh,
   } = useStorage()
 
@@ -299,6 +300,41 @@ function AppContent() {
     }
   }
 
+  const handleMarkReadingDay = async (): Promise<boolean> => {
+    try {
+      const marked = await markReadingDay()
+      if (marked) {
+        success('Logged your reading day!', {
+          title: 'Reading Recorded',
+          duration: 4000,
+        })
+        await refresh()
+      } else {
+        showError('Failed to mark reading day. Please try again.')
+      }
+      return marked
+    } catch (err) {
+      showError('Failed to mark reading day. Please try again.')
+      return false
+    }
+  }
+
+  const handleUnmarkReadingDay = async (): Promise<boolean> => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      await removeReadingDayEntry(today)
+      success("Today's reading entry removed", {
+        title: 'Entry Removed',
+        duration: 4000,
+      })
+      await refresh()
+      return true
+    } catch (err) {
+      showError('Failed to remove today\'s reading entry. Please try again.')
+      return false
+    }
+  }
+
   // Show error state if there's an error
   if (error) {
     return (
@@ -333,7 +369,8 @@ function AppContent() {
         onUpdateBook={handleUpdateBook}
         onDeleteBook={handleDeleteBook}
         onImportComplete={handleImportComplete}
-        onMarkReadingDay={markReadingDay}
+        onMarkReadingDay={handleMarkReadingDay}
+        onUnmarkReadingDay={handleUnmarkReadingDay}
         onStreakUpdate={refresh}
         loading={loading}
       />
